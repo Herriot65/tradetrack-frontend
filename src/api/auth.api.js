@@ -10,11 +10,10 @@ import {
 /* =========================
    LOGIN
 ========================= */
-export const loginUser = async (email, password) => {
-  const response = await api.post("/auth/login/", {
-    email,
-    password,
-  });
+export const loginUser = async (credentials) => {
+  const response = await api.post("/auth/login/", 
+    credentials
+  );
 
   const { access, refresh, user } = response.data;
 
@@ -42,5 +41,17 @@ export const logoutUser = async () => {
 ========================= */
 export const getCurrentUser = async () => {
   const response = await api.get("/auth/me/");
+  return response.data;
+};
+
+/* =========================
+   REGISTER
+========================= */
+export const registerUser = async (userData) => {
+  const response = await api.post(
+    "/auth/register/",
+    userData
+  );
+
   return response.data;
 };
