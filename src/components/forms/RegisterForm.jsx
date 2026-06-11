@@ -1,17 +1,29 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema } from "../../schemas/registerSchema";
 import { registerUser } from "../../api/auth.api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { PasswordInput } from "./PasswordInput";
+import { FormErrorBanner } from "./FormErrorBanner";
+import { FieldError } from "./FieldError";
 
 export default function RegisterForm() {
   const navigate = useNavigate();
+  const [serverError, setServerError] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
 
   const {
     register,
@@ -22,94 +34,127 @@ export default function RegisterForm() {
   });
 
   const onSubmit = async (data) => {
+    setServerError("");
+
+    if (data.password !== confirmPassword) {
+      setConfirmPasswordError("Passwords do not match");
+      return;
+    }
+
+    setConfirmPasswordError("");
+
     try {
       await registerUser(data);
       navigate("/dashboard");
     } catch (error) {
       console.error(error);
-      alert("Failed to register");
+      setServerError(
+        "Unable to create your account. Please check your details and try again."
+      );
     }
   };
 
   return (
-    <Card className="w-full max-w-md p-6 bg-gray-900 border-gray-800">
-      
-      <h1 className="text-2xl font-bold text-white text-center mb-6">
-        Create account
-      </h1>
+    <Card className="w-full max-w-md border-border/60 bg-card/80 shadow-xl shadow-black/20 backdrop-blur-sm">
+      <CardHeader className="space-y-1 text-center">
+        <CardTitle className="text-2xl font-bold tracking-tight">
+          Create account
+        </CardTitle>
+        <CardDescription>
+          Start tracking your trading performance today
+        </CardDescription>
+      </CardHeader>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <CardContent>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <FormErrorBanner message={serverError} />
 
-        {/* EMAIL */}
-        <div className="space-y-1">
-          <Label>Email</Label>
-          <Input
-            type="email"
-            placeholder="you@example.com"
-            {...register("email")}
-          />
-          {errors.email && (
-            <p className="text-sm text-red-500">
-              {errors.email.message}
-            </p>
-          )}
-        </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              autoComplete="email"
+              aria-invalid={!!errors.email}
+              {...register("email")}
+            />
+            <FieldError message={errors.email?.message} />
+          </div>
 
-        {/* FIRST NAME */}
-        <div className="space-y-1">
-          <Label>First name</Label>
-          <Input
-            type="text"
-            placeholder="John"
-            {...register("first_name")}
-          />
-          {errors.first_name && (
-            <p className="text-sm text-red-500">
-              {errors.first_name.message}
-            </p>
-          )}
-        </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="first_name">First name</Label>
+              <Input
+                id="first_name"
+                type="text"
+                placeholder="John"
+                autoComplete="given-name"
+                aria-invalid={!!errors.first_name}
+                {...register("first_name")}
+              />
+              <FieldError message={errors.first_name?.message} />
+            </div>
 
-        {/* LAST NAME */}
-        <div className="space-y-1">
-          <Label>Last name</Label>
-          <Input
-            type="text"
-            placeholder="Doe"
-            {...register("last_name")}
-          />
-          {errors.last_name && (
-            <p className="text-sm text-red-500">
-              {errors.last_name.message}
-            </p>
-          )}
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="last_name">Last name</Label>
+              <Input
+                id="last_name"
+                type="text"
+                placeholder="Doe"
+                autoComplete="family-name"
+                aria-invalid={!!errors.last_name}
+                {...register("last_name")}
+              />
+              <FieldError message={errors.last_name?.message} />
+            </div>
+          </div>
 
-        {/* PASSWORD */}
-        <div className="space-y-1">
-          <Label>Password</Label>
-          <Input
-            type="password"
-            placeholder="••••••••"
-            {...register("password")}
-          />
-          {errors.password && (
-            <p className="text-sm text-red-500">
-              {errors.password.message}
-            </p>
-          )}
-        </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <PasswordInput
+              id="password"
+              placeholder="••••••••"
+              autoComplete="new-password"
+              aria-invalid={!!errors.password}
+              {...register("password")}
+            />
+            <FieldError message={errors.password?.message} />
+          </div>
 
-        {/* SUBMIT */}
-        <Button className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Creating account..." : "Register"}
-        </Button>
+          <div className="space-y-2">
+            <Label htmlFor="confirm_password">Confirm password</Label>
+            <PasswordInput
+              id="confirm_password"
+              placeholder="••••••••"
+              autoComplete="new-password"
+              aria-invalid={!!confirmPasswordError}
+              value={confirmPassword}
+              onChange={(event) => {
+                setConfirmPassword(event.target.value);
+                if (confirmPasswordError) {
+                  setConfirmPasswordError("");
+                }
+              }}
+            />
+            <FieldError message={confirmPasswordError} />
+          </div>
 
-        <div className="flex justify-center">
-            <Link to="/login" className="text-sm text-center text-gray-400 hover:text-gray-300">    Already have an account? <span className="text-green-500 hover:text-green-600">Login</span></Link>
-        </div>
+          <Button className="w-full" size="lg" disabled={isSubmitting}>
+            {isSubmitting ? "Creating account..." : "Create account"}
+          </Button>
 
-      </form>
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <Link
+              to="/login"
+              className="font-medium text-primary transition-colors hover:text-primary/80 hover:underline"
+            >
+              Sign in
+            </Link>
+          </p>
+        </form>
+      </CardContent>
     </Card>
   );
 }
