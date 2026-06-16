@@ -1,17 +1,18 @@
 import { useCallback } from "react";
 
-import { fetchEquityCurve } from "@/api/analytics.api";
+import { fetchCareerData } from "@/api/hub.api";
 import { useWorkspace } from "@/workspaces/useWorkspace";
+
 import { useAsyncQuery } from "./useAsyncQuery";
 
-export function useEquityCurve(period = "weekly") {
+export function useCareerData() {
   const { activeWorkspace } = useWorkspace();
   const workspaceId = activeWorkspace?.id;
 
   const queryFn = useCallback(
-    () => fetchEquityCurve(workspaceId, period),
-    [workspaceId, period]
+    () => fetchCareerData(workspaceId),
+    [workspaceId]
   );
 
-  return useAsyncQuery(queryFn, [workspaceId, period], { enabled: !!workspaceId });
+  return useAsyncQuery(queryFn, [workspaceId], { enabled: !!workspaceId });
 }

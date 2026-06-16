@@ -9,9 +9,9 @@ function getErrorMessage(err) {
   );
 }
 
-export function useAsyncQuery(fetchFn, deps = []) {
+export function useAsyncQuery(fetchFn, deps = [], { enabled = true } = {}) {
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -20,6 +20,13 @@ export function useAsyncQuery(fetchFn, deps = []) {
   }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      setData(null);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     let cancelled = false;
 
     async function load() {
@@ -46,7 +53,7 @@ export function useAsyncQuery(fetchFn, deps = []) {
     };
     // fetchFn identity is controlled by caller hooks via their own useCallback
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...deps, reloadKey]);
+  }, [...deps, reloadKey, enabled]);
 
   return { data, loading, error, refetch };
 }

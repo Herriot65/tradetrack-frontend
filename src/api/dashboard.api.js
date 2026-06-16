@@ -1,6 +1,8 @@
 import api from "./axios";
+import { USE_MOCK, mockFetchDashboardSummary } from "@/mocks/mockData";
 
-export const fetchDashboardSummary = async () => {
-  const response = await api.get("/dashboard/summary/");
-  return response.data;
+export const fetchDashboardSummary = async (workspaceId) => {
+  if (USE_MOCK) return mockFetchDashboardSummary(workspaceId);
+  const { data } = await api.get(`/workspaces/${workspaceId}/dashboard/summary/`);
+  return data;
 };
