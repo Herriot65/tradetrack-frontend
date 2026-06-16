@@ -2,6 +2,8 @@ import { useMemo } from "react";
 
 import { useCareerData } from "@/hooks/useCareerData";
 
+import AssetBreakdownChart from "./AssetBreakdownChart";
+import DrawdownChart from "./DrawdownChart";
 import HeatmapGrid from "./HeatmapGrid";
 import HubEquityCurve from "./HubEquityCurve";
 import ProfitLossDonut from "./ProfitLossDonut";
@@ -21,7 +23,6 @@ export default function AnalyticsPane({
 }) {
   const { data: careerData, loading: careerLoading } = useCareerData();
 
-  // Filter career data to match selected years — so table + heatmap narrow when a year is picked
   const displayedYearSummaries = useMemo(() => {
     if (!careerData?.yearSummaries) return [];
     if (selectedYears.length === 0) return careerData.yearSummaries;
@@ -41,21 +42,30 @@ export default function AnalyticsPane({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-      {/* LEFT: charts only */}
+      {/* LEFT: time-series charts */}
       <div className="flex flex-col gap-5">
         <HubEquityCurve
           data={yearEquityCurve}
           title={`Equity Curve${yearsLabel ? ` — ${yearsLabel}` : ""}`}
           height={240}
         />
+        <DrawdownChart
+          data={yearAnalytics?.drawdownCurve ?? []}
+          title={`Drawdown${yearsLabel ? ` — ${yearsLabel}` : ""}`}
+          height={160}
+        />
         <RPerTradeChart
           data={yearRPerTrade}
           title={`R per Trade${yearsLabel ? ` — ${yearsLabel}` : ""}`}
-          height={220}
+          height={200}
+        />
+        <AssetBreakdownChart
+          data={yearAnalytics?.pnlByAsset ?? []}
+          title={`R by Asset${yearsLabel ? ` — ${yearsLabel}` : ""}`}
         />
       </div>
 
-      {/* RIGHT: table → heatmap → donuts stacked */}
+      {/* RIGHT: table → heatmap → donuts */}
       <div className="flex flex-col gap-5">
         <YearPerformanceTable
           data={displayedYearSummaries}

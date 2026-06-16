@@ -13,6 +13,7 @@ import {
 import { formatPercent, formatR } from "@/lib/formatters";
 
 import HubEquityCurve from "./HubEquityCurve";
+import PerformanceCalendar from "./PerformanceCalendar";
 import ProfitLossDonut from "./ProfitLossDonut";
 import RPerTradeChart from "./RPerTradeChart";
 import WinLossDonut from "./WinLossDonut";
@@ -180,12 +181,17 @@ export default function MonthDetailDialog({ open, onClose, year, month, monthAna
                 <HubEquityCurve
                   data={monthAnalytics.equityCurve}
                   title={`Equity — ${monthName} ${year}`}
-                  height={220}
+                  height={200}
+                />
+                <PerformanceCalendar
+                  year={year}
+                  month={month}
+                  calendarData={monthAnalytics.calendarData}
                 />
                 <RPerTradeChart
                   data={monthAnalytics.rPerTrade}
                   title={`R per Trade — ${monthName}`}
-                  height={200}
+                  height={180}
                 />
               </div>
 
