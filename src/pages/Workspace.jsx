@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { BookOpen, Plus, Search } from "lucide-react";
 
-import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import TradeJournalEntry from "@/components/journal/TradeJournalEntry";
+import AppShell from "@/components/layout/AppShell";
+import TradeTable from "@/components/journal/TradeTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,38 +20,25 @@ const STATUS_FILTERS = [
   { value: "BE",   label: "Break Even" },
 ];
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function groupByDate(trades) {
-  const map = new Map();
-  trades.forEach((t) => {
-    const date = t.entry_datetime.slice(0, 10);
-    if (!map.has(date)) map.set(date, []);
-    map.get(date).push(t);
-  });
-  return [...map.entries()].map(([date, entries]) => ({ date, entries }));
-}
-
-function formatGroupDate(dateStr) {
-  return new Date(dateStr + "T00:00:00").toLocaleDateString(undefined, {
-    weekday: "long",
-    year:    "numeric",
-    month:   "long",
-    day:     "numeric",
-  });
-}
-
 // ─── Loading skeleton ─────────────────────────────────────────────────────────
 
-function JournalSkeleton() {
+function TableSkeleton() {
   return (
-    <div className="space-y-6">
-      {[0, 1].map((g) => (
-        <div key={g} className="space-y-2">
-          <Skeleton className="h-4 w-48" />
-          {[0, 1, 2].map((i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
-        </div>
-      ))}
+    <div className="overflow-hidden rounded-lg border border-zinc-800/60">
+      <div className="border-b border-zinc-800/60 bg-zinc-900/60 px-3 py-2.5">
+        <Skeleton className="h-3 w-64" />
+      </div>
+      <div className="divide-y divide-zinc-800/40">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="flex items-center gap-4 px-3 py-3">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-3 w-12" />
+            <Skeleton className="h-5 w-10 rounded" />
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="ml-auto h-5 w-14" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -71,7 +58,7 @@ function EmptyState({ hasFilters }) {
         <p className="max-w-xs text-xs text-zinc-600">
           {hasFilters
             ? "Try clearing the search or status filter."
-            : "Add your first trade to start building your journal."}
+            : "Trades will appear here once synced from MT5."}
         </p>
       </div>
     </div>
@@ -81,11 +68,11 @@ function EmptyState({ hasFilters }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Workspace() {
-  const { workspaceId }                     = useParams();
-  const navigate                            = useNavigate();
+  const { workspaceId }   = useParams();
+  const navigate          = useNavigate();
   const { workspaces, activeWorkspace, selectWorkspace, loading: wsLoading } = useWorkspace();
 
-  // Sync workspace selection when the URL param changes
+  // Sync workspace selection when URL param changes
   useEffect(() => {
     if (wsLoading) return;
     const ws = workspaces.find((w) => String(w.id) === workspaceId);
@@ -98,29 +85,23 @@ export default function Workspace() {
     }
   }, [workspaceId, workspaces, wsLoading, navigate, selectWorkspace]);
 
-  // Filter state
   const [search,       setSearch]       = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  // Fetch trades (search is server-side; status is client-side for instant response)
+  // Search is server-side; status is client-side for instant response
   const { data: tradesData, loading: tradesLoading } = useTrades({ search });
-
   const trades = tradesData?.results ?? [];
 
-  // Client-side status filter + group by date
-  const grouped = useMemo(() => {
-    const filtered = statusFilter
-      ? trades.filter((t) => t.status === statusFilter)
-      : trades;
-    return groupByDate(filtered);
+  const filtered = useMemo(() => {
+    if (!statusFilter) return trades;
+    return trades.filter((t) => t.status === statusFilter);
   }, [trades, statusFilter]);
 
-  const hasFilters    = !!search || !!statusFilter;
-  const totalFiltered = grouped.reduce((n, g) => n + g.entries.length, 0);
+  const hasFilters = !!search || !!statusFilter;
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <AppShell>
+      <div className="space-y-5">
 
         {/* ── Header ── */}
         <div className="flex items-start justify-between gap-4">
@@ -128,8 +109,8 @@ export default function Workspace() {
             <h1 className="text-2xl font-semibold tracking-tight">
               {activeWorkspace?.name ?? "Journal"}
             </h1>
-            <p className="text-sm text-zinc-500 mt-0.5">
-              Trading journal — your personal trade log and reflections
+            <p className="mt-0.5 text-sm text-zinc-500">
+              MT5 execution history — review and annotate your trades
             </p>
           </div>
           <Button size="sm" className="shrink-0" disabled>
@@ -141,18 +122,27 @@ export default function Workspace() {
         {/* ── Filters ── */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           {/* Search */}
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-zinc-500 pointer-events-none" />
+          <div className="relative max-w-xs flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-zinc-500" />
             <Input
               placeholder="Search asset or setup…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 h-8 bg-zinc-900/60 border-zinc-800 text-sm placeholder:text-zinc-600 focus-visible:ring-emerald-500/30"
+              className="h-8 border-zinc-800 bg-zinc-900/60 pl-8 text-sm placeholder:text-zinc-600 focus-visible:ring-emerald-500/30"
             />
           </div>
 
+          {/* Account filter (placeholder — multi-account support coming) */}
+          <select
+            disabled
+            title="Account filter — coming soon"
+            className="h-8 cursor-not-allowed rounded-md border border-zinc-800/60 bg-zinc-900/60 px-2.5 text-xs text-zinc-600"
+          >
+            <option>All Accounts</option>
+          </select>
+
           {/* Status pills */}
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex flex-wrap items-center gap-1.5">
             {STATUS_FILTERS.map((f) => (
               <button
                 key={f.value}
@@ -168,46 +158,23 @@ export default function Workspace() {
             ))}
           </div>
 
-          {/* Count */}
           {!tradesLoading && (
-            <span className="ml-auto text-xs text-zinc-600 shrink-0">
-              {totalFiltered} {totalFiltered === 1 ? "trade" : "trades"}
+            <span className="ml-auto shrink-0 text-xs text-zinc-600">
+              {filtered.length} {filtered.length === 1 ? "trade" : "trades"}
             </span>
           )}
         </div>
 
-        {/* ── Journal entries ── */}
+        {/* ── Table ── */}
         {tradesLoading ? (
-          <JournalSkeleton />
-        ) : grouped.length === 0 ? (
+          <TableSkeleton />
+        ) : filtered.length === 0 ? (
           <EmptyState hasFilters={hasFilters} />
         ) : (
-          <div className="space-y-8">
-            {grouped.map(({ date, entries }) => (
-              <div key={date} className="space-y-2">
-                {/* Date heading */}
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                    {formatGroupDate(date)}
-                  </span>
-                  <div className="flex-1 h-px bg-zinc-800/60" />
-                  <span className="text-[10px] text-zinc-700">
-                    {entries.length} {entries.length === 1 ? "trade" : "trades"}
-                  </span>
-                </div>
-
-                {/* Trade cards for this day */}
-                <div className="space-y-1.5">
-                  {entries.map((trade) => (
-                    <TradeJournalEntry key={trade.id} trade={trade} />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+          <TradeTable trades={filtered} />
         )}
 
       </div>
-    </DashboardLayout>
+    </AppShell>
   );
 }

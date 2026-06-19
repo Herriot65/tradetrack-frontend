@@ -5,14 +5,14 @@ import "./index.css";
 
 import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "./auth/AuthContext";
-import { WorkspaceProvider } from "./workspaces/WorkspaceContext";
+import { JournalProvider } from "./journals/JournalContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
     <AuthProvider>
-      <WorkspaceProvider>
+      <JournalProvider>
         <App />
-      </WorkspaceProvider>
+      </JournalProvider>
     </AuthProvider>
   </BrowserRouter>
 );

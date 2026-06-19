@@ -1,8 +1,2 @@
-import { useContext } from "react";
-import { WorkspaceContext } from "./WorkspaceContext";
-
-export function useWorkspace() {
-  const ctx = useContext(WorkspaceContext);
-  if (!ctx) throw new Error("useWorkspace must be used inside WorkspaceProvider");
-  return ctx;
-}
+// Backward-compat re-export — new code should use useJournal() directly.
+export { useJournal as useWorkspace } from "@/journals/useJournal";

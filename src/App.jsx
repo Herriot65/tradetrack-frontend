@@ -4,8 +4,7 @@ import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import Workspace from "./pages/Workspace";
-import PerformanceHub from "./pages/PerformanceHub";
+import Journal from "./pages/Journal";
 import ProtectedRoute from "./auth/ProtectedRoute";
 
 export default function App() {
@@ -25,19 +24,10 @@ export default function App() {
       />
 
       <Route
-        path="/workspace/:workspaceId"
+        path="/journal/:journalId"
         element={
           <ProtectedRoute>
-            <Workspace />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/workspace/:workspaceId/hub"
-        element={
-          <ProtectedRoute>
-            <PerformanceHub />
+            <Journal />
           </ProtectedRoute>
         }
       />

@@ -177,5 +177,21 @@ export function useHubAnalytics({ selectedYears = [], openMonth = null }) {
     return computeAnalytics(monthTrades);
   }, [allTrades, openMonth]);
 
-  return { yearAnalytics, monthAnalytics, loading, error, refetch };
+  // Always computed for the most recently traded month (used by AnalyticsPane calendar)
+  const latestMonthAnalytics = useMemo(() => {
+    if (!allTrades?.length) return null;
+    const latestDate = allTrades.reduce((max, t) => {
+      const d = new Date(t.entry_datetime);
+      return d > max ? d : max;
+    }, new Date(0));
+    const year  = latestDate.getFullYear();
+    const month = latestDate.getMonth();
+    const monthTrades = allTrades.filter((t) => {
+      const d = new Date(t.entry_datetime);
+      return d.getFullYear() === year && d.getMonth() === month;
+    });
+    return { year, month, ...computeAnalytics(monthTrades) };
+  }, [allTrades]);
+
+  return { yearAnalytics, monthAnalytics, latestMonthAnalytics, loading, error, refetch };
 }
