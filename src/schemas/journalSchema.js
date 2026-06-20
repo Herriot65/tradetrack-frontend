@@ -12,4 +12,8 @@ export const journalSchema = z.object({
   breakEvenMethod: z.enum(["ratio", "profit"], {
     required_error: "Break-even method is required",
   }),
+  breakEvenValue: z.coerce
+    .number({ invalid_type_error: "Must be a number" })
+    .min(0, "Must be 0 or greater")
+    .optional(),
 });

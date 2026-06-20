@@ -193,5 +193,7 @@ export function useHubAnalytics({ selectedYears = [], openMonth = null }) {
     return { year, month, ...computeAnalytics(monthTrades) };
   }, [allTrades]);
 
-  return { yearAnalytics, monthAnalytics, latestMonthAnalytics, loading, error, refetch };
+  const hasData = !loading && (allTrades?.length ?? 0) > 0;
+
+  return { yearAnalytics, monthAnalytics, latestMonthAnalytics, loading, error, refetch, hasData };
 }

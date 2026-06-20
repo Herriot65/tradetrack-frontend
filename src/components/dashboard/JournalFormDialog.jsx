@@ -27,6 +27,7 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
     register,
     handleSubmit,
     reset,
+    watch,
     setError,
     formState: { errors, isSubmitting },
   } = useForm({
@@ -37,8 +38,11 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
       startingCapital: "",
       currency: "USD",
       breakEvenMethod: "ratio",
+      breakEvenValue: "",
     },
   });
+
+  const breakEvenMethod = watch("breakEvenMethod");
 
   useEffect(() => {
     if (open) reset({
@@ -47,6 +51,7 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
       startingCapital: "",
       currency: "USD",
       breakEvenMethod: "ratio",
+      breakEvenValue: "",
     });
   }, [open, reset]);
 
@@ -147,6 +152,23 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
               <option value="profit">Profit Based</option>
             </select>
             <FieldError message={errors.breakEvenMethod?.message} />
+          </div>
+
+          {/* BE Threshold — label adapts to selected method */}
+          <div className="space-y-1.5">
+            <Label htmlFor="break-even-value">
+              {breakEvenMethod === "profit" ? "BE Threshold (currency)" : "BE Threshold (R)"}
+            </Label>
+            <Input
+              id="break-even-value"
+              type="number"
+              min="0"
+              step="any"
+              placeholder={breakEvenMethod === "profit" ? "10" : "0.5"}
+              aria-invalid={!!errors.breakEvenValue}
+              {...register("breakEvenValue")}
+            />
+            <FieldError message={errors.breakEvenValue?.message} />
           </div>
 
           <DialogFooter>

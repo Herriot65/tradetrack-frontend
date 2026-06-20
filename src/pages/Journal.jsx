@@ -1,16 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
+  BarChart3,
   BookOpen,
   Cable,
   Layers,
+  Plus,
   PlugZap,
   Search,
   Settings2,
+  Trash2,
 } from "lucide-react";
 
 import AppShell from "@/components/layout/AppShell";
 import TradeTable from "@/components/journal/TradeTable";
+import TradePanel from "@/components/journal/TradePanel";
 import AnalyticsPane from "@/components/hub/AnalyticsPane";
 import HubHeader from "@/components/hub/HubHeader";
 import KpiStrip from "@/components/hub/KpiStrip";
@@ -19,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogDescription,
@@ -27,13 +32,18 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { createTrade, updateTrade, deleteTrade } from "@/api/trades.api";
 import { useHubAnalytics } from "@/hooks/useHubAnalytics";
 import { useTrades } from "@/hooks/useTrades";
+import { useAuth } from "@/auth/useAuth";
 import { useJournal } from "@/journals/useJournal";
+import { useJournalCatalog } from "@/journals/useJournalCatalog";
+import { deriveStatus } from "@/lib/deriveStatus";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -111,38 +121,44 @@ function EmptyTrades({ hasFilters }) {
   );
 }
 
-function TradesTab({ breakEvenMethod }) {
+function TradesTab({ breakEvenMethod, journalId }) {
   const [search,       setSearch]       = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  // panel state: null = closed, { mode: 'create'|'edit', trade: null|obj }
+  const [panel, setPanel] = useState(null);
 
-  const { data: tradesData, loading: tradesLoading } = useTrades({ search });
+  const { activeWorkspace } = useJournal();
+  const workspaceId = activeWorkspace?.id;
+
+  const { data: tradesData, loading: tradesLoading, refetch } = useTrades({ search });
   const trades = tradesData?.results ?? [];
+
+  const catalog = useJournalCatalog(journalId);
 
   const filtered = useMemo(() => {
     if (!statusFilter) return trades;
-    // Status filter uses derived status: re-derive here for consistency
-    const method = breakEvenMethod ?? "ratio";
-    return trades.filter((t) => {
-      if (t.pnl_r === null || t.pnl_r === undefined) {
-        return statusFilter === "OPEN";
-      }
-      const r = parseFloat(t.pnl_r);
-      let derived;
-      if (method === "profit" && t.pnl != null) {
-        const pnl = parseFloat(t.pnl);
-        derived = pnl > 0 ? "WIN" : pnl < 0 ? "LOSS" : "BE";
-      } else {
-        derived = r > 0 ? "WIN" : r < 0 ? "LOSS" : "BE";
-      }
-      return derived === statusFilter;
-    });
-  }, [trades, statusFilter, breakEvenMethod]);
+    return trades.filter((t) => deriveStatus(t) === statusFilter);
+  }, [trades, statusFilter]);
 
   const hasFilters = !!search || !!statusFilter;
 
+  async function handleSave(payload) {
+    if (panel?.mode === "edit") {
+      await updateTrade(workspaceId, panel.trade.id, payload);
+    } else {
+      await createTrade(workspaceId, payload);
+    }
+    refetch();
+  }
+
+  async function handleDelete(id) {
+    await deleteTrade(workspaceId, id);
+    refetch();
+  }
+
   return (
     <div className="space-y-4">
-      {/* Filters */}
+      {/* Toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative max-w-xs flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-zinc-500" />
@@ -170,11 +186,20 @@ function TradesTab({ breakEvenMethod }) {
           ))}
         </div>
 
-        {!tradesLoading && (
-          <span className="ml-auto shrink-0 text-xs text-zinc-600">
-            {filtered.length} {filtered.length === 1 ? "trade" : "trades"}
-          </span>
-        )}
+        <div className="ml-auto flex shrink-0 items-center gap-3">
+          {!tradesLoading && (
+            <span className="text-xs text-zinc-600">
+              {filtered.length} {filtered.length === 1 ? "trade" : "trades"}
+            </span>
+          )}
+          <Button
+            size="sm"
+            onClick={() => setPanel({ mode: "create", trade: null })}
+          >
+            <Plus className="size-3.5" />
+            New Trade
+          </Button>
+        </div>
       </div>
 
       {/* Table */}
@@ -183,8 +208,24 @@ function TradesTab({ breakEvenMethod }) {
       ) : filtered.length === 0 ? (
         <EmptyTrades hasFilters={hasFilters} />
       ) : (
-        <TradeTable trades={filtered} breakEvenMethod={breakEvenMethod} />
+        <TradeTable
+          trades={filtered}
+          breakEvenMethod={breakEvenMethod}
+          onRowClick={(trade) => setPanel({ mode: "edit", trade })}
+          journalId={journalId}
+        />
       )}
+
+      {/* Trade panel */}
+      <TradePanel
+        mode={panel?.mode ?? "create"}
+        trade={panel?.trade ?? null}
+        open={panel !== null}
+        onClose={() => setPanel(null)}
+        onSave={handleSave}
+        onDelete={handleDelete}
+        catalog={catalog}
+      />
     </div>
   );
 }
@@ -195,7 +236,7 @@ function AnalyticsTab() {
   const [selectedYears, setSelectedYears] = useState([]);
   const [openMonth,     setOpenMonth]     = useState(null);
 
-  const { yearAnalytics, monthAnalytics, latestMonthAnalytics, loading } =
+  const { yearAnalytics, monthAnalytics, latestMonthAnalytics, loading, hasData } =
     useHubAnalytics({ selectedYears, openMonth });
 
   const handleYearToggle = (year) =>
@@ -211,6 +252,22 @@ function AnalyticsTab() {
     );
 
   const label = yearsLabel(selectedYears);
+
+  if (!loading && !hasData) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-zinc-800 py-20 text-center">
+        <div className="flex size-12 items-center justify-center rounded-xl bg-zinc-900 ring-1 ring-zinc-800">
+          <BarChart3 className="size-5 text-zinc-600" />
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-zinc-300">No data yet</p>
+          <p className="max-w-xs text-xs text-zinc-600">
+            Add closed trades to this journal to see your analytics and performance charts.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -263,12 +320,21 @@ function CustomFieldsTab() {
 // ─── Settings dialog ──────────────────────────────────────────────────────────
 
 function SettingsDialog({ open, onClose, journal }) {
+  const beThresholdValue = (() => {
+    if (journal?.breakEvenValue == null) return "—";
+    const v = Number(journal.breakEvenValue);
+    return journal?.breakEvenMethod === "profit"
+      ? `${journal.currency ?? ""} ${v}`.trim()
+      : `${v} R`;
+  })();
+
   const rows = [
     { label: "Name",              value: journal?.name },
     { label: "Type",              value: JOURNAL_TYPE_LABEL[journal?.journalType] ?? "—" },
     { label: "Starting Capital",  value: journal?.startingCapital != null ? `${journal.currency ?? ""} ${Number(journal.startingCapital).toLocaleString()}`.trim() : "—" },
     { label: "Currency",          value: journal?.currency ?? "—" },
     { label: "Break-Even Method", value: BREAK_EVEN_LABEL[journal?.breakEvenMethod] ?? "—" },
+    { label: "BE Threshold",      value: beThresholdValue },
   ];
 
   return (
@@ -327,20 +393,46 @@ function BrokerConnectionsDialog({ open, onClose }) {
 export default function Journal() {
   const { journalId } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { loading: authLoading } = useAuth();
   const {
     journals,
     activeJournal,
     selectJournal,
+    deleteJournal,
     loading: jLoading,
   } = useJournal();
 
-  const [activeTab,     setActiveTab]     = useState("trades");
-  const [settingsOpen,  setSettingsOpen]  = useState(false);
-  const [brokerOpen,    setBrokerOpen]    = useState(false);
+  // Tab is stored in the URL so it survives page refresh
+  const activeTab = searchParams.get("tab") ?? "trades";
+  function setActiveTab(tab) {
+    setSearchParams({ tab }, { replace: true });
+  }
 
-  // Sync active journal when URL param changes
+  const [settingsOpen,     setSettingsOpen]     = useState(false);
+  const [brokerOpen,       setBrokerOpen]       = useState(false);
+  const [deleteOpen,       setDeleteOpen]       = useState(false);
+  const [deleting,         setDeleting]         = useState(false);
+  const [deleteError,      setDeleteError]      = useState(null);
+
+  const handleDelete = async () => {
+    if (!activeJournal) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteJournal(activeJournal.id);
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setDeleteError(err?.response?.data?.detail ?? err.message ?? "Failed to delete journal");
+      setDeleting(false);
+    }
+  };
+
+  // Sync active journal when URL param changes.
+  // Guard on both auth AND journal loading to avoid premature redirect to /dashboard
+  // when the page refreshes and journals haven't been fetched yet.
   useEffect(() => {
-    if (jLoading) return;
+    if (authLoading || jLoading) return;
     const j = journals.find((j) => String(j.id) === journalId);
     if (j) {
       selectJournal(j);
@@ -349,7 +441,7 @@ export default function Journal() {
     } else {
       navigate("/dashboard", { replace: true });
     }
-  }, [journalId, journals, jLoading, navigate, selectJournal]);
+  }, [journalId, journals, jLoading, authLoading, navigate, selectJournal]);
 
   const typeLabel = activeJournal
     ? (JOURNAL_TYPE_LABEL[activeJournal.journalType] ?? "Journal")
@@ -400,6 +492,14 @@ export default function Journal() {
                 <Cable className="size-3.5" />
                 Broker Connections
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => { setDeleteError(null); setDeleteOpen(true); }}
+              >
+                <Trash2 className="size-3.5" />
+                Delete Journal
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -424,7 +524,10 @@ export default function Journal() {
         {/* ── Tab content ── */}
         <div className="pt-5">
           {activeTab === "trades" && (
-            <TradesTab breakEvenMethod={breakEvenMethod} />
+            <TradesTab
+              breakEvenMethod={breakEvenMethod}
+              journalId={activeJournal?.id}
+            />
           )}
           {activeTab === "analytics" && <AnalyticsTab />}
           {activeTab === "custom-fields" && <CustomFieldsTab />}
@@ -441,6 +544,27 @@ export default function Journal() {
         open={brokerOpen}
         onClose={() => setBrokerOpen(false)}
       />
+
+      <Dialog open={deleteOpen} onOpenChange={(v) => !v && setDeleteOpen(false)}>
+        <DialogContent className="border-zinc-800 bg-zinc-950 sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete &ldquo;{activeJournal?.name}&rdquo;?</DialogTitle>
+            <DialogDescription>
+              All trades, analytics, and catalog data will be permanently deleted.
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteError && <p className="text-sm text-destructive">{deleteError}</p>}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? "Deleting…" : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }

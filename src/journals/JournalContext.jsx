@@ -5,7 +5,7 @@ import {
   deleteWorkspace as apiDelete,
   fetchWorkspaces,
   updateWorkspace as apiUpdate,
-} from "@/api/workspaces.api";
+} from "@/api/journals.api";
 import { useAuth } from "@/auth/useAuth";
 
 const STORAGE_LAST_KEY = "last_journal_id";
@@ -36,7 +36,7 @@ export function JournalProvider({ children }) {
   const { isAuthenticated } = useAuth();
   const [journals, setJournals] = useState([]);
   const [activeJournal, setActiveJournal] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const load = useCallback(async () => {
@@ -75,9 +75,9 @@ export function JournalProvider({ children }) {
 
   const createJournal = useCallback(
     async (payload) => {
-      const { name, journalType, startingCapital, currency, breakEvenMethod } = payload;
+      const { name, journalType, startingCapital, currency, breakEvenMethod, breakEvenValue } = payload;
       const created = await apiCreate({ name });
-      const meta = { journalType, startingCapital, currency, breakEvenMethod };
+      const meta = { journalType, startingCapital, currency, breakEvenMethod, breakEvenValue };
       saveMeta(created.id, meta);
       const enriched = { ...created, ...meta };
       setJournals((prev) => [...prev, enriched]);

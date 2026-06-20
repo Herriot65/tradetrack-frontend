@@ -1,9 +1,45 @@
-import { useMemo, useState } from "react";
-
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Columns3 } from "lucide-react";
 import { formatDate } from "@/lib/formatters";
-import TradeDetailPanel from "./TradeDetailPanel";
+import { deriveStatus } from "@/lib/deriveStatus";
 
-// ─── Config ───────────────────────────────────────────────────────────────────
+// ─── Column definitions ───────────────────────────────────────────────────────
+
+const COLUMNS = [
+  { id: "asset",       label: "Asset",      sortKey: "asset" },
+  { id: "entryDate",   label: "Entry",      sortKey: "date"  },
+  { id: "exitDate",    label: "Exit",       sortKey: null    },
+  { id: "side",        label: "Side",       sortKey: null    },
+  { id: "oppTf",       label: "Opp. TF",    sortKey: null    },
+  { id: "entryTf",     label: "Entry TF",   sortKey: null    },
+  { id: "trend",       label: "Trend",      sortKey: null    },
+  { id: "riskPercent", label: "Risk %",     sortKey: null    },
+  { id: "pnl",         label: "PnL",        sortKey: "r"     },
+  { id: "status",      label: "Status",     sortKey: null    },
+  { id: "commission",  label: "Commission", sortKey: null    },
+  { id: "swap",        label: "Swap",       sortKey: null    },
+];
+
+const DEFAULT_VISIBLE = {
+  asset: true, entryDate: true, exitDate: true, side: true,
+  oppTf: false, entryTf: false, trend: false, riskPercent: true,
+  pnl: true, status: true, commission: false, swap: false,
+};
+
+function readCols(journalId) {
+  if (!journalId) return DEFAULT_VISIBLE;
+  try {
+    const raw = localStorage.getItem(`journal_columns_${journalId}`);
+    return raw ? { ...DEFAULT_VISIBLE, ...JSON.parse(raw) } : DEFAULT_VISIBLE;
+  } catch { return DEFAULT_VISIBLE; }
+}
+
+function writeCols(journalId, cols) {
+  if (!journalId) return;
+  try { localStorage.setItem(`journal_columns_${journalId}`, JSON.stringify(cols)); } catch {}
+}
+
+// ─── Style maps ───────────────────────────────────────────────────────────────
 
 const STATUS_STYLE = {
   WIN:  { bg: "bg-emerald-500/15", text: "text-emerald-400", ring: "ring-emerald-500/20" },
@@ -17,26 +53,9 @@ const SIDE_STYLE = {
   SELL: "bg-red-500/10 text-red-400",
 };
 
-const SORTABLE = ["date", "r", "asset"];
+// ─── Cell helpers ─────────────────────────────────────────────────────────────
 
-// ─── Status derivation ────────────────────────────────────────────────────────
-
-function deriveStatus(trade, breakEvenMethod = "ratio") {
-  if (trade.pnl_r === null || trade.pnl_r === undefined) return "OPEN";
-  const r = parseFloat(trade.pnl_r);
-  if (isNaN(r)) return "OPEN";
-  if (breakEvenMethod === "profit" && trade.pnl != null) {
-    const pnl = parseFloat(trade.pnl);
-    if (pnl > 0) return "WIN";
-    if (pnl < 0) return "LOSS";
-    return "BE";
-  }
-  if (r > 0) return "WIN";
-  if (r < 0) return "LOSS";
-  return "BE";
-}
-
-// ─── Cell components ──────────────────────────────────────────────────────────
+function Dash() { return <span className="text-zinc-600">—</span>; }
 
 function StatusBadge({ status }) {
   const c = STATUS_STYLE[status] ?? STATUS_STYLE.BE;
@@ -56,179 +75,205 @@ function SidePill({ side }) {
   );
 }
 
-function RCell({ pnlR, status }) {
-  if (status === "OPEN") {
-    return <span className="text-xs font-medium text-amber-400">Open</span>;
-  }
+function PnlCell({ pnlR, status }) {
+  if (status === "OPEN") return <span className="text-xs font-medium text-amber-400">Open</span>;
+  if (pnlR == null) return <Dash />;
   const r = parseFloat(pnlR);
   const color = r > 0 ? "text-emerald-400" : r < 0 ? "text-red-400" : "text-zinc-400";
   return (
     <span className={`tabular-nums font-bold text-sm ${color}`}>
-      {r > 0 ? "+" : ""}{pnlR}R
+      {r > 0 ? "+" : ""}{pnlR}
     </span>
   );
 }
 
-function PnlCell({ pnl, status }) {
-  if (status === "OPEN" || pnl == null) return <span className="text-zinc-600">—</span>;
-  const v = parseFloat(pnl);
-  const color = v > 0 ? "text-emerald-400" : v < 0 ? "text-red-400" : "text-zinc-400";
-  return <span className={`tabular-nums text-xs ${color}`}>{v > 0 ? "+" : ""}{pnl}</span>;
+// Shows date on first line, HH:MM on second line
+function DateTimeCell({ iso, openLabel }) {
+  if (!iso) {
+    return openLabel
+      ? <span className="text-xs text-amber-400/70">{openLabel}</span>
+      : <Dash />;
+  }
+  const d    = new Date(iso);
+  const date = formatDate(iso.slice(0, 10));
+  const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return (
+    <div className="whitespace-nowrap">
+      <div className="text-xs text-zinc-400">{date}</div>
+      <div className="text-[10px] tabular-nums text-zinc-600">{time}</div>
+    </div>
+  );
 }
 
-function SortIcon({ field, sortField, sortDir }) {
-  if (sortField !== field) return <span className="ml-1 text-zinc-700">↕</span>;
-  return <span className="ml-1 text-emerald-500">{sortDir === "asc" ? "↑" : "↓"}</span>;
-}
+// ─── Column visibility picker ─────────────────────────────────────────────────
 
-function Null() {
-  return <span className="text-zinc-600">—</span>;
-}
+function ColPicker({ visibleCols, onToggle }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
 
-function dateOf(iso) {
-  if (!iso) return null;
-  return formatDate(iso.slice(0, 10));
+  useEffect(() => {
+    function down(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", down);
+    return () => document.removeEventListener("mousedown", down);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`flex items-center gap-1.5 rounded px-2 py-1 text-xs transition-colors ${
+          open
+            ? "bg-zinc-800 text-zinc-200"
+            : "text-zinc-500 hover:bg-zinc-800/60 hover:text-zinc-300"
+        }`}
+      >
+        <Columns3 className="size-3.5" />
+        Columns
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-7 z-50 w-44 rounded-md border border-zinc-800 bg-zinc-900 shadow-2xl">
+          <p className="border-b border-zinc-800/60 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
+            Visible columns
+          </p>
+          <div className="max-h-64 overflow-y-auto py-1">
+            {COLUMNS.map((col) => (
+              <label
+                key={col.id}
+                className="flex cursor-pointer items-center gap-2.5 px-3 py-1.5 text-sm hover:bg-zinc-800"
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleCols[col.id] ?? false}
+                  onChange={() => onToggle(col.id)}
+                  className="size-3.5 accent-emerald-500"
+                />
+                <span className="text-zinc-300">{col.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function TradeTable({ trades = [], breakEvenMethod = "ratio" }) {
-  const [selectedTrade, setSelectedTrade] = useState(null);
-  const [sortField, setSortField]         = useState("date");
-  const [sortDir,   setSortDir]           = useState("desc");
+export default function TradeTable({ trades = [], breakEvenMethod = "ratio", onRowClick, journalId }) {
+  const [sortField,   setSortField]   = useState("date");
+  const [sortDir,     setSortDir]     = useState("desc");
+  const [visibleCols, setVisibleCols] = useState(() => readCols(journalId));
 
-  function handleSort(field) {
-    if (!SORTABLE.includes(field)) return;
-    if (sortField === field) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortField(field);
-      setSortDir("desc");
-    }
+  function toggleCol(id) {
+    setVisibleCols((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      writeCols(journalId, next);
+      return next;
+    });
+  }
+
+  function handleSort(key) {
+    if (sortField === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortField(key); setSortDir("desc"); }
   }
 
   const enriched = useMemo(
-    () => trades.map((t) => ({ ...t, _derivedStatus: deriveStatus(t, breakEvenMethod) })),
+    () => trades.map((t) => ({ ...t, _status: deriveStatus(t, breakEvenMethod) })),
     [trades, breakEvenMethod]
   );
 
-  const sorted = useMemo(() => {
-    return [...enriched].sort((a, b) => {
-      let va, vb;
-      if (sortField === "date") {
-        va = a.entry_datetime ?? "";
-        vb = b.entry_datetime ?? "";
-      } else if (sortField === "r") {
-        va = a.pnl_r === null ? -Infinity : parseFloat(a.pnl_r);
-        vb = b.pnl_r === null ? -Infinity : parseFloat(b.pnl_r);
-      } else {
-        va = (a.asset ?? "").toLowerCase();
-        vb = (b.asset ?? "").toLowerCase();
-      }
-      if (va < vb) return sortDir === "asc" ? -1 : 1;
-      if (va > vb) return sortDir === "asc" ? 1 : -1;
-      return 0;
-    });
-  }, [enriched, sortField, sortDir]);
+  const sorted = useMemo(() => [...enriched].sort((a, b) => {
+    let va, vb;
+    if (sortField === "date") {
+      va = a.entry_datetime ?? ""; vb = b.entry_datetime ?? "";
+    } else if (sortField === "r") {
+      va = a.pnl_r == null ? -Infinity : parseFloat(a.pnl_r);
+      vb = b.pnl_r == null ? -Infinity : parseFloat(b.pnl_r);
+    } else {
+      va = (a.asset ?? "").toLowerCase(); vb = (b.asset ?? "").toLowerCase();
+    }
+    if (va < vb) return sortDir === "asc" ? -1 : 1;
+    if (va > vb) return sortDir === "asc" ? 1 : -1;
+    return 0;
+  }), [enriched, sortField, sortDir]);
 
-  function Th({ field, label, className = "" }) {
-    const sortable = SORTABLE.includes(field);
+  // Inline Th so it closes over sort state
+  function Th({ colId, label, sortKey: sk, className = "" }) {
+    const sortable = !!sk;
+    const active   = sortable && sortField === sk;
     return (
       <th
-        onClick={() => sortable && handleSort(field)}
+        onClick={() => sortable && handleSort(sk)}
         className={`px-3 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider text-zinc-500 ${
           sortable ? "cursor-pointer select-none transition-colors hover:text-zinc-300" : ""
         } ${className}`}
       >
         {label}
-        {sortable && <SortIcon field={field} sortField={sortField} sortDir={sortDir} />}
+        {sortable && (
+          <span className={`ml-1 ${active ? "text-emerald-500" : "text-zinc-700"}`}>
+            {active ? (sortDir === "asc" ? "↑" : "↓") : "↕"}
+          </span>
+        )}
       </th>
     );
   }
 
-  return (
-    <>
-      <div className="overflow-hidden rounded-lg border border-zinc-800/60">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1080px] text-sm">
-            <thead>
-              <tr className="border-b border-zinc-800/60 bg-zinc-900/60">
-                <Th field="asset" label="Asset" />
-                <Th field="date"  label="Entry Date" />
-                <Th field=""      label="Exit Date" />
-                <Th field=""      label="Side" />
-                <Th field=""      label="Opp. TF" className="hidden xl:table-cell" />
-                <Th field=""      label="Entry TF" className="hidden xl:table-cell" />
-                <Th field=""      label="Trend" className="hidden lg:table-cell" />
-                <Th field=""      label="Risk %" className="hidden md:table-cell" />
-                <Th field="r"     label="R" className="text-right" />
-                <Th field=""      label="Status" />
-                <Th field=""      label="PnL" className="hidden md:table-cell" />
-                <Th field=""      label="Commission" className="hidden lg:table-cell" />
-                <Th field=""      label="Swap" className="hidden lg:table-cell" />
-              </tr>
-            </thead>
+  const v = visibleCols;
 
-            <tbody className="divide-y divide-zinc-800/40">
-              {sorted.map((trade) => (
-                <tr
-                  key={trade.id}
-                  onClick={() => setSelectedTrade(trade)}
-                  className="cursor-pointer transition-colors hover:bg-zinc-800/25"
-                >
-                  <td className="px-3 py-3 text-sm font-semibold text-zinc-100">
-                    {trade.asset}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-xs text-zinc-400">
-                    {dateOf(trade.entry_datetime) ?? <Null />}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-xs text-zinc-400">
-                    {trade.exit_datetime ? dateOf(trade.exit_datetime) : (
-                      <span className="text-amber-400/70">Open</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-3">
-                    <SidePill side={trade.side} />
-                  </td>
-                  <td className="hidden px-3 py-3 text-xs text-zinc-400 xl:table-cell">
-                    {trade.opportunity_timeframe ?? <Null />}
-                  </td>
-                  <td className="hidden px-3 py-3 text-xs text-zinc-400 xl:table-cell">
-                    {trade.entry_timeframe ?? <Null />}
-                  </td>
-                  <td className="hidden px-3 py-3 text-xs text-zinc-400 lg:table-cell">
-                    {trade.trend_direction ?? <Null />}
-                  </td>
-                  <td className="hidden px-3 py-3 text-xs tabular-nums text-zinc-400 md:table-cell">
-                    {trade.risk_percent ? `${trade.risk_percent}%` : <Null />}
-                  </td>
-                  <td className="px-3 py-3 text-right">
-                    <RCell pnlR={trade.pnl_r} status={trade._derivedStatus} />
-                  </td>
-                  <td className="px-3 py-3">
-                    <StatusBadge status={trade._derivedStatus} />
-                  </td>
-                  <td className="hidden px-3 py-3 md:table-cell">
-                    <PnlCell pnl={trade.pnl} status={trade._derivedStatus} />
-                  </td>
-                  <td className="hidden px-3 py-3 text-xs tabular-nums text-zinc-400 lg:table-cell">
-                    {trade.commission != null ? trade.commission : <Null />}
-                  </td>
-                  <td className="hidden px-3 py-3 text-xs tabular-nums text-zinc-400 lg:table-cell">
-                    {trade.swap != null ? trade.swap : <Null />}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+  return (
+    <div className="overflow-hidden rounded-lg border border-zinc-800/60">
+      {/* Column picker toolbar */}
+      <div className="flex items-center justify-end border-b border-zinc-800/40 bg-zinc-900/40 px-3 py-1.5">
+        <ColPicker visibleCols={v} onToggle={toggleCol} />
       </div>
 
-      <TradeDetailPanel
-        trade={selectedTrade}
-        open={selectedTrade !== null}
-        onClose={() => setSelectedTrade(null)}
-      />
-    </>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-zinc-800/60 bg-zinc-900/60">
+              {v.asset       && <Th colId="asset"       label="Asset"      sortKey="asset" />}
+              {v.entryDate   && <Th colId="entryDate"   label="Entry"      sortKey="date"  />}
+              {v.exitDate    && <Th colId="exitDate"    label="Exit"                       />}
+              {v.side        && <Th colId="side"        label="Side"                       />}
+              {v.oppTf       && <Th colId="oppTf"       label="Opp. TF"                    />}
+              {v.entryTf     && <Th colId="entryTf"     label="Entry TF"                   />}
+              {v.trend       && <Th colId="trend"       label="Trend"                      />}
+              {v.riskPercent && <Th colId="riskPercent" label="Risk %"                     />}
+              {v.pnl         && <Th colId="pnl"         label="PnL"        sortKey="r"  className="text-right" />}
+              {v.status      && <Th colId="status"      label="Status"                     />}
+              {v.commission  && <Th colId="commission"  label="Commission"                 />}
+              {v.swap        && <Th colId="swap"        label="Swap"                       />}
+            </tr>
+          </thead>
+
+          <tbody className="divide-y divide-zinc-800/40">
+            {sorted.map((trade) => (
+              <tr
+                key={trade.id}
+                onClick={() => onRowClick?.(trade)}
+                className="cursor-pointer transition-colors hover:bg-zinc-800/25"
+              >
+                {v.asset       && <td className="px-3 py-3 text-sm font-semibold text-zinc-100">{typeof trade.asset === "object" ? trade.asset?.symbol : trade.asset}</td>}
+                {v.entryDate   && <td className="px-3 py-3"><DateTimeCell iso={trade.entry_datetime} /></td>}
+                {v.exitDate    && <td className="px-3 py-3"><DateTimeCell iso={trade.exit_datetime} openLabel="Open" /></td>}
+                {v.side        && <td className="px-3 py-3"><SidePill side={trade.side} /></td>}
+                {v.oppTf       && <td className="px-3 py-3 text-xs text-zinc-400">{trade.opportunity_timeframe ?? <Dash />}</td>}
+                {v.entryTf     && <td className="px-3 py-3 text-xs text-zinc-400">{trade.entry_timeframe ?? <Dash />}</td>}
+                {v.trend       && <td className="px-3 py-3 text-xs text-zinc-400">{trade.trend_direction ?? <Dash />}</td>}
+                {v.riskPercent && <td className="px-3 py-3 text-xs tabular-nums text-zinc-400">{trade.risk_percent != null ? `${trade.risk_percent}%` : <Dash />}</td>}
+                {v.pnl         && <td className="px-3 py-3 text-right"><PnlCell pnlR={trade.pnl_r} status={trade._status} /></td>}
+                {v.status      && <td className="px-3 py-3"><StatusBadge status={trade._status} /></td>}
+                {v.commission  && <td className="px-3 py-3 text-xs tabular-nums text-zinc-400">${trade.commission != null ? trade.commission : "0.00"}</td>}
+                {v.swap        && <td className="px-3 py-3 text-xs tabular-nums text-zinc-400">${trade.swap != null ? trade.swap : "0.00"}</td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
