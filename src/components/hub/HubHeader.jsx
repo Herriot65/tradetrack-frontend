@@ -1,13 +1,10 @@
 import { Filter, Share2 } from "lucide-react";
 
-const YEARS = [2022, 2023, 2024, 2025, 2026];
-
-export default function HubHeader({ selectedYears, onYearsChange }) {
+export default function HubHeader({ selectedYears, onYearsChange, availableYears = [] }) {
   const isAll = selectedYears.length === 0;
 
   const toggleYear = (year) => {
     if (selectedYears.includes(year)) {
-      // Deselect — if this was the last one, go back to "All"
       onYearsChange(selectedYears.filter((y) => y !== year));
     } else {
       onYearsChange([...selectedYears, year].sort((a, b) => a - b));
@@ -42,7 +39,7 @@ export default function HubHeader({ selectedYears, onYearsChange }) {
 
           <span className="mx-0.5 h-4 w-px bg-zinc-800" />
 
-          {YEARS.map((year) => {
+          {availableYears.map((year) => {
             const active = selectedYears.includes(year);
             return (
               <button

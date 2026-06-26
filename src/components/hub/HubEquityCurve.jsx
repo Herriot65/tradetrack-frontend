@@ -13,6 +13,7 @@ import { Eye, EyeOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import InfoTip from "@/components/ui/InfoTip";
 import { formatDate } from "@/lib/formatters";
 
 // ─── Tooltip ──────────────────────────────────────────────────────────────────
@@ -103,7 +104,10 @@ export default function HubEquityCurve({ data = [], title = "Equity Curve", heig
   return (
     <Card className="border-zinc-800/60 bg-zinc-900/40">
       <CardHeader className="flex flex-row items-center justify-between px-5 pt-4 pb-3">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <div className="flex items-center gap-1.5">
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          <InfoTip text="Cumulative R over time. Each point is the running total of R after that trade. Green = above breakeven, red = below." />
+        </div>
         <Button
           variant="ghost"
           size="icon"

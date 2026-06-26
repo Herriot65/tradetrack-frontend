@@ -9,7 +9,7 @@ function getErrorMessage(err) {
   );
 }
 
-export function useAsyncQuery(fetchFn, deps = [], { enabled = true } = {}) {
+export function useAsyncQuery(fetchFn, deps = [], { enabled = true, keepPreviousData = false } = {}) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState(null);
@@ -21,7 +21,7 @@ export function useAsyncQuery(fetchFn, deps = [], { enabled = true } = {}) {
 
   useEffect(() => {
     if (!enabled) {
-      setData(null);
+      if (!keepPreviousData) setData(null);
       setLoading(false);
       setError(null);
       return;
@@ -39,7 +39,7 @@ export function useAsyncQuery(fetchFn, deps = [], { enabled = true } = {}) {
       } catch (err) {
         if (!cancelled) {
           setError(getErrorMessage(err));
-          setData(null);
+          if (!keepPreviousData) setData(null);
         }
       } finally {
         if (!cancelled) setLoading(false);

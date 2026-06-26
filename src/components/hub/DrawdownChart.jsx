@@ -11,6 +11,7 @@ import {
 } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import InfoTip from "@/components/ui/InfoTip";
 import { formatDate } from "@/lib/formatters";
 
 function DdTooltip({ active, payload, label }) {
@@ -65,7 +66,10 @@ export default function DrawdownChart({ data = [], title = "Drawdown (R)", heigh
   return (
     <Card className="border-zinc-800/60 bg-zinc-900/40">
       <CardHeader className="px-5 pt-4 pb-3">
-        <CardTitle className="text-sm font-medium text-zinc-400">{title}</CardTitle>
+        <div className="flex items-center gap-1.5">
+          <CardTitle className="text-sm font-medium text-zinc-400">{title}</CardTitle>
+          <InfoTip text="Distance from the previous equity peak at each trade. Shows how deep the losing periods go from their highs." />
+        </div>
       </CardHeader>
       <CardContent className="px-5 pb-4">
         {allFlat ? (

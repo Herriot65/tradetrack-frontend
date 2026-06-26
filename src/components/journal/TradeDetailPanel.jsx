@@ -60,7 +60,7 @@ export default function TradeDetailPanel({ trade, open, onClose }) {
       <SheetContent>
         <SheetHeader onClose={onClose}>
           <SheetTitle className="text-base font-semibold">
-            {trade.asset}
+            {typeof trade.asset === "object" ? trade.asset?.symbol : trade.asset}
             {trade.side && (
               <Badge colorClass={sideColor + " ring-0 ml-2"}>{trade.side}</Badge>
             )}

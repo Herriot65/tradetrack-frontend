@@ -5,7 +5,7 @@ import { useWorkspace } from "@/workspaces/useWorkspace";
 import { useAsyncQuery } from "./useAsyncQuery";
 
 export function usePnlBySetup() {
-  const { activeWorkspace } = useWorkspace();
+  const { activeWorkspace, analyticsVersion } = useWorkspace();
   const workspaceId = activeWorkspace?.id;
 
   const queryFn = useCallback(
@@ -13,5 +13,5 @@ export function usePnlBySetup() {
     [workspaceId]
   );
 
-  return useAsyncQuery(queryFn, [workspaceId], { enabled: !!workspaceId });
+  return useAsyncQuery(queryFn, [workspaceId, analyticsVersion], { enabled: !!workspaceId });
 }

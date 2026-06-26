@@ -1,6 +1,7 @@
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import InfoTip from "@/components/ui/InfoTip";
 
 function AssetTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
@@ -24,7 +25,10 @@ export default function AssetBreakdownChart({ data = [], title = "R by Asset" })
   return (
     <Card className="border-zinc-800/60 bg-zinc-900/40">
       <CardHeader className="px-5 pt-4 pb-3">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <div className="flex items-center gap-1.5">
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          <InfoTip text="Total R grouped by traded instrument. Shows which assets are contributing most to your P&L." />
+        </div>
       </CardHeader>
       <CardContent className="px-3 pb-4">
         <ResponsiveContainer width="100%" height={chartHeight}>

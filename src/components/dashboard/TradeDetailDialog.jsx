@@ -41,7 +41,7 @@ export default function TradeDetailDialog({ trade, open, onOpenChange }) {
       <DialogContent className="max-h-[85vh] overflow-y-auto border-zinc-800 bg-zinc-950 sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {trade.asset}
+            {typeof trade.asset === "object" ? trade.asset?.symbol : trade.asset}
             <Badge
               variant="outline"
               className={cn(getSideBadgeClass(trade.side))}

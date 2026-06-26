@@ -1,5 +1,7 @@
 import { Cell, Label, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
+import InfoTip from "@/components/ui/InfoTip";
+
 const PROFIT_COLOR = "hsl(142 70% 45%)";
 const LOSS_COLOR   = "hsl(0 72% 51%)";
 
@@ -26,7 +28,10 @@ export default function ProfitLossDonut({ grossProfit = 0, grossLoss = 0, totalR
 
   return (
     <div className="flex flex-col items-center gap-1">
-      <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Profit / Loss</p>
+      <div className="flex items-center gap-1.5">
+        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Profit / Loss</p>
+        <InfoTip text="Gross profit R vs gross loss R split. The centre shows your net R. Helps visualise if wins outweigh losses in magnitude." />
+      </div>
       <ResponsiveContainer width="100%" height={140}>
         <PieChart>
           <Pie

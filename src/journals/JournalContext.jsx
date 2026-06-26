@@ -38,6 +38,7 @@ export function JournalProvider({ children }) {
   const [activeJournal, setActiveJournal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [analyticsVersion, setAnalyticsVersion] = useState(0);
 
   const load = useCallback(async () => {
     if (!isAuthenticated) {
@@ -50,6 +51,19 @@ export function JournalProvider({ children }) {
     try {
       const list = await fetchWorkspaces();
       const enriched = list.map(enrichJournal);
+
+      // One-time migration: push any localStorage startingCapital to the backend
+      // for journals where the backend still has starting_capital = 0.
+      await Promise.all(
+        enriched.map(async (j) => {
+          const backendCapital = parseFloat(j.starting_capital ?? 0);
+          const localCapital   = parseFloat(j.startingCapital  ?? 0);
+          if (backendCapital === 0 && localCapital > 0) {
+            await apiUpdate(j.id, { starting_capital: localCapital }).catch(() => {});
+          }
+        })
+      );
+
       setJournals(enriched);
 
       const lastId = localStorage.getItem(STORAGE_LAST_KEY);
@@ -76,7 +90,7 @@ export function JournalProvider({ children }) {
   const createJournal = useCallback(
     async (payload) => {
       const { name, journalType, startingCapital, currency, breakEvenMethod, breakEvenValue } = payload;
-      const created = await apiCreate({ name });
+      const created = await apiCreate({ name, starting_capital: startingCapital ?? 0 });
       const meta = { journalType, startingCapital, currency, breakEvenMethod, breakEvenValue };
       saveMeta(created.id, meta);
       const enriched = { ...created, ...meta };
@@ -97,6 +111,34 @@ export function JournalProvider({ children }) {
       return enriched;
     },
     [activeJournal?.id]
+  );
+
+  const updateJournal = useCallback(
+    async (id, payload) => {
+      const { name, startingCapital, journalType, currency, breakEvenMethod, breakEvenValue } = payload;
+      const backendPayload = {};
+      if (name             != null) backendPayload.name             = name;
+      if (startingCapital  != null) backendPayload.starting_capital = startingCapital;
+      const updated = Object.keys(backendPayload).length > 0
+        ? await apiUpdate(id, backendPayload)
+        : (journals.find((j) => j.id === id) ?? {});
+      const prevMeta = loadMeta(id);
+      const newMeta = {
+        ...prevMeta,
+        ...(journalType     != null && { journalType     }),
+        ...(currency        != null && { currency        }),
+        ...(breakEvenMethod != null && { breakEvenMethod }),
+        ...(breakEvenValue  != null && { breakEvenValue  }),
+        ...(startingCapital != null && { startingCapital }),
+      };
+      saveMeta(id, newMeta);
+      const enriched = { ...updated, ...newMeta };
+      setJournals((prev) => prev.map((j) => (j.id === id ? enriched : j)));
+      if (activeJournal?.id === id) setActiveJournal(enriched);
+      setAnalyticsVersion((v) => v + 1);
+      return enriched;
+    },
+    [activeJournal?.id, journals]
   );
 
   const deleteJournal = useCallback(
@@ -122,10 +164,12 @@ export function JournalProvider({ children }) {
     selectJournal,
     createJournal,
     renameJournal,
+    updateJournal,
     deleteJournal,
     refetchJournals: load,
     loading,
     error,
+    analyticsVersion,
     // Backward-compat aliases so existing hooks (useTrades, useHubAnalytics, etc.)
     // continue to work without modification
     workspaces: journals,

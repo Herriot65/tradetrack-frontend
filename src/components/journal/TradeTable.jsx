@@ -194,7 +194,8 @@ export default function TradeTable({ trades = [], breakEvenMethod = "ratio", onR
       va = a.pnl_r == null ? -Infinity : parseFloat(a.pnl_r);
       vb = b.pnl_r == null ? -Infinity : parseFloat(b.pnl_r);
     } else {
-      va = (a.asset ?? "").toLowerCase(); vb = (b.asset ?? "").toLowerCase();
+      va = (typeof a.asset === "object" ? (a.asset?.symbol ?? "") : (a.asset ?? "")).toLowerCase();
+      vb = (typeof b.asset === "object" ? (b.asset?.symbol ?? "") : (b.asset ?? "")).toLowerCase();
     }
     if (va < vb) return sortDir === "asc" ? -1 : 1;
     if (va > vb) return sortDir === "asc" ? 1 : -1;

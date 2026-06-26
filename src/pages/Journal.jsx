@@ -21,6 +21,7 @@ import AnalyticsPane from "@/components/hub/AnalyticsPane";
 import HubHeader from "@/components/hub/HubHeader";
 import KpiStrip from "@/components/hub/KpiStrip";
 import MonthDetailDialog from "@/components/hub/MonthDetailDialog";
+import StatsStrip from "@/components/hub/StatsStrip";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -46,6 +47,7 @@ import { useTrades } from "@/hooks/useTrades";
 import { useAuth } from "@/auth/useAuth";
 import { useJournal } from "@/journals/useJournal";
 import { useJournalCatalog } from "@/journals/useJournalCatalog";
+import { buildMergedSummary } from "@/lib/buildMergedSummary";
 import { deriveStatus } from "@/lib/deriveStatus";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -346,6 +348,7 @@ function AnalyticsTab({
       <div className="space-y-6">
         <HubHeader selectedYears={selectedYears} onYearsChange={setSelectedYears} availableYears={availableYears} />
         <KpiStrip summary={mergedSummary ?? yearAnalytics?.summary} loading={isLoading} />
+        <StatsStrip summary={mergedSummary} loading={isLoading} />
         <AnalyticsPane
           yearEquityCurve={yearAnalytics?.equityCurve ?? []}
           yearRPerTrade={yearAnalytics?.rPerTrade ?? []}
@@ -392,41 +395,115 @@ function CustomFieldsTab() {
 // ─── Settings dialog ──────────────────────────────────────────────────────────
 
 function SettingsDialog({ open, onClose, journal }) {
-  const beThresholdValue = (() => {
-    if (journal?.breakEvenValue == null) return "—";
-    const v = Number(journal.breakEvenValue);
-    return journal?.breakEvenMethod === "profit"
-      ? `${journal.currency ?? ""} ${v}`.trim()
-      : `${v} R`;
-  })();
+  const { updateJournal } = useJournal();
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
-  const rows = [
-    { label: "Name",              value: journal?.name },
-    { label: "Type",              value: JOURNAL_TYPE_LABEL[journal?.journalType] ?? "—" },
-    { label: "Starting Capital",  value: journal?.startingCapital != null ? `${journal.currency ?? ""} ${Number(journal.startingCapital).toLocaleString()}`.trim() : "—" },
-    { label: "Currency",          value: journal?.currency ?? "—" },
-    { label: "Break-Even Method", value: BREAK_EVEN_LABEL[journal?.breakEvenMethod] ?? "—" },
-    { label: "BE Threshold",      value: beThresholdValue },
-  ];
+  // Local form state — reinitialised each time the dialog opens
+  const [name,            setName]            = useState("");
+  const [currency,        setCurrency]        = useState("");
+  const [startingCapital, setStartingCapital] = useState("");
+  const [journalType,     setJournalType]     = useState("trading");
+  const [breakEvenMethod, setBreakEvenMethod] = useState("ratio");
+  const [breakEvenValue,  setBreakEvenValue]  = useState("");
+
+  // Reset form fields from journal prop whenever dialog opens
+  useEffect(() => {
+    if (!open || !journal) return;
+    setName(journal.name ?? "");
+    setCurrency(journal.currency ?? "");
+    setStartingCapital(journal.startingCapital != null ? String(journal.startingCapital) : "");
+    setJournalType(journal.journalType ?? "trading");
+    setBreakEvenMethod(journal.breakEvenMethod ?? "ratio");
+    setBreakEvenValue(journal.breakEvenValue != null ? String(journal.breakEvenValue) : "");
+    setSaveError(null);
+  }, [open, journal]);
+
+  const handleSave = async () => {
+    if (!journal) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await updateJournal(journal.id, {
+        name:           name.trim() || journal.name,
+        currency:       currency.trim() || undefined,
+        startingCapital: startingCapital !== "" ? Number(startingCapital) : undefined,
+        journalType:    journalType  || undefined,
+        breakEvenMethod: breakEvenMethod || undefined,
+        breakEvenValue: breakEvenValue !== "" ? Number(breakEvenValue) : undefined,
+      });
+      onClose();
+    } catch (err) {
+      setSaveError(err?.response?.data?.detail ?? err.message ?? "Failed to save settings");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const fieldClass = "w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-500/50";
+  const selectClass = fieldClass;
+  const labelClass  = "text-xs font-medium text-zinc-500";
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="border-zinc-800 bg-zinc-950 sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>Journal Settings</DialogTitle>
-          <DialogDescription className="sr-only">
-            Journal configuration details.
-          </DialogDescription>
+          <DialogDescription className="sr-only">Edit journal configuration.</DialogDescription>
         </DialogHeader>
-        <div className="divide-y divide-zinc-800/60">
-          {rows.map(({ label, value }) => (
-            <div key={label} className="flex items-center justify-between py-3">
-              <span className="text-sm text-zinc-500">{label}</span>
-              <span className="text-sm font-medium text-zinc-200">{value ?? "—"}</span>
+
+        <div className="space-y-4 py-1">
+          {/* Name */}
+          <div className="space-y-1.5">
+            <label className={labelClass}>Name</label>
+            <input className={fieldClass} value={name} onChange={(e) => setName(e.target.value)} placeholder="Journal name" />
+          </div>
+
+          {/* Type */}
+          <div className="space-y-1.5">
+            <label className={labelClass}>Type</label>
+            <select className={selectClass} value={journalType} onChange={(e) => setJournalType(e.target.value)}>
+              <option value="trading">Trading Journal</option>
+              <option value="backtest">Backtest Journal</option>
+            </select>
+          </div>
+
+          {/* Currency + Starting Capital side by side */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className={labelClass}>Currency</label>
+              <input className={fieldClass} value={currency} onChange={(e) => setCurrency(e.target.value)} placeholder="USD" maxLength={6} />
             </div>
-          ))}
+            <div className="space-y-1.5">
+              <label className={labelClass}>Starting Capital</label>
+              <input className={fieldClass} type="number" min="0" value={startingCapital} onChange={(e) => setStartingCapital(e.target.value)} placeholder="0" />
+            </div>
+          </div>
+
+          {/* Break-Even Method + Threshold */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className={labelClass}>Break-Even Method</label>
+              <select className={selectClass} value={breakEvenMethod} onChange={(e) => setBreakEvenMethod(e.target.value)}>
+                <option value="ratio">Ratio Based</option>
+                <option value="profit">Profit Based</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className={labelClass}>BE Threshold {breakEvenMethod === "profit" ? `(${currency || "currency"})` : "(R)"}</label>
+              <input className={fieldClass} type="number" step="0.01" value={breakEvenValue} onChange={(e) => setBreakEvenValue(e.target.value)} placeholder="0" />
+            </div>
+          </div>
         </div>
-        <p className="text-xs text-zinc-600">Editing journal settings is coming soon.</p>
+
+        {saveError && <p className="text-sm text-destructive">{saveError}</p>}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? "Saving…" : "Save"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -494,38 +571,10 @@ export default function Journal() {
 
   const { data: careerData } = useCareerData();
 
-  // Prefer backend aggregate values over client-side computation.
-  // max_loss_streak is not in the backend response — stays computed from trades.
-  const mergedSummary = useMemo(() => {
-    const base = yearAnalytics?.summary;
-    if (!base || !careerData?.yearSummaries?.length) return base ?? null;
-
-    const filteredSummaries = selectedYears.length === 0
-      ? careerData.yearSummaries
-      : careerData.yearSummaries.filter((y) => selectedYears.includes(y.year));
-
-    if (!filteredSummaries.length) return base;
-
-    const totalTrades = filteredSummaries.reduce((s, y) => s + y.total_trades, 0);
-    const totalWins   = filteredSummaries.reduce(
-      (s, y) => s + Math.round((y.win_rate / 100) * y.total_trades), 0
-    );
-    const winRate = totalTrades > 0
-      ? Math.round((totalWins / totalTrades) * 10000) / 100
-      : 0;
-
-    const isAllYears = selectedYears.length === 0;
-
-    return {
-      ...base,
-      totalTrades,
-      winRate,
-      ...(isAllYears && {
-        maxWinStreak: careerData.max_win_streak ?? base.maxWinStreak,
-        maxDrawdownR: careerData.max_drawdown   ?? base.maxDrawdownR,
-      }),
-    };
-  }, [yearAnalytics?.summary, careerData, selectedYears]);
+  const mergedSummary = useMemo(
+    () => buildMergedSummary(yearAnalytics?.summary, careerData, selectedYears),
+    [yearAnalytics?.summary, careerData, selectedYears]
+  );
 
   const [settingsOpen,     setSettingsOpen]     = useState(false);
   const [brokerOpen,       setBrokerOpen]       = useState(false);

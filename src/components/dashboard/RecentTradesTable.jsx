@@ -126,7 +126,7 @@ export default function RecentTradesTable() {
                   trade.exit_datetime
                 )}
               </TableCell>
-              <TableCell className="font-medium">{trade.asset}</TableCell>
+              <TableCell className="font-medium">{typeof trade.asset === "object" ? trade.asset?.symbol : trade.asset}</TableCell>
               <TableCell className="hidden lg:table-cell">
                 {TREND_LABELS[trade.trend_direction] ?? trade.trend_direction}
               </TableCell>

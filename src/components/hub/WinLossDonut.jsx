@@ -1,5 +1,7 @@
 import { Cell, Label, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
+import InfoTip from "@/components/ui/InfoTip";
+
 const WIN_COLOR  = "hsl(142 70% 45%)";
 const LOSS_COLOR = "hsl(0 72% 51%)";
 const BE_COLOR   = "hsl(0 0% 42%)";
@@ -26,7 +28,10 @@ export default function WinLossDonut({ wins = 0, losses = 0, breakEven = 0 }) {
 
   return (
     <div className="flex flex-col items-center gap-1">
-      <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Win / Loss</p>
+      <div className="flex items-center gap-1.5">
+        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Win / Loss</p>
+        <InfoTip text="Trade outcome distribution — wins, losses, and break-even trades. The centre shows your overall win rate." />
+      </div>
       <ResponsiveContainer width="100%" height={140}>
         <PieChart>
           <Pie

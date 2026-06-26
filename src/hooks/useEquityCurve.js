@@ -5,7 +5,7 @@ import { useWorkspace } from "@/workspaces/useWorkspace";
 import { useAsyncQuery } from "./useAsyncQuery";
 
 export function useEquityCurve(period = "weekly") {
-  const { activeWorkspace } = useWorkspace();
+  const { activeWorkspace, analyticsVersion } = useWorkspace();
   const workspaceId = activeWorkspace?.id;
 
   const queryFn = useCallback(
@@ -13,5 +13,5 @@ export function useEquityCurve(period = "weekly") {
     [workspaceId, period]
   );
 
-  return useAsyncQuery(queryFn, [workspaceId, period], { enabled: !!workspaceId });
+  return useAsyncQuery(queryFn, [workspaceId, period, analyticsVersion], { enabled: !!workspaceId });
 }

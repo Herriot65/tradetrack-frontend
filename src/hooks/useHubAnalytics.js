@@ -153,7 +153,7 @@ function computeAnalytics(allTrades) {
 }
 
 export function useHubAnalytics({ selectedYears = [], openMonth = null }) {
-  const { activeWorkspace } = useWorkspace();
+  const { activeWorkspace, analyticsVersion } = useWorkspace();
   const workspaceId = activeWorkspace?.id;
 
   const queryFn = useCallback(
@@ -163,7 +163,7 @@ export function useHubAnalytics({ selectedYears = [], openMonth = null }) {
 
   const { data: allTrades, loading, error, refetch } = useAsyncQuery(
     queryFn,
-    [workspaceId],
+    [workspaceId, analyticsVersion],
     { enabled: !!workspaceId, keepPreviousData: true }
   );
 

@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import InfoTip from "@/components/ui/InfoTip";
 
 const COLORS = {
   emerald: {
@@ -27,7 +28,7 @@ const COLORS = {
   },
 };
 
-export default function KpiCard({ label, icon: Icon, value, loading, color = "zinc" }) {
+export default function KpiCard({ label, icon: Icon, value, loading, color = "zinc", info }) {
   const c = COLORS[color] ?? COLORS.zinc;
 
   return (
@@ -43,6 +44,7 @@ export default function KpiCard({ label, icon: Icon, value, loading, color = "zi
         <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-500 leading-tight">
           {label}
         </span>
+        <InfoTip text={info} />
       </div>
 
       {/* Value */}

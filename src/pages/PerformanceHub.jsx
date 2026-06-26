@@ -7,6 +7,7 @@ import KpiStrip from "@/components/hub/KpiStrip";
 import MonthDetailDialog from "@/components/hub/MonthDetailDialog";
 import { useCareerData } from "@/hooks/useCareerData";
 import { useHubAnalytics } from "@/hooks/useHubAnalytics";
+import { buildMergedSummary } from "@/lib/buildMergedSummary";
 
 function yearsLabel(selectedYears) {
   if (selectedYears.length === 0) return "All";
@@ -26,39 +27,10 @@ export default function PerformanceHub() {
 
   const { data: careerData } = useCareerData();
 
-  // Prefer backend-provided aggregate values over client-side computation.
-  // win_rate is derived from yearSummaries so it can be filtered by selectedYears.
-  // max_loss_streak is not returned by the backend and stays computed from trades.
-  const mergedSummary = useMemo(() => {
-    const base = yearAnalytics?.summary;
-    if (!base || !careerData?.yearSummaries?.length) return base ?? null;
-
-    const filteredSummaries = selectedYears.length === 0
-      ? careerData.yearSummaries
-      : careerData.yearSummaries.filter((y) => selectedYears.includes(y.year));
-
-    if (!filteredSummaries.length) return base;
-
-    const totalTrades = filteredSummaries.reduce((s, y) => s + y.total_trades, 0);
-    const totalWins   = filteredSummaries.reduce(
-      (s, y) => s + Math.round((y.win_rate / 100) * y.total_trades), 0
-    );
-    const winRate = totalTrades > 0
-      ? Math.round((totalWins / totalTrades) * 10000) / 100
-      : 0;
-
-    const isAllYears = selectedYears.length === 0;
-
-    return {
-      ...base,
-      totalTrades,
-      winRate,
-      ...(isAllYears && {
-        maxWinStreak: careerData.max_win_streak ?? base.maxWinStreak,
-        maxDrawdownR: careerData.max_drawdown   ?? base.maxDrawdownR,
-      }),
-    };
-  }, [yearAnalytics?.summary, careerData, selectedYears]);
+  const mergedSummary = useMemo(
+    () => buildMergedSummary(yearAnalytics?.summary, careerData, selectedYears),
+    [yearAnalytics?.summary, careerData, selectedYears]
+  );
 
   const handleYearToggle = (year) => {
     setSelectedYears((prev) =>

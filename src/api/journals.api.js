@@ -49,3 +49,13 @@ export const updateCatalogItem = async (journalId, catalogType, itemId, payload)
 export const deleteCatalogItem = async (journalId, catalogType, itemId) => {
   await api.delete(`/journals/${journalId}/${catalogType}/${itemId}/`);
 };
+
+// ── MT5 Import ────────────────────────────────────────────────────────────────
+
+export const importMT5 = async (journalId, file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  // Axios sets Content-Type: multipart/form-data with boundary automatically
+  const { data } = await api.post(`/journals/${journalId}/imports/mt5/`, formData);
+  return data;
+};

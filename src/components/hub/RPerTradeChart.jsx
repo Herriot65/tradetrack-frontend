@@ -10,6 +10,7 @@ import {
 } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import InfoTip from "@/components/ui/InfoTip";
 import { formatDate } from "@/lib/formatters";
 
 const WIN_COLOR  = "hsl(142 70% 45%)";
@@ -61,7 +62,10 @@ export default function RPerTradeChart({ data = [], title = "R per Trade", heigh
   return (
     <Card className="border-zinc-800/60 bg-zinc-900/40">
       <CardHeader className="flex flex-row items-center justify-between px-6 pt-5 pb-4">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <div className="flex items-center gap-1.5">
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          <InfoTip text="Individual R-multiple for each closed trade in sequence. Green bars = wins, red bars = losses." />
+        </div>
         <span className="text-xs text-zinc-600">{data.length} trades</span>
       </CardHeader>
       <CardContent className="px-6 pb-6">

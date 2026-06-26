@@ -1,11 +1,16 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
+import { fetchPerformanceByDay, fetchPerformanceByHour } from "@/api/hub.api";
 import { useCareerData } from "@/hooks/useCareerData";
+import { useAsyncQuery } from "@/hooks/useAsyncQuery";
+import { useWorkspace } from "@/workspaces/useWorkspace";
 
 import AssetBreakdownChart from "./AssetBreakdownChart";
 import DrawdownChart from "./DrawdownChart";
 import HeatmapGrid from "./HeatmapGrid";
 import HubEquityCurve from "./HubEquityCurve";
+import PerformanceByDayChart from "./PerformanceByDayChart";
+import PerformanceByHourChart from "./PerformanceByHourChart";
 import PerformanceCalendar from "./PerformanceCalendar";
 import ProfitLossDonut from "./ProfitLossDonut";
 import RPerTradeChart from "./RPerTradeChart";
@@ -22,6 +27,19 @@ export default function AnalyticsPane({
   onCellClick,
 }) {
   const { data: careerData, loading: careerLoading } = useCareerData();
+
+  const { activeWorkspace, analyticsVersion } = useWorkspace();
+  const workspaceId = activeWorkspace?.id;
+
+  const userTz = useMemo(() => {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; }
+    catch { return "UTC"; }
+  }, []);
+
+  const byDayFn  = useCallback(() => fetchPerformanceByDay(workspaceId, userTz),  [workspaceId, userTz]);
+  const byHourFn = useCallback(() => fetchPerformanceByHour(workspaceId, userTz), [workspaceId, userTz]);
+  const { data: byDayData,  loading: byDayLoading  } = useAsyncQuery(byDayFn,  [workspaceId, analyticsVersion], { enabled: !!workspaceId });
+  const { data: byHourData, loading: byHourLoading } = useAsyncQuery(byHourFn, [workspaceId, analyticsVersion], { enabled: !!workspaceId });
 
   const displayedHeatmap = useMemo(() => {
     if (!careerData?.heatmap) return null;
@@ -90,6 +108,12 @@ export default function AnalyticsPane({
           openMonth={openMonth}
           onCellClick={onCellClick}
         />
+      </div>
+
+      {/* ── Section 4: Time-of-day / day-of-week analysis ── */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <PerformanceByDayChart  data={byDayData  ?? []} loading={byDayLoading}  />
+        <PerformanceByHourChart data={byHourData ?? []} loading={byHourLoading} />
       </div>
 
     </div>

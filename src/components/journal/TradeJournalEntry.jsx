@@ -65,7 +65,7 @@ export default function TradeJournalEntry({ trade }) {
         </span>
 
         {/* Asset */}
-        <span className="text-sm font-semibold text-zinc-100 w-20 shrink-0">{trade.asset}</span>
+        <span className="text-sm font-semibold text-zinc-100 w-20 shrink-0">{typeof trade.asset === "object" ? trade.asset?.symbol : trade.asset}</span>
 
         {/* Setup + session */}
         <span className="flex-1 text-xs text-zinc-500 truncate hidden sm:block">
