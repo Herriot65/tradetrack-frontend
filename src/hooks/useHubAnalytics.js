@@ -1,9 +1,14 @@
 import { useCallback, useMemo } from "react";
 
 import { fetchHubTrades } from "@/api/hub.api";
+import { deriveStatus } from "@/lib/deriveStatus";
 import { useWorkspace } from "@/workspaces/useWorkspace";
 
 import { useAsyncQuery } from "./useAsyncQuery";
+
+// Backend may return asset as {id, symbol} or as a plain string.
+const assetSymbol = (a) =>
+  typeof a === "object" && a !== null ? (a.symbol ?? String(a)) : String(a ?? "");
 
 function computeAnalytics(allTrades) {
   const openTrades      = allTrades.filter((t) => t.pnl_r === null);
@@ -36,9 +41,9 @@ function computeAnalytics(allTrades) {
   const rPerTrade = trades.map((t, i) => ({
     seq:    i + 1,
     r:      parseFloat(t.pnl_r),
-    asset:  t.asset,
+    asset:  assetSymbol(t.asset),
     date:   t.entry_datetime.slice(0, 10),
-    status: t.status,
+    status: deriveStatus(t),
   }));
 
   // ── Equity curve + drawdown curve ───────────────────────────────────────────
@@ -57,9 +62,9 @@ function computeAnalytics(allTrades) {
   });
 
   // ── Win / loss / BE counts ──────────────────────────────────────────────────
-  const wins      = trades.filter((t) => t.status === "WIN").length;
-  const losses    = trades.filter((t) => t.status === "LOSS").length;
-  const breakEven = trades.filter((t) => t.status === "BE").length;
+  const wins      = trades.filter((t) => deriveStatus(t) === "WIN").length;
+  const losses    = trades.filter((t) => deriveStatus(t) === "LOSS").length;
+  const breakEven = trades.filter((t) => deriveStatus(t) === "BE").length;
 
   const totalR   = Math.round(cum * 100) / 100;
   const avgR     = Math.round((totalR / trades.length) * 100) / 100;
@@ -84,11 +89,12 @@ function computeAnalytics(allTrades) {
   // ── Win / loss streaks ───────────────────────────────────────────────────────
   let maxWinStreak = 0, maxLossStreak = 0, curWin = 0, curLoss = 0;
   trades.forEach((t) => {
-    if (t.status === "WIN") {
+    const s = deriveStatus(t);
+    if (s === "WIN") {
       curWin++;
       curLoss = 0;
       if (curWin > maxWinStreak) maxWinStreak = curWin;
-    } else if (t.status === "LOSS") {
+    } else if (s === "LOSS") {
       curLoss++;
       curWin = 0;
       if (curLoss > maxLossStreak) maxLossStreak = curLoss;
@@ -101,8 +107,9 @@ function computeAnalytics(allTrades) {
   // ── P&L by asset (closed trades only) ───────────────────────────────────────
   const assetMap = {};
   trades.forEach((t) => {
-    if (!assetMap[t.asset]) assetMap[t.asset] = 0;
-    assetMap[t.asset] = Math.round((assetMap[t.asset] + parseFloat(t.pnl_r)) * 100) / 100;
+    const sym = assetSymbol(t.asset);
+    if (!assetMap[sym]) assetMap[sym] = 0;
+    assetMap[sym] = Math.round((assetMap[sym] + parseFloat(t.pnl_r)) * 100) / 100;
   });
   const pnlByAsset = Object.entries(assetMap)
     .map(([asset, totalR]) => ({ asset, totalR }))
@@ -118,8 +125,9 @@ function computeAnalytics(allTrades) {
     calendarData[day].count++;
     if (t.pnl_r !== null) {
       calendarData[day].totalR = Math.round((calendarData[day].totalR + parseFloat(t.pnl_r)) * 100) / 100;
-      if (t.status === "WIN")  calendarData[day].wins++;
-      else if (t.status === "LOSS") calendarData[day].losses++;
+      const s = deriveStatus(t);
+      if (s === "WIN")  calendarData[day].wins++;
+      else if (s === "LOSS") calendarData[day].losses++;
     } else {
       calendarData[day].open++;
     }
@@ -156,7 +164,7 @@ export function useHubAnalytics({ selectedYears = [], openMonth = null }) {
   const { data: allTrades, loading, error, refetch } = useAsyncQuery(
     queryFn,
     [workspaceId],
-    { enabled: !!workspaceId }
+    { enabled: !!workspaceId, keepPreviousData: true }
   );
 
   const yearAnalytics = useMemo(() => {
@@ -195,5 +203,11 @@ export function useHubAnalytics({ selectedYears = [], openMonth = null }) {
 
   const hasData = !loading && (allTrades?.length ?? 0) > 0;
 
-  return { yearAnalytics, monthAnalytics, latestMonthAnalytics, loading, error, refetch, hasData };
+  const availableYears = useMemo(() => {
+    if (!allTrades?.length) return [];
+    const yearSet = new Set(allTrades.map((t) => new Date(t.entry_datetime).getFullYear()));
+    return [...yearSet].sort((a, b) => a - b);
+  }, [allTrades]);
+
+  return { yearAnalytics, monthAnalytics, latestMonthAnalytics, loading, error, refetch, hasData, availableYears };
 }

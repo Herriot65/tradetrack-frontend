@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   BarChart3,
   BookOpen,
   Cable,
+  FileUp,
   Layers,
   Plus,
   PlugZap,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 
 import AppShell from "@/components/layout/AppShell";
+import { MT5ImportDialog } from "@/components/journal/MT5ImportDialog";
 import TradeTable from "@/components/journal/TradeTable";
 import TradePanel from "@/components/journal/TradePanel";
 import AnalyticsPane from "@/components/hub/AnalyticsPane";
@@ -38,6 +40,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createTrade, updateTrade, deleteTrade } from "@/api/trades.api";
+import { useCareerData } from "@/hooks/useCareerData";
 import { useHubAnalytics } from "@/hooks/useHubAnalytics";
 import { useTrades } from "@/hooks/useTrades";
 import { useAuth } from "@/auth/useAuth";
@@ -121,17 +124,35 @@ function EmptyTrades({ hasFilters }) {
   );
 }
 
-function TradesTab({ breakEvenMethod, journalId }) {
+const PAGE_SIZE = 20;
+
+function TradesTab({ breakEvenMethod, journalId, refreshKey }) {
   const [search,       setSearch]       = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [page,         setPage]         = useState(1);
   // panel state: null = closed, { mode: 'create'|'edit', trade: null|obj }
   const [panel, setPanel] = useState(null);
 
   const { activeWorkspace } = useJournal();
   const workspaceId = activeWorkspace?.id;
 
-  const { data: tradesData, loading: tradesLoading, refetch } = useTrades({ search });
-  const trades = tradesData?.results ?? [];
+  // Reset to page 1 whenever the search query changes
+  useEffect(() => { setPage(1); }, [search]);
+
+  const { data: tradesData, loading: tradesLoading, refetch } = useTrades({ search, page });
+
+  const prevRefreshKey = useRef(refreshKey);
+  useEffect(() => {
+    if (refreshKey !== prevRefreshKey.current) {
+      prevRefreshKey.current = refreshKey;
+      setPage(1);
+      refetch();
+    }
+  }, [refreshKey, refetch]);
+
+  const trades     = tradesData?.results ?? [];
+  const totalCount = tradesData?.count   ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   const catalog = useJournalCatalog(journalId);
 
@@ -189,7 +210,10 @@ function TradesTab({ breakEvenMethod, journalId }) {
         <div className="ml-auto flex shrink-0 items-center gap-3">
           {!tradesLoading && (
             <span className="text-xs text-zinc-600">
-              {filtered.length} {filtered.length === 1 ? "trade" : "trades"}
+              {statusFilter
+                ? `${filtered.length} shown of ${totalCount}`
+                : totalCount}{" "}
+              {totalCount === 1 ? "trade" : "trades"}
             </span>
           )}
           <Button
@@ -216,6 +240,33 @@ function TradesTab({ breakEvenMethod, journalId }) {
         />
       )}
 
+      {/* Pagination */}
+      {!tradesLoading && totalPages > 1 && (
+        <div className="flex items-center justify-between pt-1">
+          <span className="text-xs text-zinc-500">
+            Page {page} of {totalPages}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+            >
+              Previous
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Trade panel */}
       <TradePanel
         mode={panel?.mode ?? "create"}
@@ -232,12 +283,15 @@ function TradesTab({ breakEvenMethod, journalId }) {
 
 // ─── Analytics tab ────────────────────────────────────────────────────────────
 
-function AnalyticsTab() {
-  const [selectedYears, setSelectedYears] = useState([]);
-  const [openMonth,     setOpenMonth]     = useState(null);
-
-  const { yearAnalytics, monthAnalytics, latestMonthAnalytics, loading, hasData } =
-    useHubAnalytics({ selectedYears, openMonth });
+function AnalyticsTab({
+  jLoading,
+  selectedYears, setSelectedYears,
+  openMonth, setOpenMonth,
+  yearAnalytics, monthAnalytics, latestMonthAnalytics,
+  loading, error, refetch, hasData, availableYears,
+  mergedSummary,
+}) {
+  const isLoading = jLoading || loading;
 
   const handleYearToggle = (year) =>
     setSelectedYears((prev) =>
@@ -253,7 +307,25 @@ function AnalyticsTab() {
 
   const label = yearsLabel(selectedYears);
 
-  if (!loading && !hasData) {
+  // Error state — shown instead of empty state when the fetch itself failed
+  if (!isLoading && error) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-zinc-800 py-20 text-center">
+        <div className="flex size-12 items-center justify-center rounded-xl bg-zinc-900 ring-1 ring-zinc-800">
+          <BarChart3 className="size-5 text-zinc-600" />
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-zinc-300">Failed to load analytics</p>
+          <p className="max-w-xs text-zinc-600">{error}</p>
+        </div>
+        <Button size="sm" variant="outline" onClick={refetch}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (!isLoading && !hasData) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-zinc-800 py-20 text-center">
         <div className="flex size-12 items-center justify-center rounded-xl bg-zinc-900 ring-1 ring-zinc-800">
@@ -272,8 +344,8 @@ function AnalyticsTab() {
   return (
     <>
       <div className="space-y-6">
-        <HubHeader selectedYears={selectedYears} onYearsChange={setSelectedYears} />
-        <KpiStrip summary={yearAnalytics?.summary} loading={loading} />
+        <HubHeader selectedYears={selectedYears} onYearsChange={setSelectedYears} availableYears={availableYears} />
+        <KpiStrip summary={mergedSummary ?? yearAnalytics?.summary} loading={isLoading} />
         <AnalyticsPane
           yearEquityCurve={yearAnalytics?.equityCurve ?? []}
           yearRPerTrade={yearAnalytics?.rPerTrade ?? []}
@@ -409,11 +481,59 @@ export default function Journal() {
     setSearchParams({ tab }, { replace: true });
   }
 
+  // Analytics state lives here so data survives tab switches and any
+  // AnalyticsTab re-mount; it can only be lost on full route navigation.
+  const [selectedYears, setSelectedYears] = useState([]);
+  const [openMonth,     setOpenMonth]     = useState(null);
+  const {
+    yearAnalytics, monthAnalytics, latestMonthAnalytics,
+    loading: analyticsLoading, error: analyticsError,
+    refetch: analyticsRefetch, hasData: analyticsHasData,
+    availableYears,
+  } = useHubAnalytics({ selectedYears, openMonth });
+
+  const { data: careerData } = useCareerData();
+
+  // Prefer backend aggregate values over client-side computation.
+  // max_loss_streak is not in the backend response — stays computed from trades.
+  const mergedSummary = useMemo(() => {
+    const base = yearAnalytics?.summary;
+    if (!base || !careerData?.yearSummaries?.length) return base ?? null;
+
+    const filteredSummaries = selectedYears.length === 0
+      ? careerData.yearSummaries
+      : careerData.yearSummaries.filter((y) => selectedYears.includes(y.year));
+
+    if (!filteredSummaries.length) return base;
+
+    const totalTrades = filteredSummaries.reduce((s, y) => s + y.total_trades, 0);
+    const totalWins   = filteredSummaries.reduce(
+      (s, y) => s + Math.round((y.win_rate / 100) * y.total_trades), 0
+    );
+    const winRate = totalTrades > 0
+      ? Math.round((totalWins / totalTrades) * 10000) / 100
+      : 0;
+
+    const isAllYears = selectedYears.length === 0;
+
+    return {
+      ...base,
+      totalTrades,
+      winRate,
+      ...(isAllYears && {
+        maxWinStreak: careerData.max_win_streak ?? base.maxWinStreak,
+        maxDrawdownR: careerData.max_drawdown   ?? base.maxDrawdownR,
+      }),
+    };
+  }, [yearAnalytics?.summary, careerData, selectedYears]);
+
   const [settingsOpen,     setSettingsOpen]     = useState(false);
   const [brokerOpen,       setBrokerOpen]       = useState(false);
+  const [importOpen,       setImportOpen]       = useState(false);
   const [deleteOpen,       setDeleteOpen]       = useState(false);
   const [deleting,         setDeleting]         = useState(false);
   const [deleteError,      setDeleteError]      = useState(null);
+  const [tradesRefreshKey, setTradesRefreshKey] = useState(0);
 
   const handleDelete = async () => {
     if (!activeJournal) return;
@@ -492,6 +612,10 @@ export default function Journal() {
                 <Cable className="size-3.5" />
                 Broker Connections
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setImportOpen(true)}>
+                <FileUp className="size-3.5" />
+                Import MT5 Report
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"
@@ -521,16 +645,38 @@ export default function Journal() {
           ))}
         </div>
 
-        {/* ── Tab content ── */}
+        {/* ── Tab content ──
+             All three panels stay mounted so data isn't lost on tab switches.
+             CSS `hidden` hides the inactive ones without unmounting them. */}
         <div className="pt-5">
-          {activeTab === "trades" && (
+          <div className={activeTab !== "trades" ? "hidden" : ""}>
             <TradesTab
               breakEvenMethod={breakEvenMethod}
               journalId={activeJournal?.id}
+              refreshKey={tradesRefreshKey}
             />
-          )}
-          {activeTab === "analytics" && <AnalyticsTab />}
-          {activeTab === "custom-fields" && <CustomFieldsTab />}
+          </div>
+          <div className={activeTab !== "analytics" ? "hidden" : ""}>
+            <AnalyticsTab
+              jLoading={jLoading}
+              selectedYears={selectedYears}
+              setSelectedYears={setSelectedYears}
+              openMonth={openMonth}
+              setOpenMonth={setOpenMonth}
+              yearAnalytics={yearAnalytics}
+              monthAnalytics={monthAnalytics}
+              latestMonthAnalytics={latestMonthAnalytics}
+              loading={analyticsLoading}
+              error={analyticsError}
+              refetch={analyticsRefetch}
+              hasData={analyticsHasData}
+              availableYears={availableYears}
+              mergedSummary={mergedSummary}
+            />
+          </div>
+          <div className={activeTab !== "custom-fields" ? "hidden" : ""}>
+            <CustomFieldsTab />
+          </div>
         </div>
 
       </div>
@@ -543,6 +689,12 @@ export default function Journal() {
       <BrokerConnectionsDialog
         open={brokerOpen}
         onClose={() => setBrokerOpen(false)}
+      />
+      <MT5ImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        journal={activeJournal}
+        onSuccess={() => setTradesRefreshKey((k) => k + 1)}
       />
 
       <Dialog open={deleteOpen} onOpenChange={(v) => !v && setDeleteOpen(false)}>

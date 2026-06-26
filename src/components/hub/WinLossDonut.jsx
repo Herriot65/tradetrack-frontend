@@ -16,7 +16,7 @@ function DonutTooltip({ active, payload }) {
 
 export default function WinLossDonut({ wins = 0, losses = 0, breakEven = 0 }) {
   const total = wins + losses + breakEven;
-  const winRate = total > 0 ? Math.round((wins / total) * 100) : 0;
+  const winRate = total > 0 ? Math.round((wins / total) * 10000) / 100 : 0;
 
   const data = [
     { name: "Wins",       value: wins,      fill: WIN_COLOR  },

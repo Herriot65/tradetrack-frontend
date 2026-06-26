@@ -91,6 +91,15 @@ export default function HubEquityCurve({ data = [], title = "Equity Curve", heig
   const { yMin, yMax }          = useMemo(() => computeDomain(data), [data]);
   const { ticks, formatter }    = useMemo(() => computeXAxis(data),  [data]);
 
+  const lastEquityR  = data.length > 0 ? data[data.length - 1].equity_r : 0;
+  const isNegative   = lastEquityR < 0;
+  const lineColor    = isNegative ? "hsl(0 70% 55%)"   : "hsl(142 70% 45%)";
+  const fillColor    = isNegative ? "hsl(0 70% 50%)"   : "hsl(142 70% 45%)";
+  // For negative equity the fill area is below 0 so the gradient should intensify downward.
+  const fillStops    = isNegative
+    ? [{ offset: "5%", opacity: 0 }, { offset: "95%", opacity: 0.28 }]
+    : [{ offset: "5%", opacity: 0.28 }, { offset: "95%", opacity: 0 }];
+
   return (
     <Card className="border-zinc-800/60 bg-zinc-900/40">
       <CardHeader className="flex flex-row items-center justify-between px-5 pt-4 pb-3">
@@ -119,8 +128,9 @@ export default function HubEquityCurve({ data = [], title = "Equity Curve", heig
             <AreaChart data={data} margin={{ top: 4, right: 12, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="equityFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="hsl(142 70% 45%)" stopOpacity={0.28} />
-                  <stop offset="95%" stopColor="hsl(142 70% 45%)" stopOpacity={0}    />
+                  {fillStops.map((s) => (
+                    <stop key={s.offset} offset={s.offset} stopColor={fillColor} stopOpacity={s.opacity} />
+                  ))}
                 </linearGradient>
               </defs>
 
@@ -156,11 +166,11 @@ export default function HubEquityCurve({ data = [], title = "Equity Curve", heig
               <Area
                 type="monotone"
                 dataKey="equity_r"
-                stroke="hsl(142 70% 45%)"
+                stroke={lineColor}
                 strokeWidth={2}
                 fill="url(#equityFill)"
                 dot={false}
-                activeDot={{ r: 4, strokeWidth: 0, fill: "hsl(142 70% 45%)" }}
+                activeDot={{ r: 4, strokeWidth: 0, fill: lineColor }}
                 isAnimationActive={false}
               />
             </AreaChart>

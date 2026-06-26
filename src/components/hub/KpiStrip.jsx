@@ -67,14 +67,14 @@ export default function KpiStrip({ summary, loading }) {
       label: "Max Win Streak",
       icon:  Zap,
       value: summary?.maxWinStreak ?? null,
-      color: "emerald",
+      color: (summary?.maxWinStreak ?? 0) > 0 ? "emerald" : "zinc",
     },
     {
       id:    "loss-streak",
       label: "Max Loss Streak",
       icon:  ZapOff,
       value: summary?.maxLossStreak ?? null,
-      color: "red",
+      color: (summary?.maxLossStreak ?? 0) > 0 ? "red" : "emerald",
     },
   ];
 
