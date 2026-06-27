@@ -59,9 +59,9 @@ function Dash() { return <span className="text-zinc-600">—</span>; }
 
 function StatusBadge({ status }) {
   const c = STATUS_STYLE[status] ?? STATUS_STYLE.BE;
-  const label = status === "BE" ? "BREAKEVEN" : status;
+  const label = status === "BE" ? "B/E" : status;
   return (
-    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ${c.bg} ${c.text} ${c.ring}`}>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ${c.bg} ${c.text} ${c.ring}`}>
       {label}
     </span>
   );
@@ -69,7 +69,7 @@ function StatusBadge({ status }) {
 
 function SidePill({ side }) {
   return (
-    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${SIDE_STYLE[side] ?? ""}`}>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${SIDE_STYLE[side] ?? ""}`}>
       {side}
     </span>
   );
@@ -226,16 +226,16 @@ export default function TradeTable({ trades = [], breakEvenMethod = "ratio", onR
   const v = visibleCols;
 
   return (
-    <div className="overflow-hidden rounded-lg border border-zinc-800/60">
+    <div className="rounded-xl border border-zinc-800/60 [overflow:clip]">
       {/* Column picker toolbar */}
-      <div className="flex items-center justify-end border-b border-zinc-800/40 bg-zinc-900/40 px-3 py-1.5">
+      <div className="flex items-center justify-end border-b border-zinc-800/40 bg-zinc-900/50 px-3 py-2">
         <ColPicker visibleCols={v} onToggle={toggleCol} />
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-zinc-800/60 bg-zinc-900/60">
+          <thead className="sticky top-14 z-10">
+            <tr className="border-b border-zinc-800/60 bg-zinc-900/95 backdrop-blur-sm">
               {v.asset       && <Th colId="asset"       label="Asset"      sortKey="asset" />}
               {v.entryDate   && <Th colId="entryDate"   label="Entry"      sortKey="date"  />}
               {v.exitDate    && <Th colId="exitDate"    label="Exit"                       />}
@@ -251,25 +251,25 @@ export default function TradeTable({ trades = [], breakEvenMethod = "ratio", onR
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-zinc-800/40">
+          <tbody className="divide-y divide-zinc-800/30">
             {sorted.map((trade) => (
               <tr
                 key={trade.id}
                 onClick={() => onRowClick?.(trade)}
-                className="cursor-pointer transition-colors hover:bg-zinc-800/25"
+                className="cursor-pointer transition-colors duration-100 hover:bg-zinc-800/50"
               >
-                {v.asset       && <td className="px-3 py-3 text-sm font-semibold text-zinc-100">{typeof trade.asset === "object" ? trade.asset?.symbol : trade.asset}</td>}
-                {v.entryDate   && <td className="px-3 py-3"><DateTimeCell iso={trade.entry_datetime} /></td>}
-                {v.exitDate    && <td className="px-3 py-3"><DateTimeCell iso={trade.exit_datetime} openLabel="Open" /></td>}
-                {v.side        && <td className="px-3 py-3"><SidePill side={trade.side} /></td>}
-                {v.oppTf       && <td className="px-3 py-3 text-xs text-zinc-400">{trade.opportunity_timeframe ?? <Dash />}</td>}
-                {v.entryTf     && <td className="px-3 py-3 text-xs text-zinc-400">{trade.entry_timeframe ?? <Dash />}</td>}
-                {v.trend       && <td className="px-3 py-3 text-xs text-zinc-400">{trade.trend_direction ?? <Dash />}</td>}
-                {v.riskPercent && <td className="px-3 py-3 text-xs tabular-nums text-zinc-400">{trade.risk_percent != null ? `${trade.risk_percent}%` : <Dash />}</td>}
-                {v.pnl         && <td className="px-3 py-3 text-right"><PnlCell pnlR={trade.pnl_r} status={trade._status} /></td>}
-                {v.status      && <td className="px-3 py-3"><StatusBadge status={trade._status} /></td>}
-                {v.commission  && <td className="px-3 py-3 text-xs tabular-nums text-zinc-400">${trade.commission != null ? trade.commission : "0.00"}</td>}
-                {v.swap        && <td className="px-3 py-3 text-xs tabular-nums text-zinc-400">${trade.swap != null ? trade.swap : "0.00"}</td>}
+                {v.asset       && <td className="px-3 py-3.5 text-sm font-semibold text-zinc-100">{typeof trade.asset === "object" ? trade.asset?.symbol : trade.asset}</td>}
+                {v.entryDate   && <td className="px-3 py-3.5"><DateTimeCell iso={trade.entry_datetime} /></td>}
+                {v.exitDate    && <td className="px-3 py-3.5"><DateTimeCell iso={trade.exit_datetime} openLabel="Open" /></td>}
+                {v.side        && <td className="px-3 py-3.5"><SidePill side={trade.side} /></td>}
+                {v.oppTf       && <td className="px-3 py-3.5 text-xs text-zinc-400">{trade.opportunity_timeframe ?? <Dash />}</td>}
+                {v.entryTf     && <td className="px-3 py-3.5 text-xs text-zinc-400">{trade.entry_timeframe ?? <Dash />}</td>}
+                {v.trend       && <td className="px-3 py-3.5 text-xs text-zinc-400">{trade.trend_direction ?? <Dash />}</td>}
+                {v.riskPercent && <td className="px-3 py-3.5 text-xs tabular-nums text-zinc-400">{trade.risk_percent != null ? `${trade.risk_percent}%` : <Dash />}</td>}
+                {v.pnl         && <td className="px-3 py-3.5 text-right"><PnlCell pnlR={trade.pnl_r} status={trade._status} /></td>}
+                {v.status      && <td className="px-3 py-3.5"><StatusBadge status={trade._status} /></td>}
+                {v.commission  && <td className="px-3 py-3.5 text-xs tabular-nums text-zinc-400">${trade.commission != null ? trade.commission : "0.00"}</td>}
+                {v.swap        && <td className="px-3 py-3.5 text-xs tabular-nums text-zinc-400">${trade.swap != null ? trade.swap : "0.00"}</td>}
               </tr>
             ))}
           </tbody>
