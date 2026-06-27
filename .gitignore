@@ -24,3 +24,8 @@ dist-ssr
 *.sw?
 
 .env
+.claude/
+
+# Local dev docs
+CLAUDE.md
+FRONTEND_BACKEND_HANDOFF.md

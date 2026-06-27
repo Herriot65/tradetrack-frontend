@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Journal from "./pages/Journal";
+import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./auth/ProtectedRoute";
 
 export default function App() {
@@ -31,6 +32,7 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Bot,
@@ -14,7 +14,6 @@ import {
   Newspaper,
   Settings,
   Shield,
-  TrendingUp,
   User,
 } from "lucide-react";
 
@@ -73,6 +72,16 @@ export default function AppShell({ children }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(readCollapsed);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // On mobile the sidebar is always icon-only to avoid covering page content
+  const isCollapsed = isMobile || collapsed;
 
   function toggleCollapsed() {
     setCollapsed((c) => {
@@ -89,8 +98,8 @@ export default function AppShell({ children }) {
     return location.pathname.startsWith(to);
   }
 
-  const sidebarW  = collapsed ? "w-[60px]"   : "w-[224px]";
-  const contentPl = collapsed ? "pl-[60px]"  : "pl-[224px]";
+  const sidebarW  = isCollapsed ? "w-[60px]"   : "w-[224px]";
+  const contentPl = isCollapsed ? "pl-[60px]"  : "pl-[224px]";
   const initials  = getInitials(user);
   const displayName = getDisplayName(user);
 
@@ -103,11 +112,13 @@ export default function AppShell({ children }) {
       >
 
         {/* Brand */}
-        <div className={`flex h-14 shrink-0 items-center border-b border-zinc-800/50 ${collapsed ? "justify-center px-3" : "px-4"}`}>
-          <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 ring-1 ring-emerald-500/25">
-            <TrendingUp className="size-3.5 text-emerald-400" />
-          </div>
-          {!collapsed && (
+        <div className={`flex h-14 shrink-0 items-center border-b border-zinc-800/50 ${isCollapsed ? "justify-center px-3" : "px-4"}`}>
+          <img
+            src="/trader_track_logo.png"
+            alt="TradeTrack"
+            className="size-7 shrink-0 rounded-lg object-contain"
+          />
+          {!isCollapsed && (
             <div className="ml-2.5 overflow-hidden">
               <p className="whitespace-nowrap text-[13px] font-semibold leading-tight tracking-tight text-zinc-100">
                 TradeTrack
@@ -125,7 +136,7 @@ export default function AppShell({ children }) {
           {/* Main items */}
           {NAV_ITEMS.map(({ label, icon: Icon, to }) => {
             const active = isActive(to);
-            if (collapsed) {
+            if (isCollapsed) {
               return (
                 <Tooltip key={label}>
                   <TooltipTrigger asChild>
@@ -164,8 +175,8 @@ export default function AppShell({ children }) {
           })}
 
           {/* Tools section divider */}
-          <div className={`${collapsed ? "my-3" : "mt-5 mb-1"}`}>
-            {collapsed
+          <div className={`${isCollapsed ? "my-3" : "mt-5 mb-1"}`}>
+            {isCollapsed
               ? <div className="mx-2 h-px bg-zinc-800/60" />
               : <p className="px-2.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
                   Tools
@@ -175,7 +186,7 @@ export default function AppShell({ children }) {
 
           {/* Coming soon tools */}
           {TOOL_ITEMS.map(({ label, icon: Icon }) => {
-            if (collapsed) {
+            if (isCollapsed) {
               return (
                 <Tooltip key={label}>
                   <TooltipTrigger asChild>
@@ -206,12 +217,12 @@ export default function AppShell({ children }) {
         <div className="border-t border-zinc-800/50 p-2">
           <button
             onClick={toggleCollapsed}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             className={`flex h-9 w-full items-center rounded-md text-sm text-zinc-600 transition-colors hover:bg-zinc-800/60 hover:text-zinc-300 ${
-              collapsed ? "justify-center" : "gap-2.5 px-2.5"
+              isCollapsed ? "justify-center" : "gap-2.5 px-2.5"
             }`}
           >
-            {collapsed
+            {isCollapsed
               ? <ChevronsRight className="size-4 shrink-0" />
               : (
                 <>
