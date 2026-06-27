@@ -7,8 +7,8 @@ export default function Features() {
     <Section id="features" className="border-t border-zinc-800/40">
       <SectionHeader
         eyebrow="Features"
-        title="Everything you need to level up"
-        description="From trade logs to psychology scores — one platform to understand your performance inside and out."
+        title="Everything you need to find your edge"
+        description="One platform to log trades, understand your numbers, and discover the patterns that separate your best sessions from your worst."
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:gap-6">

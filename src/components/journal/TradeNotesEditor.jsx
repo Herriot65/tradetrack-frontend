@@ -1,64 +1,80 @@
-import { useRef } from "react";
-import { ImagePlus, X } from "lucide-react";
+import { useRef, useState } from "react";
+import { ImagePlus, Plus, X } from "lucide-react";
+import ImageLightbox from "./ImageLightbox";
 
-const DEFAULT_SECTIONS = [
+export const DEFAULT_SECTIONS = [
   { id: "before", title: "Before / Market Entry", text: "", images: [] },
   { id: "during", title: "During",                text: "", images: [] },
   { id: "after",  title: "After",                 text: "", images: [] },
 ];
 
-export { DEFAULT_SECTIONS };
-
 // ─── Single section ───────────────────────────────────────────────────────────
 
-function NoteSection({ section, canRemove, onRemove, onTextChange, onAddImages, onRemoveImage }) {
-  const inputRef = useRef(null);
+function NoteSection({
+  section,
+  canRemove,
+  isEditingTitle,
+  onStartRename,
+  onFinishRename,
+  onRemove,
+  onTextChange,
+  onAddImages,
+  onRemoveImage,
+  onImageClick,
+}) {
+  const fileInputRef  = useRef(null);
 
   function readFiles(files) {
     Array.from(files).forEach((file) => {
       if (!file.type.startsWith("image/")) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        onAddImages([{ id: Date.now() + Math.random(), name: file.name, preview: e.target.result }]);
-      };
-      reader.readAsDataURL(file);
+      onAddImages([{ id: Date.now() + Math.random(), name: file.name, preview: URL.createObjectURL(file), file }]);
     });
   }
 
   function handlePaste(e) {
-    const items = Array.from(e.clipboardData?.items ?? []);
-    const imageItem = items.find((item) => item.type.startsWith("image/"));
-    if (!imageItem) return;
+    const item = Array.from(e.clipboardData?.items ?? []).find((i) =>
+      i.type.startsWith("image/")
+    );
+    if (!item) return;
     e.preventDefault();
-    const file = imageItem.getAsFile();
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      onAddImages([{ id: Date.now() + Math.random(), name: "pasted-image.png", preview: ev.target.result }]);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function handleDrop(e) {
-    e.preventDefault();
-    readFiles(e.dataTransfer.files);
+    const file = item.getAsFile();
+    onAddImages([{ id: Date.now() + Math.random(), name: "pasted-image.png", preview: URL.createObjectURL(file), file }]);
   }
 
   return (
     <div
       className="overflow-hidden rounded-md border border-zinc-800 bg-zinc-900/20"
       onDragOver={(e) => e.preventDefault()}
-      onDrop={handleDrop}
+      onDrop={(e) => { e.preventDefault(); readFiles(e.dataTransfer.files); }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-800/60 bg-zinc-900/60 px-3 py-2">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-          {section.title}
-        </span>
-        {canRemove && (
+      <div className="flex items-center gap-2 border-b border-zinc-800/60 bg-zinc-900/60 px-3 py-2">
+        {isEditingTitle ? (
+          <input
+            autoFocus
+            defaultValue={section.title}
+            className="flex-1 bg-transparent text-[11px] font-semibold uppercase tracking-wider text-zinc-200 outline-none"
+            onBlur={(e) => onFinishRename(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { e.preventDefault(); onFinishRename(e.target.value); }
+              if (e.key === "Escape") onFinishRename(null);
+            }}
+          />
+        ) : (
+          <button
+            type="button"
+            title="Click to rename"
+            onClick={onStartRename}
+            className="flex-1 truncate text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500 transition-colors hover:text-zinc-300"
+          >
+            {section.title}
+          </button>
+        )}
+        {canRemove && !isEditingTitle && (
           <button
             type="button"
             onClick={onRemove}
-            className="rounded p-0.5 text-zinc-600 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+            className="shrink-0 rounded p-0.5 text-zinc-600 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
             aria-label={`Remove ${section.title} section`}
           >
             <X className="size-3.5" />
@@ -66,7 +82,7 @@ function NoteSection({ section, canRemove, onRemove, onTextChange, onAddImages, 
         )}
       </div>
 
-      {/* Text input */}
+      {/* Text */}
       <textarea
         value={section.text}
         onChange={(e) => onTextChange(e.target.value)}
@@ -76,15 +92,17 @@ function NoteSection({ section, canRemove, onRemove, onTextChange, onAddImages, 
         className="w-full resize-none bg-transparent px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none"
       />
 
-      {/* Image previews */}
+      {/* Image grid */}
       {section.images.length > 0 && (
         <div className="grid grid-cols-2 gap-2 px-3 pb-2">
           {section.images.map((img) => (
-            <div
-              key={img.id}
-              className="group relative overflow-hidden rounded border border-zinc-800 bg-zinc-900"
-            >
-              <img src={img.preview} alt={img.name} className="h-28 w-full object-cover" />
+            <div key={img.id} className="group relative overflow-hidden rounded border border-zinc-800 bg-zinc-900">
+              <img
+                src={img.preview}
+                alt={img.name}
+                className="h-28 w-full cursor-zoom-in object-cover"
+                onClick={() => onImageClick(img.preview)}
+              />
               <button
                 type="button"
                 onClick={() => onRemoveImage(img.id)}
@@ -98,65 +116,100 @@ function NoteSection({ section, canRemove, onRemove, onTextChange, onAddImages, 
         </div>
       )}
 
-      {/* Upload button */}
+      {/* Upload */}
       <div className="border-t border-zinc-800/40 px-3 py-2">
         <button
           type="button"
-          onClick={() => inputRef.current?.click()}
+          onClick={() => fileInputRef.current?.click()}
           className="flex items-center gap-1.5 text-xs text-zinc-600 transition-colors hover:text-zinc-400"
         >
           <ImagePlus className="size-3.5" />
           Upload image
         </button>
         <input
-          ref={inputRef}
+          ref={fileInputRef}
           type="file"
           accept="image/*"
           multiple
           className="hidden"
-          onChange={(e) => readFiles(e.target.files)}
+          onChange={(e) => { readFiles(e.target.files); e.target.value = ""; }}
         />
       </div>
     </div>
   );
 }
 
-// ─── Editor (all sections) ────────────────────────────────────────────────────
+// ─── Editor ───────────────────────────────────────────────────────────────────
 
-export default function TradeNotesEditor({ sections, onChange }) {
+export default function TradeNotesEditor({ sections, onChange, onDeleteImage }) {
+  const [editingId,   setEditingId]   = useState(null);
+  const [lightboxSrc, setLightboxSrc] = useState(null);
+
   function update(id, patch) {
     onChange(sections.map((s) => (s.id === id ? { ...s, ...patch } : s)));
   }
 
-  function remove(id) {
-    onChange(sections.filter((s) => s.id !== id));
+  function finishRename(id, value) {
+    if (value && value.trim()) update(id, { title: value.trim() });
+    setEditingId(null);
   }
 
-  function addImages(id, newImages) {
+  function addSection() {
+    const id = `section-${Date.now()}`;
+    onChange([...sections, { id, title: "New Section", text: "", images: [] }]);
+    setEditingId(id);
+  }
+
+  function addImages(id, newImgs) {
     const s = sections.find((s) => s.id === id);
-    if (!s) return;
-    update(id, { images: [...s.images, ...newImages] });
+    if (s) update(id, { images: [...s.images, ...newImgs] });
   }
 
-  function removeImage(sectionId, imageId) {
+  function removeImage(sectionId, imgId) {
     const s = sections.find((s) => s.id === sectionId);
     if (!s) return;
-    update(sectionId, { images: s.images.filter((i) => i.id !== imageId) });
+    const img = s.images.find((i) => i.id === imgId);
+    if (img?.file) URL.revokeObjectURL(img.preview);
+    if (img?.screenshotId && onDeleteImage) onDeleteImage(img.screenshotId);
+    update(sectionId, { images: s.images.filter((i) => i.id !== imgId) });
+  }
+
+  function removeSection(id) {
+    const s = sections.find((sec) => sec.id === id);
+    if (s) s.images.forEach((img) => { if (img.file) URL.revokeObjectURL(img.preview); });
+    onChange(sections.filter((sec) => sec.id !== id));
   }
 
   return (
-    <div className="space-y-2">
-      {sections.map((s) => (
-        <NoteSection
-          key={s.id}
-          section={s}
-          canRemove={sections.length > 1}
-          onRemove={() => remove(s.id)}
-          onTextChange={(text) => update(s.id, { text })}
-          onAddImages={(imgs) => addImages(s.id, imgs)}
-          onRemoveImage={(imgId) => removeImage(s.id, imgId)}
-        />
-      ))}
-    </div>
+    <>
+      <div className="space-y-2">
+        {sections.map((s) => (
+          <NoteSection
+            key={s.id}
+            section={s}
+            canRemove={sections.length > 1}
+            isEditingTitle={editingId === s.id}
+            onStartRename={() => setEditingId(s.id)}
+            onFinishRename={(v) => finishRename(s.id, v)}
+            onRemove={() => removeSection(s.id)}
+            onTextChange={(text) => update(s.id, { text })}
+            onAddImages={(imgs) => addImages(s.id, imgs)}
+            onRemoveImage={(imgId) => removeImage(s.id, imgId)}
+            onImageClick={setLightboxSrc}
+          />
+        ))}
+
+        <button
+          type="button"
+          onClick={addSection}
+          className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-zinc-800 py-2 text-xs text-zinc-600 transition-colors hover:border-zinc-700 hover:text-zinc-400"
+        >
+          <Plus className="size-3.5" />
+          Add section
+        </button>
+      </div>
+
+      {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
+    </>
   );
 }

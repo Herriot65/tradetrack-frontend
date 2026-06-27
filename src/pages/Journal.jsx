@@ -166,12 +166,14 @@ function TradesTab({ breakEvenMethod, journalId, refreshKey }) {
   const hasFilters = !!search || !!statusFilter;
 
   async function handleSave(payload) {
+    let result;
     if (panel?.mode === "edit") {
-      await updateTrade(workspaceId, panel.trade.id, payload);
+      result = await updateTrade(workspaceId, panel.trade.id, payload);
     } else {
-      await createTrade(workspaceId, payload);
+      result = await createTrade(workspaceId, payload);
     }
     refetch();
+    return result;
   }
 
   async function handleDelete(id) {
@@ -278,6 +280,7 @@ function TradesTab({ breakEvenMethod, journalId, refreshKey }) {
         onSave={handleSave}
         onDelete={handleDelete}
         catalog={catalog}
+        journalId={workspaceId}
       />
     </div>
   );

@@ -48,6 +48,14 @@ export default function LoginForm() {
   return (
     <Card className="w-full max-w-md border-border/60 bg-card/80 shadow-xl shadow-black/20 backdrop-blur-sm">
       <CardHeader className="space-y-1 text-center">
+        <div className="flex justify-center mb-2">
+          <img
+            src="/trader_track_logo.png"
+            alt="TraderTrack"
+            className="h-16 w-16 rounded-xl animate-[float_3s_ease-in-out_infinite]"
+            style={{ animation: "float 3s ease-in-out infinite" }}
+          />
+        </div>
         <CardTitle className="text-2xl font-bold tracking-tight">
           Welcome back
         </CardTitle>
@@ -106,6 +114,28 @@ export default function LoginForm() {
               Create account
             </Link>
           </p>
+
+          <div className="pt-1">
+            <Link
+              to="/"
+              className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+              Back to home
+            </Link>
+          </div>
         </form>
       </CardContent>
     </Card>

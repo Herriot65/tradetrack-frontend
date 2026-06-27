@@ -36,3 +36,18 @@ export const deleteTrade = async (workspaceId, id) => {
   if (USE_MOCK) return mockDeleteTrade(workspaceId, id);
   await api.delete(`/journals/${workspaceId}/trades/${id}/`);
 };
+
+export const uploadScreenshot = async (journalId, tradeId, file, section = null) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (section) formData.append("section", section);
+  const { data } = await api.post(
+    `/journals/${journalId}/trades/${tradeId}/screenshots/`,
+    formData,
+  );
+  return data;
+};
+
+export const deleteScreenshot = async (journalId, tradeId, screenshotId) => {
+  await api.delete(`/journals/${journalId}/trades/${tradeId}/screenshots/${screenshotId}/`);
+};

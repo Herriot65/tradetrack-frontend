@@ -11,7 +11,7 @@ export default function Pricing() {
         description="Start free and upgrade when you're ready. No hidden fees, cancel anytime."
       />
 
-      <div className="grid gap-6 lg:grid-cols-3 lg:gap-8">
+      <div className="grid gap-6 pt-4 lg:grid-cols-3 lg:gap-8">
         {pricingTiers.map((tier) => (
           <PricingCard key={tier.name} {...tier} />
         ))}

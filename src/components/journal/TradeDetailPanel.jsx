@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { formatDate } from "@/lib/formatters";
 import {
   Sheet,
@@ -7,6 +8,7 @@ import {
   SheetDescription,
   SheetBody,
 } from "@/components/ui/sheet";
+import ImageLightbox from "./ImageLightbox";
 
 const STATUS_COLORS = {
   WIN:  "bg-emerald-500/15 text-emerald-400 ring-emerald-500/20",
@@ -50,6 +52,7 @@ function formatR(pnlR) {
 }
 
 export default function TradeDetailPanel({ trade, open, onClose }) {
+  const [lightboxSrc, setLightboxSrc] = useState(null);
   if (!trade) return null;
 
   const statusColor = STATUS_COLORS[trade._derivedStatus] ?? STATUS_COLORS.BE;
@@ -143,9 +146,31 @@ export default function TradeDetailPanel({ trade, open, onClose }) {
               </section>
             )}
 
+            {/* Screenshots */}
+            {trade.screenshots?.length > 0 && (
+              <section>
+                <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
+                  Screenshots
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {trade.screenshots.map((s) => (
+                    <img
+                      key={s.id}
+                      src={s.image_url}
+                      alt="Trade screenshot"
+                      className="h-32 w-full cursor-zoom-in rounded-md border border-zinc-800 object-cover transition-opacity hover:opacity-80"
+                      onClick={() => setLightboxSrc(s.image_url)}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
           </div>
         </SheetBody>
       </SheetContent>
     </Sheet>
+
+    {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
   );
 }

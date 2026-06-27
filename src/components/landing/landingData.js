@@ -1,11 +1,12 @@
 import {
   BookOpen,
   LineChart,
-  TrendingUp,
-  Brain,
-  Upload,
   BarChart3,
+  Clock,
+  Upload,
+  TrendingUp,
   Target,
+  Flame,
 } from "lucide-react";
 
 export const navLinks = [
@@ -17,27 +18,27 @@ export const navLinks = [
 export const features = [
   {
     icon: BookOpen,
-    title: "Trade Journaling",
+    title: "Multi-journal Trade Logging",
     description:
-      "Log every trade with tags, notes, and screenshots. Build a searchable history that reveals your edge.",
+      "Keep separate journals for live, demo, or backtesting. Log trades with asset, entry & exit, R-multiple, setup tags, and notes — then search and filter your full history in seconds.",
   },
   {
     icon: BarChart3,
-    title: "Deep Analytics",
+    title: "Full Analytics Suite",
     description:
-      "Win rate, profit factor, R-multiples, and session breakdowns — all computed automatically from your journal.",
+      "Equity curve, drawdown chart, R-per-trade waterfall, win/loss distribution, profit factor, max streaks, and expectancy — all computed automatically from your trade log.",
   },
   {
-    icon: TrendingUp,
-    title: "Equity Curve",
+    icon: Clock,
+    title: "Time-Based Performance",
     description:
-      "Visualize your account growth over time with drawdown overlays and benchmark comparisons.",
+      "Discover exactly which days of the week and hours of the day you trade best. Heatmap calendar and session breakdowns surface patterns invisible to the naked eye.",
   },
   {
-    icon: Brain,
-    title: "Psychology Tracking",
+    icon: Upload,
+    title: "MT5 One-Click Import",
     description:
-      "Rate your emotional state before and after trades. Spot patterns between mindset and performance.",
+      "Import your full MetaTrader 5 trading history in seconds. Trades are mapped automatically — no spreadsheet wrangling, no manual entry.",
   },
 ];
 
@@ -47,28 +48,28 @@ export const steps = [
     step: "01",
     title: "Import or log trades",
     description:
-      "Connect your broker or manually journal trades in seconds with our streamlined entry form.",
+      "Import your MT5 history with one click, or manually journal trades using our streamlined entry form with R-multiple, setup tags, and notes.",
   },
   {
     icon: LineChart,
     step: "02",
-    title: "Analyze performance",
+    title: "See your analytics instantly",
     description:
-      "Instant dashboards surface your best setups, worst habits, and key metrics at a glance.",
+      "Your equity curve, drawdown chart, win rate, profit factor, and career-level streak stats appear the moment your first trade lands.",
   },
   {
     icon: Target,
     step: "03",
-    title: "Track psychology",
+    title: "Find your edge",
     description:
-      "Log pre-trade confidence and post-trade emotions to uncover behavioral edges and leaks.",
+      "Heatmaps, day-of-week charts, and hourly breakdowns reveal which setups, sessions, and instruments actually drive your results.",
   },
   {
-    icon: TrendingUp,
+    icon: Flame,
     step: "04",
-    title: "Improve consistently",
+    title: "Compound the advantage",
     description:
-      "Set goals, review weekly reports, and iterate on your process with data-backed insights.",
+      "Track expectancy and average R across years. Filter by year, review per-period stats, and iterate on your process with hard numbers.",
   },
 ];
 
@@ -77,11 +78,13 @@ export const pricingTiers = [
     name: "Free",
     price: "$0",
     period: "forever",
-    description: "Perfect for getting started with trade journaling.",
+    description: "Everything you need to get started and stay consistent.",
     features: [
-      "Up to 50 trades/month",
-      "Basic analytics dashboard",
-      "Equity curve chart",
+      "1 trading journal",
+      "Unlimited trade logging",
+      "Full analytics dashboard",
+      "Equity curve & drawdown",
+      "MT5 import",
       "Email support",
     ],
     cta: "Get Started",
@@ -91,12 +94,13 @@ export const pricingTiers = [
     name: "Pro",
     price: "$19",
     period: "per month",
-    description: "For serious traders who want the full toolkit.",
+    description: "For serious traders who want the complete picture.",
     features: [
-      "Unlimited trades",
-      "Advanced analytics & filters",
-      "Psychology tracking",
-      "Weekly performance reports",
+      "Unlimited journals",
+      "Career analytics (all-time streaks, expectancy)",
+      "Performance by day & hour",
+      "Multi-year heatmap & filters",
+      "R-breakdown by asset & setup",
       "Priority support",
     ],
     cta: "Start Free Trial",

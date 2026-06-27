@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { TrendingUp } from "lucide-react";
 
 import { footerLinks } from "./landingData";
 
@@ -12,16 +11,18 @@ export default function Footer() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2 lg:col-span-1">
             <Link to="/" className="flex items-center gap-2.5">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30">
-                <TrendingUp className="size-4" />
-              </div>
+              <img
+                src="/trader_track_logo.png"
+                alt="TradeTrack"
+                className="h-8 w-8 rounded-lg"
+              />
               <span className="text-sm font-semibold text-white">
                 TradeTrack Analytics
               </span>
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-zinc-500">
-              Professional-grade trading analytics for traders who take their
-              edge seriously.
+              Journal your trades, understand your numbers, and compound the
+              edge you already have.
             </p>
           </div>
 

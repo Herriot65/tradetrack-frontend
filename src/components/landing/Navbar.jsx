@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, TrendingUp } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -13,9 +13,11 @@ export default function Navbar() {
     <header className="fixed inset-x-0 top-0 z-50 border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur-xl">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30">
-            <TrendingUp className="size-4" />
-          </div>
+          <img
+            src="/trader_track_logo.png"
+            alt="TradeTrack"
+            className="h-9 w-9 rounded-lg"
+          />
           <span className="text-sm font-semibold tracking-tight text-white sm:text-base">
             TradeTrack{" "}
             <span className="text-zinc-400">Analytics</span>

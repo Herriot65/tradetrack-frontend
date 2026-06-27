@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
 /* ── Recharts global overrides ───────────────────────────────────────────────
    Placed OUTSIDE any @layer so these rules sit above all Tailwind layers in
    the cascade and reliably override the browser's UA focus-ring styles.     */

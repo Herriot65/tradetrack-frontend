@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertTriangle, Settings2, Trash2 } from "lucide-react";
+import { Settings2, Trash2 } from "lucide-react";
 
 import { tradeSchema } from "@/schemas/tradeSchema";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ import TagManager from "./TagManager";
 import AssetCombobox from "./AssetCombobox";
 import CatalogCombobox from "./CatalogCombobox";
 import TradeNotesEditor, { DEFAULT_SECTIONS } from "./TradeNotesEditor";
+import { uploadScreenshot, deleteScreenshot, fetchTrade } from "@/api/trades.api";
 
 // ─── Options ──────────────────────────────────────────────────────────────────
 
@@ -99,6 +100,29 @@ function tradeToDefaults(trade) {
   };
 }
 
+// Rebuild notesSections from backend screenshots, preserving default section order.
+// Each screenshot carries a `section` string (its section title); nulls fall into
+// the first default section.
+function buildSections(screenshots = []) {
+  const map = new Map(
+    DEFAULT_SECTIONS.map((s) => [s.title, { ...s, text: "", images: [] }])
+  );
+  for (const sc of screenshots) {
+    const title = sc.section ?? DEFAULT_SECTIONS[0].title;
+    if (!map.has(title)) {
+      map.set(title, { id: `section-${title}`, title, text: "", images: [] });
+    }
+    map.get(title).images.push({
+      id: sc.id,
+      name: `screenshot-${sc.id}`,
+      preview: sc.image_url,
+      file: null,
+      screenshotId: sc.id,
+    });
+  }
+  return Array.from(map.values());
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 // Label row with optional action button on the right
@@ -158,11 +182,12 @@ export default function TradePanel({
   onSave,
   onDelete,
   catalog,
+  journalId,
 }) {
   const isEdit = mode === "edit";
 
-  const [notesSections,      setNotesSections]      = useState(() => DEFAULT_SECTIONS.map((s) => ({ ...s })));
-  const [deleteOpen,         setDeleteOpen]         = useState(false);
+  const [notesSections, setNotesSections] = useState(() => DEFAULT_SECTIONS.map((s) => ({ ...s })));
+  const [deleteOpen,     setDeleteOpen]     = useState(false);
   const [deleting,           setDeleting]           = useState(false);
   const [manageAssetsOpen,   setManageAssetsOpen]   = useState(false);
   const [manageEmotionsOpen, setManageEmotionsOpen] = useState(false);
@@ -184,15 +209,18 @@ export default function TradePanel({
   });
 
   useEffect(() => {
-    if (open) {
-      reset(tradeToDefaults(trade));
-      setNotesSections(
-        trade?.notesSections?.length
-          ? trade.notesSections
-          : DEFAULT_SECTIONS.map((s) => ({ ...s, text: "", images: [] }))
-      );
+    if (!open) return;
+    reset(tradeToDefaults(trade));
+    if (mode === "edit" && trade?.id && journalId) {
+      // The list endpoint doesn't include screenshots; fetch the detail to populate them.
+      let cancelled = false;
+      fetchTrade(journalId, trade.id)
+        .then((full) => { if (!cancelled) setNotesSections(buildSections(full.screenshots)); })
+        .catch(() =>   { if (!cancelled) setNotesSections(buildSections(trade?.screenshots)); });
+      return () => { cancelled = true; };
     }
-  }, [open, trade, reset]);
+    setNotesSections(buildSections(trade?.screenshots));
+  }, [open, trade, reset, mode, journalId]);
 
   const watchedEmotions = watch("emotions") ?? [];
   const watchedMistakes = watch("mistakes") ?? [];
@@ -220,12 +248,33 @@ export default function TradePanel({
       setup_id:    values.setup ? (catalog.setupMap.get(values.setup) ?? null) : null,
     };
     try {
-      await onSave(payload);
+      const savedTrade = await onSave(payload);
+      const tradeId = isEdit ? trade.id : savedTrade?.id;
+      if (tradeId && journalId) {
+        const pendingImages = notesSections.flatMap((s) =>
+          s.images.filter((img) => img.file).map((img) => ({ file: img.file, preview: img.preview, section: s.title }))
+        );
+        if (pendingImages.length > 0) {
+          await Promise.allSettled(
+            pendingImages.map(({ file, section }) => uploadScreenshot(journalId, tradeId, file, section))
+          );
+          pendingImages.forEach(({ preview }) => URL.revokeObjectURL(preview));
+        }
+      }
       onClose();
     } catch (err) {
       setError("root", {
         message: err?.response?.data?.detail ?? err.message ?? "Failed to save trade",
       });
+    }
+  }
+
+  async function handleDeleteBackendImage(screenshotId) {
+    if (!trade?.id || !journalId) return;
+    try {
+      await deleteScreenshot(journalId, trade.id, screenshotId);
+    } catch {
+      // image already removed from UI via TradeNotesEditor; nothing to revert
     }
   }
 
@@ -263,24 +312,6 @@ export default function TradePanel({
                 <p className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
                   {errors.root.message}
                 </p>
-              )}
-
-              {!catalog.loading && catalog.assets.length === 0 && (
-                <div className="mb-4 flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2.5">
-                  <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-400" />
-                  <p className="text-xs text-amber-300">
-                    No assets in this journal. Go to the <strong>Catalog</strong> tab to add at least one asset before logging a trade.
-                  </p>
-                </div>
-              )}
-
-              {!catalog.loading && catalog.assets.length > 0 && catalog.emotionTags.length === 0 && (
-                <div className="mb-4 flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2.5">
-                  <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-400" />
-                  <p className="text-xs text-amber-300">
-                    No emotion tags in this journal. Go to the <strong>Catalog</strong> tab to add at least one before logging a trade.
-                  </p>
-                </div>
               )}
 
               <div className="space-y-6">
@@ -537,13 +568,18 @@ export default function TradePanel({
                   />
                 </section>
 
-                {/* ── Screenshots ── */}
+                {/* ── Trade Notes ── */}
                 <section>
                   <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
-                    Screenshots
+                    Trade Notes
                   </h3>
-                  <TradeNotesEditor sections={notesSections} onChange={setNotesSections} />
+                  <TradeNotesEditor
+                    sections={notesSections}
+                    onChange={setNotesSections}
+                    onDeleteImage={handleDeleteBackendImage}
+                  />
                 </section>
+
 
               </div>
             </form>
@@ -570,7 +606,7 @@ export default function TradePanel({
                 type="submit"
                 form="trade-form"
                 size="sm"
-                disabled={isSubmitting || catalog.loading || !catalog.catalogReady}
+                disabled={isSubmitting || catalog.loading}
               >
                 {isSubmitting ? "Saving…" : "Save Trade"}
               </Button>
@@ -634,6 +670,7 @@ export default function TradePanel({
         onRemove={catalog.removeSetup}
         onUpdate={catalog.updateSetup}
       />
+
     </>
   );
 }

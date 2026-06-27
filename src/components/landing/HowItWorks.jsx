@@ -10,7 +10,7 @@ export default function HowItWorks() {
       <SectionHeader
         eyebrow="How it works"
         title="From raw data to real improvement"
-        description="Four simple steps to transform how you review, analyze, and optimize your trading."
+        description="Four steps to go from scattered trade history to a clear, data-backed understanding of your performance."
       />
 
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
