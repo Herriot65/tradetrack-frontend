@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test tests/analytics.test.js",
+    "test:browser": "node tests/browser.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",

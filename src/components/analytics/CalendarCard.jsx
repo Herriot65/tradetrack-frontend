@@ -222,6 +222,7 @@ export default function CalendarCard({
                     <PopoverTrigger asChild>
                       <button
                         type="button"
+                        aria-label={`Open trades for ${cell.key}`}
                         className={cn(
                           "flex min-h-[54px] flex-col items-start justify-between rounded-md border border-white/[0.04] px-0.5 min-[900px]:px-1.5 py-1 text-left outline-none",
                           "transition-colors hover:border-hairline-strong focus-visible:ring-2 focus-visible:ring-white/20",

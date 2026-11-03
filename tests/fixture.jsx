@@ -1,0 +1,12 @@
+import React from "react";
+import { createRoot } from "react-dom/client";
+import AnalyticsTab from "../src/components/analytics/AnalyticsTab";
+import { JournalContext } from "../src/journals/JournalContext";
+import api from "../src/api/axios";
+import "../src/index.css";
+const values=[2,-1,0,3,-2,-1,0,4];
+const rows=values.map((r,i)=>({id:i+1,pnl_r:r,entry_datetime:`2025-01-${String(i+1).padStart(2,"0")}T10:00:00`,asset:i===0?"GBPJPY":i%2?"EURUSD":"USDJPY",risk_percent:2}));
+rows.push({id:9,pnl_r:7,entry_datetime:"2026-09-04T12:00:00",asset:"EURUSD",risk_percent:2});
+api.defaults.adapter=async config=>({data:{results:rows,count:rows.length},status:200,statusText:"OK",headers:{},config});
+const journal={id:1,name:"Test journal",startingCapital:50,currency:"USD",breakEvenMethod:"ratio",breakEvenValue:0};
+createRoot(document.getElementById("root")).render(<JournalContext.Provider value={{activeWorkspace:journal,analyticsVersion:0}}><main style={{maxWidth:1280,margin:"0 auto",padding:16}}><AnalyticsTab journal={journal} syntheticEnabled={true} onToggleSynthetic={()=>{}}/></main></JournalContext.Provider>);
