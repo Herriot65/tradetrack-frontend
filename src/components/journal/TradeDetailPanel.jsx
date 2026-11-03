@@ -114,10 +114,12 @@ export default function TradeDetailPanel({ trade, open, onClose }) {
                 Setup
               </h3>
               <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                <Field label="Reference TF" value={trade.reference_timeframe} />
+                <Field label="Trade score" value={trade.trade_score != null ? `${trade.trade_score} / 10` : null} />
                 <Field label="Opportunity TF" value={trade.opportunity_timeframe} />
                 <Field label="Entry TF" value={trade.entry_timeframe} />
                 <Field label="Trend" value={trade.trend_direction} />
-                <Field label="Setup" value={trade.setup} />
+                <Field label="Setup" value={typeof trade.setup === "object" ? trade.setup?.label : trade.setup} />
                 <Field label="Session" value={trade.session} />
               </div>
             </section>

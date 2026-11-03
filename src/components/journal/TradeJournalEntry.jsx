@@ -99,6 +99,8 @@ export default function TradeJournalEntry({ trade }) {
             <DetailRow label="Exit"       value={trade.exit_datetime  ? formatDateTime(trade.exit_datetime)  : "—"}  />
             <DetailRow label="Risk"       value={trade.risk_percent ? `${trade.risk_percent}%` : null} />
             <DetailRow label="Trend"      value={trade.trend_direction} />
+            <DetailRow label="Ref. TF" value={trade.reference_timeframe} />
+            <DetailRow label="Trade score" value={trade.trade_score != null ? `${trade.trade_score} / 10` : null} />
             <DetailRow label="Opp. TF"   value={trade.opportunity_timeframe} />
             <DetailRow label="Entry TF"  value={trade.entry_timeframe} />
             <DetailRow label="Session"   value={trade.session} />

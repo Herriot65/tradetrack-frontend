@@ -1,0 +1,25 @@
+.trade-date-popover .rdp-root {
+  --rdp-accent-color: var(--ink);
+  --rdp-accent-background-color: var(--surface-raised);
+  --rdp-today-color: var(--ink);
+  --rdp-selected-border: 1px solid var(--ink-muted);
+  --rdp-day-width: 36px;
+  --rdp-day-height: 36px;
+  --rdp-day_button-width: 34px;
+  --rdp-day_button-height: 34px;
+  --rdp-day_button-border-radius: 8px;
+  --rdp-nav_button-width: 28px;
+  --rdp-nav_button-height: 32px;
+  --rdp-nav-height: 36px;
+  width: 100%;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.trade-date-popover .rdp-month_grid { width: 100%; }
+.trade-date-popover .rdp-dropdowns { max-width: calc(100% - 60px); gap: 0; }
+.trade-date-popover .rdp-selected { font-weight: 500; }
+.trade-date-popover .rdp-selected .rdp-day_button { background: var(--surface-raised); }
+.trade-date-popover .rdp-day_button:hover { background: var(--surface-raised); }
+.trade-date-popover .rdp-day_button:focus-visible { outline: 2px solid var(--ink-muted); outline-offset: -2px; }
+.trade-date-popover .rdp-chevron { fill: var(--ink-secondary); width: 16px; }
+.trade-date-popover .rdp-outside { opacity: 0.35; }

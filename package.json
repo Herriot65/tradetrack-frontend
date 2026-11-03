@@ -8,8 +8,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node --test tests/analytics.test.js",
-    "test:browser": "node tests/browser.mjs"
+    "test": "node --test tests/analytics.test.js tests/tradeForm.test.js",
+    "test:browser": "node tests/browser.mjs",
+    "test:trade-browser": "node tests/trade-browser.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",
@@ -22,6 +23,7 @@
     "lucide-react": "^1.17.0",
     "radix-ui": "^1.5.0",
     "react": "^19.2.6",
+    "react-day-picker": "^9.13.0",
     "react-dom": "^19.2.6",
     "react-hook-form": "^7.78.0",
     "react-router-dom": "^7.17.0",

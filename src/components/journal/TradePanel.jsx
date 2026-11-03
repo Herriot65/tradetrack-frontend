@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Settings2, Trash2 } from "lucide-react";
 
 import { tradeSchema } from "@/schemas/tradeSchema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import SelectField from "@/components/ui/select-field";
+import DateTimePicker from "@/components/ui/date-time-picker";
+import { toTradeDateTimeInput as toInputDt, fromTradeDateTimeInput as fromInputDt } from "@/lib/tradeDateTime";
 import {
   Sheet,
   SheetContent,
@@ -33,23 +36,10 @@ import { uploadScreenshot, deleteScreenshot, fetchTrade } from "@/api/trades.api
 // ─── Options ──────────────────────────────────────────────────────────────────
 
 const TF_OPTIONS      = ["M1", "M5", "M15", "M30", "H1", "H4", "D1", "W1", "MN"];
-const TREND_OPTIONS   = ["BULLISH", "BEARISH", "RANGE", "NEUTRAL"];
+const TREND_OPTIONS   = [{ value: "BULLISH", label: "Bullish" }, { value: "BEARISH", label: "Bearish" }, { value: "RANGE", label: "Range" }];
 const SESSION_OPTIONS = ["Asian", "London", "New York", "London/NY Overlap", "Pre-Market"];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const selectCls =
-  "h-9 w-full rounded-md border border-zinc-800 bg-zinc-900/60 px-3 text-sm text-zinc-100 outline-none focus:ring-1 focus:ring-emerald-500/50 disabled:opacity-50";
-
-function toInputDt(iso) {
-  if (!iso) return "";
-  return iso.slice(0, 16).replace(" ", "T");
-}
-
-function fromInputDt(val) {
-  if (!val) return null;
-  return val.length === 16 ? `${val}:00.000Z` : val;
-}
 
 function tradeToDefaults(trade) {
   if (!trade) {
@@ -58,6 +48,7 @@ function tradeToDefaults(trade) {
       entry_datetime: "", exit_datetime: "",
       risk_percent: "", pnl_r: "",
       commission: "", swap: "",
+      reference_timeframe: "", trade_score: "",
       opportunity_timeframe: "", entry_timeframe: "",
       trend_direction: "", setup: "", session: "",
       status: null,
@@ -89,12 +80,14 @@ function tradeToDefaults(trade) {
     pnl_r:                 trade.pnl_r ?? "",
     commission:            trade.commission ?? "",
     swap:                  trade.swap ?? "",
+    reference_timeframe:   trade.reference_timeframe ?? "",
+    trade_score:           trade.trade_score ?? "",
     opportunity_timeframe: trade.opportunity_timeframe ?? "",
     entry_timeframe:       trade.entry_timeframe ?? "",
     trend_direction:       trade.trend_direction ?? "",
     setup,
     session:               trade.session ?? "",
-    status:                trade.status ?? null,
+    status:                trade.status === "OPEN" ? null : (trade.status ?? null),
     emotions, mistakes,
     notes: trade.notes ?? "",
   };
@@ -126,11 +119,11 @@ function buildSections(screenshots = []) {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 // Label row with optional action button on the right
-function F({ label, error, children, span2 = false, action }) {
+function F({ label, error, children, span2 = false, action, id }) {
   return (
-    <div className={span2 ? "col-span-2 space-y-1" : "space-y-1"}>
+    <div className={span2 ? "min-w-0 col-span-full space-y-1.5" : "min-w-0 space-y-1.5"}>
       <div className="flex items-center justify-between">
-        <label className="block text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+        <label htmlFor={id} className="block text-xs font-medium text-zinc-400">
           {label}
         </label>
         {action}
@@ -151,7 +144,7 @@ function DollarInput({ className = "", ...props }) {
       <Input
         type="number"
         step="0.01"
-        className={`h-9 border-zinc-800 bg-zinc-900/60 pl-6 text-sm focus-visible:ring-emerald-500/50 ${className}`}
+        className={`h-9 border-zinc-800 bg-zinc-900/60 pl-6 text-sm focus-visible:ring-zinc-400/40 ${className}`}
         {...props}
       />
     </div>
@@ -186,7 +179,13 @@ export default function TradePanel({
 }) {
   const isEdit = mode === "edit";
 
-  const [notesSections, setNotesSections] = useState(() => DEFAULT_SECTIONS.map((s) => ({ ...s })));
+  const [notesSections, setNotesSections] = useState(() => buildSections(trade?.screenshots));
+  const [draftSource, setDraftSource] = useState({ open, trade, mode });
+  // A new draft must not retain the previous trade's attachments.
+  if (draftSource.open !== open || draftSource.trade !== trade || draftSource.mode !== mode) {
+    setDraftSource({ open, trade, mode });
+    if (open) setNotesSections(buildSections(trade?.screenshots));
+  }
   const [deleteOpen,     setDeleteOpen]     = useState(false);
   const [deleting,           setDeleting]           = useState(false);
   const [manageAssetsOpen,   setManageAssetsOpen]   = useState(false);
@@ -199,7 +198,6 @@ export default function TradePanel({
     handleSubmit,
     reset,
     control,
-    watch,
     setValue,
     setError,
     formState: { errors, isSubmitting },
@@ -219,11 +217,12 @@ export default function TradePanel({
         .catch(() =>   { if (!cancelled) setNotesSections(buildSections(trade?.screenshots)); });
       return () => { cancelled = true; };
     }
-    setNotesSections(buildSections(trade?.screenshots));
   }, [open, trade, reset, mode, journalId]);
 
-  const watchedEmotions = watch("emotions") ?? [];
-  const watchedMistakes = watch("mistakes") ?? [];
+  const watchedEmotions = useWatch({ control, name: "emotions" }) ?? [];
+  const watchedMistakes = useWatch({ control, name: "mistakes" }) ?? [];
+  const watchedSide = useWatch({ control, name: "side" });
+  const watchedStatus = useWatch({ control, name: "status" });
 
   async function submit(values) {
     const payload = {
@@ -231,10 +230,12 @@ export default function TradePanel({
       side:                  values.side,
       entry_datetime:        fromInputDt(values.entry_datetime),
       exit_datetime:         fromInputDt(values.exit_datetime) ?? null,
-      risk_percent:          values.risk_percent || null,
-      pnl_r:                 values.pnl_r || null,
-      commission:            values.commission || null,
-      swap:                  values.swap || null,
+      risk_percent:          values.risk_percent ?? null,
+      pnl_r:                 values.pnl_r ?? null,
+      commission:            values.commission ?? null,
+      swap:                  values.swap ?? null,
+      reference_timeframe:   values.reference_timeframe || null,
+      trade_score:           values.trade_score ?? null,
       opportunity_timeframe: values.opportunity_timeframe || null,
       entry_timeframe:       values.entry_timeframe || null,
       trend_direction:       values.trend_direction || null,
@@ -314,14 +315,14 @@ export default function TradePanel({
                 </p>
               )}
 
-              <div className="space-y-6">
+              <div className="space-y-7">
 
                 {/* ── Execution ── */}
                 <section>
-                  <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
+                  <h3 className="mb-3 text-[13px] font-medium text-zinc-200">
                     Execution
                   </h3>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                  <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-x-4 gap-y-4">
 
                     <F
                       label="Asset *"
@@ -346,7 +347,7 @@ export default function TradePanel({
                     <F label="Side *" error={errors.side?.message}>
                       <div className="flex gap-2">
                         {["BUY", "SELL"].map((s) => {
-                          const active = watch("side") === s;
+                          const active = watchedSide === s;
                           return (
                             <button
                               key={s}
@@ -365,26 +366,22 @@ export default function TradePanel({
                       </div>
                     </F>
 
-                    <F label="Entry Date/Time *" error={errors.entry_datetime?.message}>
-                      <Input
-                        type="datetime-local"
-                        className="h-9 border-zinc-800 bg-zinc-900/60 text-sm text-zinc-100 focus-visible:ring-emerald-500/50 [color-scheme:dark]"
-                        {...register("entry_datetime")}
-                      />
+                    <F label="Entry date/time *" id="trade-entry_datetime" error={errors.entry_datetime?.message}>
+                      <Controller name="entry_datetime" control={control} render={({ field }) => (
+                        <DateTimePicker id="trade-entry_datetime" label="Entry date/time" value={field.value} onChange={field.onChange} onBlur={field.onBlur} ref={field.ref} invalid={!!errors.entry_datetime} />
+                      )} />
                     </F>
 
-                    <F label="Exit Date/Time" error={errors.exit_datetime?.message}>
-                      <Input
-                        type="datetime-local"
-                        className="h-9 border-zinc-800 bg-zinc-900/60 text-sm text-zinc-100 focus-visible:ring-emerald-500/50 [color-scheme:dark]"
-                        {...register("exit_datetime")}
-                      />
+                    <F label="Exit date/time" id="trade-exit_datetime" error={errors.exit_datetime?.message}>
+                      <Controller name="exit_datetime" control={control} render={({ field }) => (
+                        <DateTimePicker id="trade-exit_datetime" label="Exit date/time" value={field.value} onChange={field.onChange} onBlur={field.onBlur} ref={field.ref} invalid={!!errors.exit_datetime} />
+                      )} />
                     </F>
 
                     <F label="Risk %" error={errors.risk_percent?.message}>
                       <Input
                         type="number" step="0.01" min="0" placeholder="1.00"
-                        className="h-9 border-zinc-800 bg-zinc-900/60 text-sm focus-visible:ring-emerald-500/50"
+                        className="h-9 border-zinc-800 bg-zinc-900/60 text-sm focus-visible:ring-zinc-400/40"
                         {...register("risk_percent")}
                       />
                     </F>
@@ -394,15 +391,15 @@ export default function TradePanel({
 
                 {/* ── Performance ── */}
                 <section>
-                  <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
+                  <h3 className="mb-3 text-[13px] font-medium text-zinc-200">
                     Performance
                   </h3>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                  <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-x-4 gap-y-4">
 
                     <F label="PnL" error={errors.pnl_r?.message} span2>
                       <Input
                         type="number" step="0.01" placeholder="e.g. 2.00"
-                        className="h-9 border-zinc-800 bg-zinc-900/60 text-sm focus-visible:ring-emerald-500/50"
+                        className="h-9 border-zinc-800 bg-zinc-900/60 text-sm focus-visible:ring-zinc-400/40"
                         {...register("pnl_r")}
                       />
                     </F>
@@ -414,9 +411,8 @@ export default function TradePanel({
                           { value: "WIN",  label: "WIN"       },
                           { value: "LOSS", label: "LOSS"      },
                           { value: "BE",   label: "Breakeven" },
-                          { value: "OPEN", label: "Open"      },
                         ].map(({ value, label }) => {
-                          const active = watch("status") === value;
+                          const active = watchedStatus === value;
                           const activeClass = {
                             null:   "border-zinc-600 bg-zinc-800 text-zinc-200",
                             WIN:    "border-emerald-500/50 bg-emerald-500/20 text-emerald-400",
@@ -440,7 +436,7 @@ export default function TradePanel({
                           );
                         })}
                       </div>
-                      {watch("status") === null && (
+                      {watchedStatus === null && (
                         <p className="mt-1 text-[10px] text-zinc-600">Derived automatically from PnL value</p>
                       )}
                     </F>
@@ -458,37 +454,45 @@ export default function TradePanel({
 
                 {/* ── Setup ── */}
                 <section>
-                  <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
+                  <h3 className="mb-3 text-[13px] font-medium text-zinc-200">
                     Setup
                   </h3>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                  <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-x-4 gap-y-4">
 
-                    <F label="Opportunity TF">
-                      <select className={selectCls} {...register("opportunity_timeframe")}>
-                        <option value="">—</option>
-                        {TF_OPTIONS.map((tf) => <option key={tf} value={tf}>{tf}</option>)}
-                      </select>
+                    <F label="Reference TF" id="trade-reference_timeframe">
+                      <Controller name="reference_timeframe" control={control} render={({ field }) => (
+                        <SelectField id="trade-reference_timeframe" label="Reference TF" value={field.value} onValueChange={field.onChange} onBlur={field.onBlur} ref={field.ref} options={TF_OPTIONS} placeholder="Select timeframe" />
+                      )} />
                     </F>
 
-                    <F label="Entry TF">
-                      <select className={selectCls} {...register("entry_timeframe")}>
-                        <option value="">—</option>
-                        {TF_OPTIONS.map((tf) => <option key={tf} value={tf}>{tf}</option>)}
-                      </select>
+                    <F label="Trade score" id="trade-trade_score" error={errors.trade_score?.message}>
+                      <Controller name="trade_score" control={control} render={({ field }) => (
+                        <SelectField id="trade-trade_score" label="Trade score" value={field.value} onValueChange={field.onChange} onBlur={field.onBlur} ref={field.ref} options={Array.from({ length: 11 }, (_, value) => ({ value, label: `${value} / 10` }))} placeholder="Rate out of 10" clearLabel="Not rated" aria-invalid={!!errors.trade_score} />
+                      )} />
                     </F>
 
-                    <F label="Trend">
-                      <select className={selectCls} {...register("trend_direction")}>
-                        <option value="">—</option>
-                        {TREND_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
-                      </select>
+                    <F label="Opportunity TF" id="trade-opportunity_timeframe">
+                      <Controller name="opportunity_timeframe" control={control} render={({ field }) => (
+                        <SelectField id="trade-opportunity_timeframe" label="Opportunity TF" value={field.value} onValueChange={field.onChange} onBlur={field.onBlur} ref={field.ref} options={TF_OPTIONS} placeholder="Select timeframe" />
+                      )} />
                     </F>
 
-                    <F label="Session">
-                      <select className={selectCls} {...register("session")}>
-                        <option value="">—</option>
-                        {SESSION_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
+                    <F label="Entry TF" id="trade-entry_timeframe">
+                      <Controller name="entry_timeframe" control={control} render={({ field }) => (
+                        <SelectField id="trade-entry_timeframe" label="Entry TF" value={field.value} onValueChange={field.onChange} onBlur={field.onBlur} ref={field.ref} options={TF_OPTIONS} placeholder="Select timeframe" />
+                      )} />
+                    </F>
+
+                    <F label="Trend" id="trade-trend_direction">
+                      <Controller name="trend_direction" control={control} render={({ field }) => (
+                        <SelectField id="trade-trend_direction" label="Trend" value={field.value} onValueChange={field.onChange} onBlur={field.onBlur} ref={field.ref} options={TREND_OPTIONS} placeholder="Select trend" />
+                      )} />
+                    </F>
+
+                    <F label="Session" id="trade-session">
+                      <Controller name="session" control={control} render={({ field }) => (
+                        <SelectField id="trade-session" label="Session" value={field.value} onValueChange={field.onChange} onBlur={field.onBlur} ref={field.ref} options={SESSION_OPTIONS} placeholder="Select session" />
+                      )} />
                     </F>
 
                     <F
@@ -517,7 +521,7 @@ export default function TradePanel({
 
                 {/* ── Psychology ── */}
                 <section>
-                  <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
+                  <h3 className="mb-3 text-[13px] font-medium text-zinc-200">
                     Psychology
                   </h3>
                   <div className="space-y-3">
@@ -557,20 +561,20 @@ export default function TradePanel({
 
                 {/* ── Notes ── */}
                 <section>
-                  <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
+                  <h3 className="mb-3 text-[13px] font-medium text-zinc-200">
                     Notes
                   </h3>
                   <textarea
                     rows={3}
                     placeholder="General trade notes…"
-                    className="w-full resize-none rounded-md border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-emerald-500/50"
+                    className="w-full resize-none rounded-md border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-zinc-400/40"
                     {...register("notes")}
                   />
                 </section>
 
                 {/* ── Trade Notes ── */}
                 <section>
-                  <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
+                  <h3 className="mb-3 text-[13px] font-medium text-zinc-200">
                     Trade Notes
                   </h3>
                   <TradeNotesEditor
