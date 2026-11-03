@@ -34,7 +34,7 @@ function LoadingSkeleton() {
         ))}
       </div>
       <Skeleton className="h-[58px] rounded-xl bg-white/[0.04]" />
-      <Skeleton className="h-[344px] rounded-xl bg-white/[0.04]" />
+      <Skeleton className="h-[530px] rounded-xl bg-white/[0.04]" />
       <div className="grid gap-3 min-[900px]:grid-cols-2">
         <Skeleton className="h-[190px] rounded-xl bg-white/[0.04]" />
         <Skeleton className="h-[190px] rounded-xl bg-white/[0.04]" />
