@@ -1,21 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
-  BookOpen,
   Cable,
   FileUp,
-  Layers,
-  Plus,
   PlugZap,
-  Search,
   Settings2,
   Trash2,
 } from "lucide-react";
 
 import AppShell from "@/components/layout/AppShell";
 import { MT5ImportDialog } from "@/components/journal/MT5ImportDialog";
-import TradeTable from "@/components/journal/TradeTable";
-import TradePanel from "@/components/journal/TradePanel";
+import CustomFieldsTab from "@/components/journal/CustomFieldsTab";
+import TradesTab from "@/components/journal/TradesTab";
 import JournalAnalyticsTab from "@/components/analytics/AnalyticsTab";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,13 +30,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { createTrade, updateTrade, deleteTrade } from "@/api/trades.api";
-import { useTrades } from "@/hooks/useTrades";
 import { useAuth } from "@/auth/useAuth";
 import { useJournal } from "@/journals/useJournal";
-import { useJournalCatalog } from "@/journals/useJournalCatalog";
-import { deriveStatus } from "@/lib/deriveStatus";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -48,14 +39,6 @@ const TABS = [
   { id: "trades",        label: "Trades"        },
   { id: "analytics",    label: "Analytics"      },
   { id: "custom-fields", label: "Custom Fields" },
-];
-
-const STATUS_FILTERS = [
-  { value: "",     label: "All"        },
-  { value: "OPEN", label: "Open"       },
-  { value: "WIN",  label: "Wins"       },
-  { value: "LOSS", label: "Losses"     },
-  { value: "BE",   label: "Break Even" },
 ];
 
 const JOURNAL_TYPE_LABEL = {
@@ -70,226 +53,10 @@ const BREAK_EVEN_LABEL = {
 
 // ─── Trades tab ───────────────────────────────────────────────────────────────
 
-function TableSkeleton() {
-  return (
-    <div className="overflow-hidden rounded-lg border border-zinc-800/60">
-      <div className="border-b border-zinc-800/60 bg-zinc-900/60 px-3 py-2.5">
-        <Skeleton className="h-3 w-64" />
-      </div>
-      <div className="divide-y divide-zinc-800/40">
-        {[0, 1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="flex items-center gap-4 px-3 py-3">
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-3 w-12" />
-            <Skeleton className="h-5 w-10 rounded" />
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="ml-auto h-5 w-14" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function EmptyTrades({ hasFilters }) {
-  return (
-    <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-zinc-800 py-20 text-center">
-      <div className="flex size-12 items-center justify-center rounded-xl bg-zinc-900 ring-1 ring-zinc-800">
-        <BookOpen className="size-5 text-zinc-600" />
-      </div>
-      <div className="space-y-1">
-        <p className="text-sm font-medium text-zinc-300">
-          {hasFilters ? "No trades match your filters" : "No trades yet"}
-        </p>
-        <p className="max-w-xs text-xs text-zinc-600">
-          {hasFilters
-            ? "Try clearing the search or status filter."
-            : "Trades will appear here once synced."}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-const PAGE_SIZE = 20;
-
-function TradesTab({ breakEvenMethod, journalId, refreshKey }) {
-  const [search,       setSearch]       = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [page,         setPage]         = useState(1);
-  // panel state: null = closed, { mode: 'create'|'edit', trade: null|obj }
-  const [panel, setPanel] = useState(null);
-
-  const { activeWorkspace } = useJournal();
-  const workspaceId = activeWorkspace?.id;
-
-  // Reset to page 1 whenever the search query changes
-  useEffect(() => { setPage(1); }, [search]);
-
-  const { data: tradesData, loading: tradesLoading, refetch } = useTrades({ search, page });
-
-  const prevRefreshKey = useRef(refreshKey);
-  useEffect(() => {
-    if (refreshKey !== prevRefreshKey.current) {
-      prevRefreshKey.current = refreshKey;
-      setPage(1);
-      refetch();
-    }
-  }, [refreshKey, refetch]);
-
-  const trades     = tradesData?.results ?? [];
-  const totalCount = tradesData?.count   ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-
-  const catalog = useJournalCatalog(journalId);
-
-  const filtered = useMemo(() => {
-    if (!statusFilter) return trades;
-    return trades.filter((t) => deriveStatus(t) === statusFilter);
-  }, [trades, statusFilter]);
-
-  const hasFilters = !!search || !!statusFilter;
-
-  async function handleSave(payload) {
-    let result;
-    if (panel?.mode === "edit") {
-      result = await updateTrade(workspaceId, panel.trade.id, payload);
-    } else {
-      result = await createTrade(workspaceId, payload);
-    }
-    refetch();
-    return result;
-  }
-
-  async function handleDelete(id) {
-    await deleteTrade(workspaceId, id);
-    refetch();
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative max-w-xs flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-zinc-500" />
-          <Input
-            placeholder="Search asset…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-8 border-zinc-800 bg-zinc-900/60 pl-8 text-sm placeholder:text-zinc-600 focus-visible:ring-zinc-400/30"
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1.5">
-          {STATUS_FILTERS.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => setStatusFilter(f.value)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                statusFilter === f.value
-                  ? "bg-zinc-700/70 text-zinc-100 ring-1 ring-zinc-600"
-                  : "bg-zinc-800/60 text-zinc-400 hover:bg-zinc-700/60 hover:text-zinc-200"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="ml-auto flex shrink-0 items-center gap-3">
-          {!tradesLoading && (
-            <span className="text-xs text-zinc-600">
-              {statusFilter
-                ? `${filtered.length} shown of ${totalCount}`
-                : totalCount}{" "}
-              {totalCount === 1 ? "trade" : "trades"}
-            </span>
-          )}
-          <Button
-            size="sm"
-            onClick={() => setPanel({ mode: "create", trade: null })}
-          >
-            <Plus className="size-3.5" />
-            New Trade
-          </Button>
-        </div>
-      </div>
-
-      {/* Table */}
-      {tradesLoading ? (
-        <TableSkeleton />
-      ) : filtered.length === 0 ? (
-        <EmptyTrades hasFilters={hasFilters} />
-      ) : (
-        <TradeTable
-          trades={filtered}
-          breakEvenMethod={breakEvenMethod}
-          onRowClick={(trade) => setPanel({ mode: "edit", trade })}
-          journalId={journalId}
-        />
-      )}
-
-      {/* Pagination */}
-      {!tradesLoading && totalPages > 1 && (
-        <div className="flex items-center justify-between pt-1">
-          <span className="text-xs text-zinc-500">
-            Page {page} of {totalPages}
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-            >
-              Previous
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Trade panel */}
-      <TradePanel
-        mode={panel?.mode ?? "create"}
-        trade={panel?.trade ?? null}
-        open={panel !== null}
-        onClose={() => setPanel(null)}
-        onSave={handleSave}
-        onDelete={handleDelete}
-        catalog={catalog}
-        journalId={workspaceId}
-      />
-    </div>
-  );
-}
-
 // ─── Analytics tab ────────────────────────────────────────────────────────────
 
 // ─── Custom Fields tab ────────────────────────────────────────────────────────
 
-function CustomFieldsTab() {
-  return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-zinc-800 py-20 text-center">
-      <div className="flex size-12 items-center justify-center rounded-xl bg-zinc-900 ring-1 ring-zinc-800">
-        <Layers className="size-5 text-zinc-600" />
-      </div>
-      <div className="space-y-1">
-        <p className="text-sm font-medium text-zinc-300">Custom field analytics</p>
-        <p className="max-w-xs text-xs text-zinc-600">
-          Breakdowns by your custom trade fields are coming soon.
-        </p>
-      </div>
-    </div>
-  );
-}
 
 // ─── Settings dialog ──────────────────────────────────────────────────────────
 
@@ -604,7 +371,7 @@ export default function Journal() {
              CSS `hidden` hides the inactive ones without unmounting them. */}
         <div className="pt-5">
           <div className={activeTab !== "trades" ? "hidden" : ""}>
-            <TradesTab
+            <TradesTab key={`${activeJournal?.id}-${tradesRefreshKey}`}
               breakEvenMethod={breakEvenMethod}
               journalId={activeJournal?.id}
               refreshKey={tradesRefreshKey}
@@ -621,7 +388,7 @@ export default function Journal() {
             />
           </div>
           <div className={activeTab !== "custom-fields" ? "hidden" : ""}>
-            <CustomFieldsTab />
+            <CustomFieldsTab journalId={activeJournal?.id} active={activeTab === "custom-fields"} />
           </div>
         </div>
 

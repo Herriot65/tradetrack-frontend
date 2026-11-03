@@ -17,3 +17,9 @@ Still requires live-journal confirmation: the exact supplied sample snapshot, au
 `npm test` also checks optional integer scores (0-10), valid reference timeframe payloads, UTC date conversion, precision preservation and exit-after-entry validation. Run `npm run test:trade-browser` to exercise the real TradePanel with its Axios boundary stubbed: create/edit/clear score and reference values, calendar month/day selection, time dropdowns, zero P&L, and narrow/mobile layouts at 320, 390, 768 and 1280px. The browser runs in America/New_York while stored timestamps remain UTC. Screenshots are saved under `artifacts/trade-form/`.
 
 Trade dates use React DayPicker 9 with Radix popovers; fixed-choice form fields and calendar/time menus use Radix Select. Backend migration 0009 adds nullable reference_timeframe and trade_score columns, and an integer 0-10 database constraint. Rebuild both Docker services to install dependencies and apply the migration automatically.
+
+## Custom fields and the trades list
+
+`npm run test:custom-fields` verifies creation below all six form sections, journal-level definition reuse, per-trade values (including 0 and false), reload persistence, and the 320px field-builder layout. Adding a definition must not submit the parent trade form. Text, number, dropdown and yes/no types are supported. Definitions live at `/journals/:id/custom-fields/`; values live in each trade's `custom_fields` object. Migration 0010 adds the model and JSON storage.
+
+`npm run test:trades-list` checks server-scoped status/search filters and pagination against 65 trades, including matches outside the original page; global sorting; and one debounced request for a six-character asset search. The input retains focus and the existing table stays mounted while results update. Django API tests independently verify filtering before pagination, the journal BE rule/manual overrides, type validation, journal ownership and definition uniqueness.

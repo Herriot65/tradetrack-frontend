@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "test": "node --test tests/analytics.test.js tests/tradeForm.test.js",
     "test:browser": "node tests/browser.mjs",
-    "test:trade-browser": "node tests/trade-browser.mjs"
+    "test:trade-browser": "node tests/trade-browser.mjs",
+    "test:custom-fields": "node tests/custom-fields-browser.mjs",
+    "test:trades-list": "node tests/trades-list-browser.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",

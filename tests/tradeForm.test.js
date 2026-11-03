@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { customFieldOptions } from "../src/lib/tradeCustomFields.js";
 import { tradeSchema } from "../src/schemas/tradeSchema.js";
 import { parseTradeDateTime, toTradeDateTimeInput, fromTradeDateTimeInput, changeTradeDate, changeTradeTime } from "../src/lib/tradeDateTime.js";
 const valid = {asset:"EURUSD",side:"BUY",entry_datetime:"2026-11-03T10:00:00.123",exit_datetime:"",emotions:["Calm"],mistakes:[],reference_timeframe:"H4"};
@@ -30,4 +31,13 @@ test("invalid/rolled-over dates and reversed exit times are rejected",()=>{
  assert.equal(tradeSchema.safeParse({...valid,exit_datetime:"2026-11-03T09:00"}).success,false);
  assert.equal(tradeSchema.safeParse({...valid,exit_datetime:valid.entry_datetime}).success,false);
  assert.equal(tradeSchema.safeParse({...valid,exit_datetime:"2026-11-03T11:00"}).success,true);
+});
+
+test("custom values preserve zero, false and null while rejecting nested or non-finite data",()=>{
+ const values={"1":"Trending","2":0,"3":false,"4":null};
+ assert.deepEqual(tradeSchema.parse({...valid,custom_fields:values}).custom_fields,values);
+ assert.deepEqual(tradeSchema.parse(valid).custom_fields,{});
+ assert.equal(tradeSchema.safeParse({...valid,custom_fields:{"1":Infinity}}).success,false);
+ assert.equal(tradeSchema.safeParse({...valid,custom_fields:{"1":{nested:true}}}).success,false);
+ assert.deepEqual(customFieldOptions("Trending, Ranging\nTrending\n Volatile "),["Trending","Ranging","Volatile"]);
 });

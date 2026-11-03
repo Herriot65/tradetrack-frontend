@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Columns3 } from "lucide-react";
 import { formatDate } from "@/lib/formatters";
 import { deriveStatus } from "@/lib/deriveStatus";
@@ -36,7 +36,7 @@ function readCols(journalId) {
 
 function writeCols(journalId, cols) {
   if (!journalId) return;
-  try { localStorage.setItem(`journal_columns_${journalId}`, JSON.stringify(cols)); } catch {}
+  try { localStorage.setItem(`journal_columns_${journalId}`, JSON.stringify(cols)); } catch { /* Storage may be disabled. */ }
 }
 
 // ─── Style maps ───────────────────────────────────────────────────────────────
@@ -163,10 +163,37 @@ function ColPicker({ visibleCols, onToggle }) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function TradeTable({ trades = [], breakEvenMethod = "ratio", onRowClick, journalId }) {
-  const [sortField,   setSortField]   = useState("date");
-  const [sortDir,     setSortDir]     = useState("desc");
+function Th({ label, sortKey: sk, sortField, sortDir, onSort, className = "" }) {
+    const sortable = !!sk;
+    const active   = sortable && sortField === sk;
+    return (
+      <th
+        onClick={() => sortable && onSort(sk)}
+        tabIndex={sortable ? 0 : undefined}
+        aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
+        onKeyDown={event => { if(sortable && ["Enter", " "].includes(event.key)) { event.preventDefault(); onSort(sk); } }}
+        className={`px-3 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider text-zinc-500 ${
+          sortable ? "cursor-pointer select-none transition-colors hover:text-zinc-300" : ""
+        } ${className}`}
+      >
+        {label}
+        {sortable && (
+          <span className={`ml-1 ${active ? "text-zinc-300" : "text-zinc-700"}`}>
+            {active ? (sortDir === "asc" ? "↑" : "↓") : "↕"}
+          </span>
+        )}
+      </th>
+    );
+  }
+
+
+export default memo(function TradeTable({ trades = [], breakEvenMethod = "ratio", onRowClick, journalId, sort, onSort }) {
+  const [localSortField,   setSortField]   = useState("date");
+  const [localSortDir,     setSortDir]     = useState("desc");
   const [visibleCols, setVisibleCols] = useState(() => readCols(journalId));
+
+  const sortField = sort?.field ?? localSortField;
+  const sortDir = sort?.dir ?? localSortDir;
 
   function toggleCol(id) {
     setVisibleCols((prev) => {
@@ -177,16 +204,17 @@ export default function TradeTable({ trades = [], breakEvenMethod = "ratio", onR
   }
 
   function handleSort(key) {
+    if(onSort) { onSort(key); return; }
     if (sortField === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else { setSortField(key); setSortDir("desc"); }
   }
 
   const enriched = useMemo(
-    () => trades.map((t) => ({ ...t, _status: deriveStatus(t, breakEvenMethod) })),
+    () => trades.map((t) => ({ ...t, _status: t.effective_status ?? deriveStatus(t, breakEvenMethod) })),
     [trades, breakEvenMethod]
   );
 
-  const sorted = useMemo(() => [...enriched].sort((a, b) => {
+  const sorted = useMemo(() => onSort ? enriched : [...enriched].sort((a, b) => {
     let va, vb;
     if (sortField === "date") {
       va = a.entry_datetime ?? ""; vb = b.entry_datetime ?? "";
@@ -200,28 +228,7 @@ export default function TradeTable({ trades = [], breakEvenMethod = "ratio", onR
     if (va < vb) return sortDir === "asc" ? -1 : 1;
     if (va > vb) return sortDir === "asc" ? 1 : -1;
     return 0;
-  }), [enriched, sortField, sortDir]);
-
-  // Inline Th so it closes over sort state
-  function Th({ colId, label, sortKey: sk, className = "" }) {
-    const sortable = !!sk;
-    const active   = sortable && sortField === sk;
-    return (
-      <th
-        onClick={() => sortable && handleSort(sk)}
-        className={`px-3 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider text-zinc-500 ${
-          sortable ? "cursor-pointer select-none transition-colors hover:text-zinc-300" : ""
-        } ${className}`}
-      >
-        {label}
-        {sortable && (
-          <span className={`ml-1 ${active ? "text-emerald-500" : "text-zinc-700"}`}>
-            {active ? (sortDir === "asc" ? "↑" : "↓") : "↕"}
-          </span>
-        )}
-      </th>
-    );
-  }
+  }), [enriched, sortField, sortDir, onSort]);
 
   const v = visibleCols;
 
@@ -236,18 +243,18 @@ export default function TradeTable({ trades = [], breakEvenMethod = "ratio", onR
         <table className="w-full text-sm">
           <thead className="sticky top-14 z-10">
             <tr className="border-b border-zinc-800/60 bg-zinc-900/95 backdrop-blur-sm">
-              {v.asset       && <Th colId="asset"       label="Asset"      sortKey="asset" />}
-              {v.entryDate   && <Th colId="entryDate"   label="Entry"      sortKey="date"  />}
-              {v.exitDate    && <Th colId="exitDate"    label="Exit"                       />}
-              {v.side        && <Th colId="side"        label="Side"                       />}
-              {v.oppTf       && <Th colId="oppTf"       label="Opp. TF"                    />}
-              {v.entryTf     && <Th colId="entryTf"     label="Entry TF"                   />}
-              {v.trend       && <Th colId="trend"       label="Trend"                      />}
-              {v.riskPercent && <Th colId="riskPercent" label="Risk %"                     />}
-              {v.pnl         && <Th colId="pnl"         label="PnL"        sortKey="r"  className="text-right" />}
-              {v.status      && <Th colId="status"      label="Status"                     />}
-              {v.commission  && <Th colId="commission"  label="Commission"                 />}
-              {v.swap        && <Th colId="swap"        label="Swap"                       />}
+              {v.asset       && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="asset"       label="Asset"      sortKey="asset" />}
+              {v.entryDate   && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="entryDate"   label="Entry"      sortKey="date"  />}
+              {v.exitDate    && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="exitDate"    label="Exit"                       />}
+              {v.side        && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="side"        label="Side"                       />}
+              {v.oppTf       && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="oppTf"       label="Opp. TF"                    />}
+              {v.entryTf     && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="entryTf"     label="Entry TF"                   />}
+              {v.trend       && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="trend"       label="Trend"                      />}
+              {v.riskPercent && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="riskPercent" label="Risk %"                     />}
+              {v.pnl         && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="pnl"         label="PnL"        sortKey="r"  className="text-right" />}
+              {v.status      && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="status"      label="Status"                     />}
+              {v.commission  && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="commission"  label="Commission"                 />}
+              {v.swap        && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="swap"        label="Swap"                       />}
             </tr>
           </thead>
 
@@ -277,4 +284,4 @@ export default function TradeTable({ trades = [], breakEvenMethod = "ratio", onR
       </div>
     </div>
   );
-}
+});

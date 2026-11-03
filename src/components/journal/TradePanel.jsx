@@ -26,6 +26,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import TradeCustomFields from "./TradeCustomFields";
+import { useTradeCustomFields } from "@/hooks/useTradeCustomFields";
 import TagPicker from "./TagPicker";
 import TagManager from "./TagManager";
 import AssetCombobox from "./AssetCombobox";
@@ -52,7 +54,7 @@ function tradeToDefaults(trade) {
       opportunity_timeframe: "", entry_timeframe: "",
       trend_direction: "", setup: "", session: "",
       status: null,
-      emotions: [], mistakes: [], notes: "",
+      emotions: [], mistakes: [], notes: "", custom_fields: {},
     };
   }
   // Handle asset: {id, symbol} (API) or string (legacy mock)
@@ -90,6 +92,7 @@ function tradeToDefaults(trade) {
     status:                trade.status === "OPEN" ? null : (trade.status ?? null),
     emotions, mistakes,
     notes: trade.notes ?? "",
+    custom_fields: trade.custom_fields ?? {},
   };
 }
 
@@ -178,6 +181,7 @@ export default function TradePanel({
   journalId,
 }) {
   const isEdit = mode === "edit";
+  const customFields = useTradeCustomFields(journalId, {enabled:open});
 
   const [notesSections, setNotesSections] = useState(() => buildSections(trade?.screenshots));
   const [draftSource, setDraftSource] = useState({ open, trade, mode });
@@ -242,6 +246,7 @@ export default function TradePanel({
       session:               values.session || null,
       status:                values.status,
       notes:                 values.notes || null,
+      custom_fields:         values.custom_fields ?? {},
       // Catalog ID fields — replace raw strings with backend IDs
       asset_id:    catalog.assetMap.get(values.asset) ?? null,
       emotion_ids: values.emotions.map((l) => catalog.emotionMap.get(l)).filter(Boolean),
@@ -264,6 +269,10 @@ export default function TradePanel({
       }
       onClose();
     } catch (err) {
+      const fieldErrors = err?.response?.data?.custom_fields;
+      if(fieldErrors && typeof fieldErrors === "object") {
+        Object.entries(fieldErrors).forEach(([id,message]) => setError(`custom_fields.${id}`,{type:"server",message:Array.isArray(message)?message.join(" "):String(message)}));
+      }
       setError("root", {
         message: err?.response?.data?.detail ?? err.message ?? "Failed to save trade",
       });
@@ -315,6 +324,7 @@ export default function TradePanel({
                 </p>
               )}
 
+              {customFields.error&&<div role="alert" className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-zinc-800 p-3 text-xs text-zinc-400"><span>Custom fields could not be loaded.</span><Button type="button" variant="outline" size="sm" onClick={customFields.refetch}>Retry</Button></div>}
               <div className="space-y-7">
 
                 {/* ── Execution ── */}
@@ -387,6 +397,7 @@ export default function TradePanel({
                     </F>
 
                   </div>
+                <TradeCustomFields section="execution" fields={customFields.fields} control={control} errors={errors} onCreate={customFields.create} disabled={customFields.loading || !!customFields.error} />
                 </section>
 
                 {/* ── Performance ── */}
@@ -450,6 +461,7 @@ export default function TradePanel({
                     </F>
 
                   </div>
+                <TradeCustomFields section="performance" fields={customFields.fields} control={control} errors={errors} onCreate={customFields.create} disabled={customFields.loading || !!customFields.error} />
                 </section>
 
                 {/* ── Setup ── */}
@@ -517,6 +529,7 @@ export default function TradePanel({
                     </F>
 
                   </div>
+                <TradeCustomFields section="setup" fields={customFields.fields} control={control} errors={errors} onCreate={customFields.create} disabled={customFields.loading || !!customFields.error} />
                 </section>
 
                 {/* ── Psychology ── */}
@@ -557,6 +570,7 @@ export default function TradePanel({
                     </F>
 
                   </div>
+                <TradeCustomFields section="psychology" fields={customFields.fields} control={control} errors={errors} onCreate={customFields.create} disabled={customFields.loading || !!customFields.error} />
                 </section>
 
                 {/* ── Notes ── */}
@@ -570,6 +584,7 @@ export default function TradePanel({
                     className="w-full resize-none rounded-md border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-zinc-400/40"
                     {...register("notes")}
                   />
+                <TradeCustomFields section="notes" fields={customFields.fields} control={control} errors={errors} onCreate={customFields.create} disabled={customFields.loading || !!customFields.error} />
                 </section>
 
                 {/* ── Trade Notes ── */}
@@ -582,6 +597,7 @@ export default function TradePanel({
                     onChange={setNotesSections}
                     onDeleteImage={handleDeleteBackendImage}
                   />
+                <TradeCustomFields section="trade_notes" fields={customFields.fields} control={control} errors={errors} onCreate={customFields.create} disabled={customFields.loading || !!customFields.error} />
                 </section>
 
 

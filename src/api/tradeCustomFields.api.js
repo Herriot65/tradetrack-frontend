@@ -1,0 +1,20 @@
+import api from "./axios";
+import { USE_MOCK } from "@/mocks/mockData";
+const key = journalId => `journal_custom_fields_${journalId}`;
+function read(journalId) {
+  try { return JSON.parse(localStorage.getItem(key(journalId)) || "[]"); } catch { return []; }
+}
+export async function fetchTradeCustomFields(journalId) {
+  if(USE_MOCK) return read(journalId);
+  const {data} = await api.get(`/journals/${journalId}/custom-fields/`);
+  return Array.isArray(data) ? data : data.results ?? [];
+}
+export async function createTradeCustomField(journalId,payload) {
+  if(USE_MOCK) {
+    const fields=read(journalId);
+    if(fields.some(field=>field.section===payload.section && field.label.toLowerCase()===payload.label.trim().toLowerCase())) throw new Error("A field with this name already exists in this section.");
+    const field={...payload,label:payload.label.trim(),id:Math.max(Date.now(),...fields.map(field=>Number(field.id)+1)),created_at:new Date().toISOString()};
+    localStorage.setItem(key(journalId),JSON.stringify([...fields,field]));return field;
+  }
+  const {data}=await api.post(`/journals/${journalId}/custom-fields/`,payload);return data;
+}

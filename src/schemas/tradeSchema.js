@@ -26,6 +26,7 @@ export const tradeSchema = z.object({
   emotions:             z.array(z.string()).min(1, "At least one emotion is required"),
   mistakes:             z.array(z.string()),
   notes:                z.string().nullable().optional(),
+  custom_fields:        z.record(z.string(), z.union([z.string().max(2000), z.number().finite(), z.boolean(), z.null()])).default({}),
 }).refine(values => {
   const entry = parseTradeDateTime(values.entry_datetime);
   const exit = parseTradeDateTime(values.exit_datetime);

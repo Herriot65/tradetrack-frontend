@@ -1,0 +1,36 @@
+import assert from "node:assert/strict";
+import {createServer} from "vite";
+import {pathToFileURL} from "node:url";
+const {chromium}=await import(process.env.PLAYWRIGHT_MODULE?pathToFileURL(process.env.PLAYWRIGHT_MODULE).href:"playwright");
+const server=await createServer({define:{"import.meta.env.VITE_USE_MOCK":JSON.stringify("false")},server:{host:"127.0.0.1",port:4182}});await server.listen();let browser;
+try {
+ browser=await chromium.launch({headless:true,channel:"chrome",timeout:15000});
+ const page=await browser.newPage({viewport:{width:1280,height:900}});page.setDefaultTimeout(10000);
+ const errors=[];page.on("pageerror",error=>errors.push(error.message));
+ await page.goto("http://127.0.0.1:4182/tests/trades-list.html");
+ await page.getByText("65 trades",{exact:true}).waitFor();
+ assert.equal(await page.locator("tbody tr").count(),20);
+ assert.equal(await page.locator("tbody").getByText("LOSS",{exact:true}).count(),20);
+ await page.getByRole("button",{name:"Next",exact:true}).click();await page.getByText("Page 2 of 4",{exact:true}).waitFor();
+ await page.getByRole("group",{name:"Trade status"}).getByRole("button",{name:"Wins",exact:true}).click();
+ await page.getByText("25 trades",{exact:true}).waitFor();assert.equal(await page.locator("tbody").getByText("WIN",{exact:true}).count(),20);
+ await page.getByText("Page 1 of 2",{exact:true}).waitFor();
+ await page.getByRole("button",{name:"Next",exact:true}).click();await page.getByText("Page 2 of 2",{exact:true}).waitFor();
+ await page.waitForFunction(()=>document.querySelectorAll("tbody tr").length===5);
+ const before=await page.evaluate(()=>{window.__sameTable=document.querySelector("table");return window.__tradeRequests.length;});
+ const search=page.getByRole("textbox",{name:"Search assets",exact:true});
+ await search.pressSequentially("EURUSD",{delay:30});await page.waitForTimeout(70);
+ assert.equal(await page.evaluate(()=>window.__tradeRequests.length),before,"Keystrokes must not request each character");
+ assert.ok(await page.evaluate(()=>document.querySelector("table")===window.__sameTable),"Typing must not unmount the table");
+ await page.getByText("8 trades",{exact:true}).waitFor();
+ assert.equal(await page.evaluate(()=>window.__tradeRequests.length),before+1);
+ assert.equal(await search.inputValue(),"EURUSD");assert.equal(await search.evaluate(el=>el===document.activeElement),true);
+ const last=await page.evaluate(()=>window.__tradeRequests.at(-1));assert.equal(last.search,"EURUSD");assert.equal(last.status,"WIN");assert.equal(last.page,1);
+ await page.getByRole("button",{name:"Clear asset search",exact:true}).click();await page.getByText("25 trades",{exact:true}).waitFor();
+ await page.getByRole("group",{name:"Trade status"}).getByRole("button",{name:"All",exact:true}).click();await page.getByText("65 trades",{exact:true}).waitFor();
+ await page.getByRole("columnheader",{name:/PnL/}).click();
+ await page.waitForFunction(()=>document.querySelector("tbody tr td:nth-child(6)")?.textContent?.trim()==="+25");
+ assert.match(await page.evaluate(()=>window.__tradeRequests.at(-1).ordering),/^-pnl_r/);
+ assert.deepEqual(errors,[]);
+ console.log("Trade list checks passed: full-dataset status filters, correct counts/pages, global sorting, debounced requests, preserved input focus and stable table while typing.");
+}finally{await browser?.close();await server.close();}

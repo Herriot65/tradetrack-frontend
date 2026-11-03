@@ -1,3 +1,5 @@
+import { deriveStatus } from "@/lib/deriveStatus";
+
 // To activate mock data: add VITE_USE_MOCK=true to .env.local
 // To switch to the real API: remove the var (or set it to false)
 export const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
@@ -337,21 +339,24 @@ export function mockFetchPnlBySetup(_workspaceId) {
 }
 
 export function mockFetchTrades(workspaceId, params = {}) {
-  const { page = 1, search = "" } = params;
-  const q = search.toLowerCase();
-  const all = allTrades(workspaceId);
-  const filtered = q
-    ? all.filter(
-        (t) =>
-          t.asset?.symbol?.toLowerCase().includes(q) ||
-          t.setup?.label?.toLowerCase().includes(q)
-      )
-    : all;
-  const start = (page - 1) * PAGE_SIZE;
-  return Promise.resolve({
-    count: filtered.length,
-    results: filtered.slice(start, start + PAGE_SIZE),
+  const {page=1,search="",status="",asset="",setup="",ordering="-entry_datetime,-id"}=params;
+  const q=search.toLowerCase();
+  const filtered=allTrades(workspaceId).filter(trade=>
+    (!q || trade.asset?.symbol?.toLowerCase().includes(q) || trade.notes?.toLowerCase().includes(q)) &&
+    (!status || (trade.effective_status ?? deriveStatus(trade)) === status) &&
+    (!asset || String(trade.asset?.id)===String(asset)) && (!setup || String(trade.setup?.id)===String(setup))
+  );
+  const fields=ordering.split(",");
+  filtered.sort((a,b)=>{
+    for(const field of fields) {
+      const desc=field.startsWith("-");const key=desc?field.slice(1):field;
+      const value=trade=>key==="asset__symbol"?trade.asset?.symbol:key==="pnl_r"?Number(trade.pnl_r??-Infinity):trade[key];
+      const first=value(a),second=value(b);if(first<second)return desc?1:-1;if(first>second)return desc?-1:1;
+    }
+    return 0;
   });
+  const start=(page-1)*PAGE_SIZE;
+  return Promise.resolve({count:filtered.length,results:filtered.slice(start,start+PAGE_SIZE)});
 }
 
 export function mockFetchTrade(workspaceId, id) {

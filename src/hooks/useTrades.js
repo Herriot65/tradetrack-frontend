@@ -4,9 +4,9 @@ import { fetchTrades } from "@/api/trades.api";
 import { useWorkspace } from "@/workspaces/useWorkspace";
 import { useAsyncQuery } from "./useAsyncQuery";
 
-export function useTrades({ page = 1, search = "", asset = "", setup = "" } = {}) {
+export function useTrades({ page = 1, search = "", asset = "", setup = "", status = "", ordering = "-entry_datetime,-id", journalId } = {}) {
   const { activeWorkspace } = useWorkspace();
-  const workspaceId = activeWorkspace?.id;
+  const workspaceId = journalId ?? activeWorkspace?.id;
 
   const queryFn = useCallback(
     () =>
@@ -15,12 +15,14 @@ export function useTrades({ page = 1, search = "", asset = "", setup = "" } = {}
         ...(search ? { search } : {}),
         ...(asset ? { asset } : {}),
         ...(setup ? { setup } : {}),
-        ordering: "-entry_datetime",
+        ...(status ? { status } : {}),
+        ordering,
       }),
-    [workspaceId, page, search, asset, setup]
+    [workspaceId, page, search, asset, setup, status, ordering]
   );
 
-  return useAsyncQuery(queryFn, [workspaceId, page, search, asset, setup], {
+  return useAsyncQuery(queryFn, [workspaceId, page, search, asset, setup, status, ordering], {
     enabled: !!workspaceId,
+    keepPreviousData: true,
   });
 }

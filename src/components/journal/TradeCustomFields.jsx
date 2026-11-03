@@ -1,0 +1,59 @@
+import { useState } from "react";
+import { Controller } from "react-hook-form";
+import { Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import SelectField from "@/components/ui/select-field";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { TRADE_SECTIONS, CUSTOM_FIELD_TYPES, customFieldOptions } from "@/lib/tradeCustomFields";
+
+function AddField({section,onCreate,onClose}) {
+  const [label,setLabel]=useState("");
+  const [type,setType]=useState("text");
+  const [options,setOptions]=useState("");
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState("");
+  const sectionLabel=TRADE_SECTIONS.find(item=>item.value===section)?.label;
+  async function submit(event) {
+    event.preventDefault();event.stopPropagation();
+    if(!label.trim()) {setError("Enter a field name.");return;}
+    const choices=type==="select"?customFieldOptions(options):[];
+    if(type==="select"&&!choices.length) {setError("Add at least one dropdown option.");return;}
+    setBusy(true);setError("");
+    try {await onCreate({section,label:label.trim(),field_type:type,options:choices});onClose();}
+    catch(error) { const data=error?.response?.data;setError(data ? Object.values(data).flat().join(" ") : error.message); }
+    finally {setBusy(false);}
+  }
+  return <DialogContent className="max-h-[90dvh] max-w-[calc(100vw-24px)] overflow-y-auto border-zinc-800 bg-zinc-950 sm:max-w-sm">
+    <DialogHeader><DialogTitle>Add field to {sectionLabel}</DialogTitle><DialogDescription>Available on all trades in this journal. Its value is saved separately for each trade.</DialogDescription></DialogHeader>
+    <form onSubmit={submit} className="space-y-4">
+      <div className="space-y-1.5"><label htmlFor="custom-field-label" className="text-xs text-zinc-400">Field name</label><Input id="custom-field-label" autoFocus maxLength={80} value={label} onChange={event=>setLabel(event.target.value)} placeholder="e.g. Market condition" className="h-10 border-zinc-800 bg-zinc-900/60"/></div>
+      <div className="space-y-1.5"><label htmlFor="custom-field-type" className="text-xs text-zinc-400">Field type</label><SelectField id="custom-field-type" label="Field type" value={type} onValueChange={setType} options={CUSTOM_FIELD_TYPES} allowClear={false}/></div>
+      {type==="select"&&<div className="space-y-1.5"><label htmlFor="custom-field-options" className="text-xs text-zinc-400">Options</label><textarea id="custom-field-options" rows={4} value={options} onChange={event=>setOptions(event.target.value)} placeholder={"Trending\nRanging\nVolatile"} className="w-full rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/40"/><p className="text-[11px] text-zinc-500">One option per line, or separate with commas.</p></div>}
+      {error&&<p role="alert" className="text-xs text-red-400">{error}</p>}
+      <DialogFooter><Button type="button" variant="outline" disabled={busy} onClick={onClose}>Cancel</Button><Button type="submit" disabled={busy}>{busy?"Adding...":"Add field"}</Button></DialogFooter>
+    </form>
+  </DialogContent>;
+}
+
+export default function TradeCustomFields({section,fields,control,errors,onCreate,disabled}) {
+  const [adding,setAdding]=useState(false);
+  const definitions=fields.filter(field=>field.section===section);
+  const label=TRADE_SECTIONS.find(item=>item.value===section)?.label;
+  return <div className="mt-4 space-y-3">
+    {definitions.length>0&&<div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2">
+      {definitions.map(definition=><div key={definition.id} className="min-w-0 space-y-1.5">
+        <label htmlFor={`custom-${definition.id}`} className="block text-xs font-medium text-zinc-400">{definition.label}</label>
+        <Controller name={`custom_fields.${definition.id}`} control={control} defaultValue="" render={({field})=>{
+          const props={id:`custom-${definition.id}`,"aria-label":definition.label,onBlur:field.onBlur,ref:field.ref};
+          if(definition.field_type==="select") return <SelectField {...props} label={definition.label} value={field.value} onValueChange={field.onChange} options={definition.options} placeholder="Select an option"/>;
+          if(definition.field_type==="boolean") return <SelectField {...props} label={definition.label} value={field.value===""||field.value==null?"":String(field.value)} onValueChange={value=>field.onChange(value===""?null:value==="true")} options={[{value:"true",label:"Yes"},{value:"false",label:"No"}]} placeholder="Select yes or no"/>;
+          return <Input {...props} type={definition.field_type==="number"?"number":"text"} step={definition.field_type==="number"?"any":undefined} maxLength={definition.field_type==="text"?2000:undefined} value={field.value??""} onChange={event=>field.onChange(definition.field_type==="number"?(event.target.value===""?null:Number(event.target.value)):event.target.value)} className="h-10 border-zinc-800 bg-zinc-900/60 text-sm focus-visible:ring-zinc-400/40"/>;
+        }}/>
+        {errors?.custom_fields?.[definition.id]?.message&&<p className="text-xs text-red-400">{errors.custom_fields[definition.id].message}</p>}
+      </div>)}
+    </div>}
+    <button type="button" disabled={disabled} aria-label={`Add custom field to ${label}`} onClick={()=>setAdding(true)} className="flex min-h-9 items-center gap-1.5 rounded-lg border border-dashed border-zinc-800 px-3 text-xs text-zinc-500 transition-colors hover:border-zinc-600 hover:text-zinc-200 disabled:opacity-40"><Plus className="size-3.5"/>Add custom field</button>
+    <Dialog open={adding} onOpenChange={setAdding}>{adding&&<AddField section={section} onCreate={onCreate} onClose={()=>setAdding(false)}/>}</Dialog>
+  </div>;
+}
