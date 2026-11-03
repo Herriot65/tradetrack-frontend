@@ -68,7 +68,7 @@ export default function AnalyticsHeader({
   return (
     <>
     {sampleEnabled && <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-400/15 bg-amber-400/5 px-4 py-2.5 text-[12px] text-amber-200/80"><span>Sample data is enabled</span><button type="button" disabled={sampleBusy} onClick={onRemoveSample} className="rounded px-2 py-1 text-ink-secondary">{sampleBusy ? "Removing sample data..." : "Remove sample data"}</button></div>}
-    <div className="sticky top-14 z-20 rounded-xl border border-hairline bg-surface-card p-4 min-[900px]:px-5">
+    <div className="analytics-filters sticky top-14 z-20 rounded-xl border border-hairline bg-surface-card p-4 min-[900px]:px-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <SegmentedControl

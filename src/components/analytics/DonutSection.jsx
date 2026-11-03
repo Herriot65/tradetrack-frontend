@@ -13,7 +13,7 @@ function Donut({ values, colors, centerValue, centerLabel, labels, hovered, onHo
   const segments = buildDonutSegments(values);
 
   return (
-    <div className="relative size-[112px] min-[600px]:size-[136px] shrink-0">
+    <div className="analytics-donut relative size-[112px] shrink-0">
       <svg role="img" aria-label={centerLabel} viewBox="0 0 124 124" className="size-full -rotate-90">
         <circle
           cx="62"
@@ -62,7 +62,7 @@ function LegendRow({ color, label, value, detail, hovered, onHover, index }) {
   return (
     <div
       className={cn(
-        "grid cursor-default items-center gap-x-1.5 min-[600px]:gap-x-2 rounded-md px-1.5 py-2 text-[12px] leading-5 transition-colors",
+        "grid cursor-default items-center gap-x-1.5 rounded-md px-1.5 py-2 text-[12px] leading-5 transition-colors",
         hovered === index && "bg-surface-raised",
       )}
       style={{ gridTemplateColumns: "8px minmax(0,1fr) auto 42px" }}
@@ -74,7 +74,7 @@ function LegendRow({ color, label, value, detail, hovered, onHover, index }) {
       onMouseLeave={() => onHover(null)}
     >
       <span className="size-2 rounded-[2px]" style={{ backgroundColor: color }} />
-      <span className="text-ink-secondary">{label}</span>
+      <span className="min-w-0 break-words text-ink-secondary">{label}</span>
       <span className="whitespace-nowrap font-medium text-right tabular-nums text-ink">{value}</span>
       <span className="whitespace-nowrap text-right tabular-nums text-ink-muted">
         {detail}
@@ -85,9 +85,9 @@ function LegendRow({ color, label, value, detail, hovered, onHover, index }) {
 
 function DonutCard({ title, children, footnote }) {
   return (
-    <AnalyticsCard>
+    <AnalyticsCard className="analytics-outcome">
       <CardHeading title={title} />
-      <div className="flex items-center gap-3 px-4 pb-5 pt-5 min-[600px]:gap-6 min-[900px]:px-6 min-[900px]:pb-6 min-[900px]:pt-6">
+      <div className="analytics-donut-layout flex flex-col items-center gap-3 px-4 pb-5 pt-5">
         {children}
       </div>
       {footnote && (
@@ -107,7 +107,7 @@ export default function DonutSection({ analytics }) {
     : formatRatio(summary.profitFactor);
 
   return (
-    <div className="grid grid-cols-1 items-stretch gap-5 min-[900px]:grid-cols-2">
+    <div className="analytics-outcomes-grid grid grid-cols-1 items-stretch gap-5">
       <DonutCard
         title="Win / loss"
         footnote={summary.decidedCount > 0

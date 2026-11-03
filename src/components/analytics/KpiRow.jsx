@@ -16,7 +16,7 @@ function KpiCard({ label, value, detail, tone = "text-ink" }) {
   return (
     <div className="min-w-0 rounded-xl border border-hairline bg-surface-card px-4 py-5 min-[900px]:px-5 min-[900px]:py-6">
       <p tabIndex={0} title={DEFINITIONS[label]} className="text-[12px] leading-4 text-ink-secondary">{label}</p>
-      <p className={cn("mt-3 text-[26px] min-[900px]:text-[28px] font-medium leading-8 tracking-tight tabular-nums", tone)}>
+      <p className={cn("analytics-kpi-value mt-3 font-medium leading-8 tracking-tight tabular-nums", tone)}>
         {value}
       </p>
       <p className="mt-2 text-[12px] leading-5 text-ink-muted">{detail}</p>
@@ -92,13 +92,13 @@ export default function KpiRow({ summary, unit }) {
 
   return (
     <div data-testid="analytics-kpis" className="space-y-4">
-      <div className="grid grid-cols-2 items-stretch gap-4 min-[900px]:grid-cols-4">
+      <div className="analytics-hero-grid grid grid-cols-2 items-stretch gap-4">
         {hero.map((kpi) => (
           <KpiCard key={kpi.label} {...kpi} />
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-hairline bg-hairline min-[1200px]:grid-cols-4">
+      <div className="analytics-stats-grid grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-hairline bg-hairline">
         {strip.map((stat) => (
           <StripCell key={stat.label} {...stat} />
         ))}

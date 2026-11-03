@@ -72,13 +72,59 @@ try {
  await page.goto("http://127.0.0.1:4179/tests/analytics.html?dense=1");
  await page.getByRole("button",{name:"All",exact:true}).click();
  await page.getByText("126 trades",{exact:true}).first().waitFor();
- for(const width of [1440,1024,390]) {
+ for(const width of [320,360,375,390,430,600,768,899,900,901,1024,1199,1200,1280,1440,1920,2560]) {
+   console.log(`Checking responsive width ${width}`);
    await page.setViewportSize({width,height:1000});
+   await page.locator("main").evaluate((element, width) => { element.style.maxWidth = "1440px"; element.style.width = `${width >= 768 ? width - 224 : width}px`; element.style.padding = "24px"; }, width);
    await page.evaluate(()=>window.scrollTo(0,0));
    await page.waitForTimeout(150);
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth), `Dense layout overflows at ${width}`);
-   await page.screenshot({path:`artifacts/analytics/modern-${width}.png`,fullPage:true});
+   const clipped = await page.locator("section").evaluateAll(sections => sections.flatMap(section => [...section.querySelectorAll("span,p,button,input")].filter(el => {
+     if(el.closest(".overflow-x-auto") || el.classList.contains("sr-only") || !el.getClientRects().length) return false;
+     const r=el.getBoundingClientRect(), card=section.getBoundingClientRect();
+     return r.width > 1 && (r.right > card.right+1 || r.left < card.left-1);
+   }).map(el=>({text:el.textContent,tag:el.tagName,cls:el.className}))));
+   assert.deepEqual(clipped,[], `Clipped card contents at ${width}: ${JSON.stringify(clipped)}`);
+   const layout=await page.evaluate(()=>{
+     const columns=selector=>getComputedStyle(document.querySelector(selector)).gridTemplateColumns.split(" ").length;
+     return {width:document.querySelector(".analytics-page").clientWidth,outcomes:columns(".analytics-outcomes-grid"),kpis:columns(".analytics-hero-grid")};
+   });
+   assert.equal(layout.outcomes,layout.width>=900?2:1,`Outcome columns at ${width}`);
+   assert.equal(layout.kpis,layout.width>=760?4:2,`KPI columns at ${width}`);
+   if([320,390,768,900,1024,1440,1920].includes(width)) await page.screenshot({path:`artifacts/analytics/modern-${width}.png`,fullPage:true});
  }
+ console.log("Responsive widths passed");
+ // Landscape and browser zoom both reduce the available CSS viewport.
+ for(const [width,height] of [[844,390],[667,375],[320,568],[640,480]]) {
+   await page.setViewportSize({width,height});
+   await page.locator("main").evaluate(element=>{element.style.width="100%";});
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth), `Overflow at ${width}x${height}`);
+   if(height<=500) assert.equal(await page.locator(".analytics-filters").evaluate(el=>getComputedStyle(el).position),"static");
+ }
+ // Touch input exercises the actual cards, the scrolled heatmap and calendar.
+ console.log("Landscape passed; checking touch");
+ const touchContext=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+ const touchPage=await touchContext.newPage();
+ touchPage.setDefaultTimeout(10000);
+ touchPage.on("pageerror",error=>errors.push(error.message));
+ await touchPage.goto("http://127.0.0.1:4179/tests/analytics.html?dense=1");
+ await touchPage.getByRole("button",{name:"All",exact:true}).tap();
+ console.log("Touch fixture ready");
+ const winSegment=touchPage.getByRole("button",{name:/^Wins:/});
+ const ringBox=await winSegment.boundingBox();
+ await winSegment.tap({position:{x:ringBox.width-2,y:ringBox.height/2}});
+ assert.equal(await touchPage.getByText("Wins",{exact:true}).count(),2);
+ await touchPage.getByRole("button",{name:"Distribution",exact:true}).tap();
+ await touchPage.getByText("How your R-multiples are distributed, in 0.5R buckets").waitFor();
+ const heatmap=touchPage.getByRole("group",{name:"Trade performance by day and hour"});
+ await heatmap.evaluate(el=>{el.scrollLeft=250;});
+ const pinned=await heatmap.locator(".sticky").first().evaluate(el=>{
+   const wrapper=el.closest(".overflow-x-auto");return Math.abs(el.getBoundingClientRect().left-wrapper.getBoundingClientRect().left)<32;
+ });
+ assert.ok(pinned,"Day labels should remain pinned when the heatmap scrolls");
+ await touchPage.getByRole("button",{name:/Open trades for/}).first().tap();
+ await touchPage.getByRole("dialog").waitFor();
+ await touchContext.close();
  assert.deepEqual(errors,[]);
- console.log("Browser checks passed: filters, KPI text, donuts, crosshair, trade detail, distribution, heatmap, calendar, empty reset, and 1440/1024/390px overflow.");
+ console.log("Browser checks passed: filters, KPI text, donuts, crosshair, trade detail, distribution, heatmap, calendar, empty reset, 17 widths from 320px to 2560px, sidebar-aware layouts, landscape, and touch input.");
 } finally {await browser?.close();await server.close();}

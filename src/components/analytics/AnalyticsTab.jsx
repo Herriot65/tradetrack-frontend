@@ -1,4 +1,5 @@
-﻿import { useRef, useState } from "react";
+import "./analytics.css";
+import { useRef, useState } from "react";
 import { BarChart3, Sparkles } from "lucide-react";
 import { format, subMonths } from "date-fns";
 
@@ -28,15 +29,15 @@ function LoadingSkeleton({ sampleEnabled }) {
       </div>
       {sampleEnabled && <Skeleton className="h-11 rounded-lg bg-surface-raised" />}
       <Skeleton className="h-[156px] rounded-xl bg-surface-raised min-[900px]:h-[110px]" />
-      <div className="grid gap-5 min-[900px]:grid-cols-2">
+      <div className="analytics-outcomes-grid grid gap-5">
         <Skeleton className="h-[224px] rounded-xl bg-surface-raised" />
         <Skeleton className="h-[224px] rounded-xl bg-surface-raised" />
       </div>
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4 min-[900px]:grid-cols-4">
+        <div className="analytics-hero-grid grid grid-cols-2 gap-4">
           {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-[140px] rounded-xl bg-surface-raised" />)}
         </div>
-        <Skeleton className="h-[148px] rounded-xl bg-surface-raised min-[1200px]:h-[74px]" />
+        <Skeleton className="analytics-stats-skeleton h-[148px] rounded-xl bg-surface-raised" />
       </div>
       <Skeleton className="h-[580px] rounded-xl bg-surface-raised" />
       {[370, 420, 340, 580].map((height) => <Skeleton key={height} style={{ height }} className="rounded-xl bg-surface-raised" />)}

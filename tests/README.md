@@ -4,7 +4,7 @@ Run `npm test` for deterministic formula, filter-reconciliation, calendar, donut
 
 Run `npm run test:browser` with Playwright installed and Chrome available. Alternatively set `PLAYWRIGHT_MODULE` to an existing Playwright `index.mjs`. The runner starts and stops its own Vite server, mounts the real AnalyticsTab and useJournalAnalytics selector, and supplies a deterministic Axios adapter. It never reads or changes a live journal.
 
-Browser assertions cover KPI/legend text, date and asset filters, multi-year monthly visibility, calendar navigation bounds and trade links, keyboard donut/crosshair/heatmap readouts, sequence/distribution switching, empty results/reset, and page overflow at 1440, 1024 and 390px. Screenshots are saved under `artifacts/analytics/` (gitignored).
+Browser assertions cover KPI/legend text, date and asset filters, multi-year monthly visibility, calendar navigation bounds and trade links, keyboard donut/crosshair/heatmap readouts, sequence/distribution switching, empty results/reset, and responsive layout at 17 widths from 320px to 2560px. The width matrix reserves space for the journal sidebar, checks clipping inside cards as well as page overflow, and verifies container-based column counts. Landscape/short viewports and mobile touch input cover donut selection, distribution controls, calendar popovers and pinned heatmap labels. Screenshots are saved under `artifacts/analytics/` (gitignored).
 
 The requested Net row in the profit/loss donut and totals in the asset table intentionally repeat their corresponding aggregate values. Redundant standalone KPI cards and KPI sub-lines were removed. Literal uniqueness of every number would conflict with those specified rows and with coincidentally equal values.
 
