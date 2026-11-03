@@ -86,7 +86,7 @@ export default function AppShell({ children }) {
   function toggleCollapsed() {
     setCollapsed((c) => {
       const next = !c;
-      try { localStorage.setItem("sidebar_collapsed", String(next)); } catch {}
+      try { localStorage.setItem("sidebar_collapsed", String(next)); } catch { /* ignore */ }
       return next;
     });
   }
@@ -144,7 +144,7 @@ export default function AppShell({ children }) {
                       to={to}
                       className={`flex h-9 w-full items-center justify-center rounded-md transition-colors ${
                         active
-                          ? "bg-emerald-500/10 text-emerald-400"
+                          ? "bg-zinc-800 text-zinc-100"
                           : "text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100"
                       }`}
                     >
@@ -161,12 +161,12 @@ export default function AppShell({ children }) {
                 to={to}
                 className={`relative flex h-9 items-center gap-2.5 rounded-md px-2.5 text-sm font-medium transition-colors ${
                   active
-                    ? "bg-emerald-500/10 text-emerald-400"
+                    ? "bg-zinc-800 text-zinc-100"
                     : "text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100"
                 }`}
               >
                 {active && (
-                  <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-full bg-emerald-500" />
+                  <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-full bg-zinc-300" />
                 )}
                 <Icon className="size-4 shrink-0" />
                 <span className="whitespace-nowrap">{label}</span>
@@ -246,7 +246,7 @@ export default function AppShell({ children }) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 outline-none transition-colors hover:bg-zinc-800/60">
-                  <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-[11px] font-bold text-emerald-400 ring-1 ring-emerald-500/30">
+                  <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-zinc-300/20 text-[11px] font-bold text-zinc-200 ring-1 ring-white/15">
                     {initials}
                   </div>
                   <span className="hidden max-w-[140px] truncate text-sm text-zinc-300 md:block">
@@ -261,7 +261,7 @@ export default function AppShell({ children }) {
               <DropdownMenuContent align="end" className="w-52">
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-[12px] font-bold text-emerald-400">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-zinc-300/20 text-[12px] font-bold text-zinc-200">
                       {initials}
                     </div>
                     <div className="min-w-0">

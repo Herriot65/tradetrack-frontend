@@ -16,6 +16,20 @@ export default {
           ring: "hsl(var(--ring))",
           background: "hsl(var(--background))",
           foreground: "hsl(var(--foreground))",
+          surface: {
+            page: "var(--surface-page)",
+            card: "var(--surface-card)",
+            raised: "var(--surface-raised)",
+          },
+          ink: {
+            DEFAULT: "var(--ink)",
+            secondary: "var(--ink-secondary)",
+            muted: "var(--ink-muted)",
+          },
+          hairline: "var(--hairline)",
+          "hairline-strong": "var(--hairline-strong)",
+          profit: "var(--profit)",
+          loss: "var(--loss)",
   
           primary: {
             DEFAULT: "hsl(var(--primary))",

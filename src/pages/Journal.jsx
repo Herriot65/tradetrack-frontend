@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
-  BarChart3,
   BookOpen,
   Cable,
   FileUp,
@@ -17,11 +16,7 @@ import AppShell from "@/components/layout/AppShell";
 import { MT5ImportDialog } from "@/components/journal/MT5ImportDialog";
 import TradeTable from "@/components/journal/TradeTable";
 import TradePanel from "@/components/journal/TradePanel";
-import AnalyticsPane from "@/components/hub/AnalyticsPane";
-import HubHeader from "@/components/hub/HubHeader";
-import KpiStrip from "@/components/hub/KpiStrip";
-import MonthDetailDialog from "@/components/hub/MonthDetailDialog";
-import StatsStrip from "@/components/hub/StatsStrip";
+import JournalAnalyticsTab from "@/components/analytics/AnalyticsTab";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -41,13 +36,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createTrade, updateTrade, deleteTrade } from "@/api/trades.api";
-import { useCareerData } from "@/hooks/useCareerData";
-import { useHubAnalytics } from "@/hooks/useHubAnalytics";
 import { useTrades } from "@/hooks/useTrades";
 import { useAuth } from "@/auth/useAuth";
 import { useJournal } from "@/journals/useJournal";
 import { useJournalCatalog } from "@/journals/useJournalCatalog";
-import { buildMergedSummary } from "@/lib/buildMergedSummary";
 import { deriveStatus } from "@/lib/deriveStatus";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -75,13 +67,6 @@ const BREAK_EVEN_LABEL = {
   ratio:  "Ratio Based",
   profit: "Profit Based",
 };
-
-function yearsLabel(selectedYears) {
-  if (selectedYears.length === 0) return "All";
-  if (selectedYears.length === 1) return String(selectedYears[0]);
-  const sorted = [...selectedYears].sort((a, b) => a - b);
-  return `${sorted[0]} – ${sorted[sorted.length - 1]}`;
-}
 
 // ─── Trades tab ───────────────────────────────────────────────────────────────
 
@@ -191,7 +176,7 @@ function TradesTab({ breakEvenMethod, journalId, refreshKey }) {
             placeholder="Search asset…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-8 border-zinc-800 bg-zinc-900/60 pl-8 text-sm placeholder:text-zinc-600 focus-visible:ring-emerald-500/30"
+            className="h-8 border-zinc-800 bg-zinc-900/60 pl-8 text-sm placeholder:text-zinc-600 focus-visible:ring-zinc-400/30"
           />
         </div>
 
@@ -202,7 +187,7 @@ function TradesTab({ breakEvenMethod, journalId, refreshKey }) {
               onClick={() => setStatusFilter(f.value)}
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                 statusFilter === f.value
-                  ? "bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30"
+                  ? "bg-zinc-700/70 text-zinc-100 ring-1 ring-zinc-600"
                   : "bg-zinc-800/60 text-zinc-400 hover:bg-zinc-700/60 hover:text-zinc-200"
               }`}
             >
@@ -288,95 +273,6 @@ function TradesTab({ breakEvenMethod, journalId, refreshKey }) {
 
 // ─── Analytics tab ────────────────────────────────────────────────────────────
 
-function AnalyticsTab({
-  jLoading,
-  selectedYears, setSelectedYears,
-  openMonth, setOpenMonth,
-  yearAnalytics, monthAnalytics, latestMonthAnalytics,
-  loading, error, refetch, hasData, availableYears,
-  mergedSummary,
-}) {
-  const isLoading = jLoading || loading;
-
-  const handleYearToggle = (year) =>
-    setSelectedYears((prev) =>
-      prev.includes(year)
-        ? prev.filter((y) => y !== year)
-        : [...prev, year].sort((a, b) => a - b)
-    );
-
-  const handleCellClick = (year, month) =>
-    setOpenMonth((prev) =>
-      prev?.year === year && prev?.month === month ? null : { year, month }
-    );
-
-  const label = yearsLabel(selectedYears);
-
-  // Error state — shown instead of empty state when the fetch itself failed
-  if (!isLoading && error) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-zinc-800 py-20 text-center">
-        <div className="flex size-12 items-center justify-center rounded-xl bg-zinc-900 ring-1 ring-zinc-800">
-          <BarChart3 className="size-5 text-zinc-600" />
-        </div>
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-zinc-300">Failed to load analytics</p>
-          <p className="max-w-xs text-zinc-600">{error}</p>
-        </div>
-        <Button size="sm" variant="outline" onClick={refetch}>
-          Retry
-        </Button>
-      </div>
-    );
-  }
-
-  if (!isLoading && !hasData) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-zinc-800 py-20 text-center">
-        <div className="flex size-12 items-center justify-center rounded-xl bg-zinc-900 ring-1 ring-zinc-800">
-          <BarChart3 className="size-5 text-zinc-600" />
-        </div>
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-zinc-300">No data yet</p>
-          <p className="max-w-xs text-xs text-zinc-600">
-            Add closed trades to this journal to see your analytics and performance charts.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <div className="space-y-6">
-        <HubHeader selectedYears={selectedYears} onYearsChange={setSelectedYears} availableYears={availableYears} />
-        <KpiStrip summary={mergedSummary ?? yearAnalytics?.summary} loading={isLoading} />
-        <StatsStrip summary={mergedSummary} loading={isLoading} />
-        <AnalyticsPane
-          yearEquityCurve={yearAnalytics?.equityCurve ?? []}
-          yearRPerTrade={yearAnalytics?.rPerTrade ?? []}
-          yearAnalytics={yearAnalytics}
-          latestMonthAnalytics={latestMonthAnalytics}
-          yearsLabel={label}
-          selectedYears={selectedYears}
-          openMonth={openMonth}
-          onCellClick={handleCellClick}
-          onYearToggle={handleYearToggle}
-        />
-      </div>
-
-      <MonthDetailDialog
-        open={openMonth !== null}
-        onClose={() => setOpenMonth(null)}
-        year={openMonth?.year}
-        month={openMonth?.month}
-        monthAnalytics={monthAnalytics}
-        loading={loading}
-      />
-    </>
-  );
-}
-
 // ─── Custom Fields tab ────────────────────────────────────────────────────────
 
 function CustomFieldsTab() {
@@ -443,7 +339,7 @@ function SettingsDialog({ open, onClose, journal }) {
     }
   };
 
-  const fieldClass = "w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-500/50";
+  const fieldClass = "w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-400/40";
   const selectClass = fieldClass;
   const labelClass  = "text-xs font-medium text-zinc-500";
 
@@ -552,6 +448,7 @@ export default function Journal() {
     activeJournal,
     selectJournal,
     deleteJournal,
+    setSyntheticData,
     loading: jLoading,
   } = useJournal();
 
@@ -561,24 +458,6 @@ export default function Journal() {
     setSearchParams({ tab }, { replace: true });
   }
 
-  // Analytics state lives here so data survives tab switches and any
-  // AnalyticsTab re-mount; it can only be lost on full route navigation.
-  const [selectedYears, setSelectedYears] = useState([]);
-  const [openMonth,     setOpenMonth]     = useState(null);
-  const {
-    yearAnalytics, monthAnalytics, latestMonthAnalytics,
-    loading: analyticsLoading, error: analyticsError,
-    refetch: analyticsRefetch, hasData: analyticsHasData,
-    availableYears,
-  } = useHubAnalytics({ selectedYears, openMonth });
-
-  const { data: careerData } = useCareerData();
-
-  const mergedSummary = useMemo(
-    () => buildMergedSummary(yearAnalytics?.summary, careerData, selectedYears),
-    [yearAnalytics?.summary, careerData, selectedYears]
-  );
-
   const [settingsOpen,     setSettingsOpen]     = useState(false);
   const [brokerOpen,       setBrokerOpen]       = useState(false);
   const [importOpen,       setImportOpen]       = useState(false);
@@ -586,6 +465,29 @@ export default function Journal() {
   const [deleting,         setDeleting]         = useState(false);
   const [deleteError,      setDeleteError]      = useState(null);
   const [tradesRefreshKey, setTradesRefreshKey] = useState(0);
+  const [syntheticBusy,    setSyntheticBusy]    = useState(false);
+  const [syntheticError,   setSyntheticError]   = useState(null);
+
+  const syntheticEnabled = !!activeJournal?.synthetic_data_enabled;
+
+  const handleToggleSynthetic = async (enabled) => {
+    if (!activeJournal) return;
+    setSyntheticBusy(true);
+    setSyntheticError(null);
+    try {
+      await setSyntheticData(activeJournal.id, enabled);
+      setTradesRefreshKey((k) => k + 1);
+    } catch (err) {
+      setSyntheticError(
+        err?.response?.data?.error ??
+          err?.response?.data?.detail ??
+          err.message ??
+          "Failed to update sample data"
+      );
+    } finally {
+      setSyntheticBusy(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (!activeJournal) return;
@@ -640,7 +542,7 @@ export default function Journal() {
             </div>
             {activeJournal?.currency && activeJournal?.startingCapital != null && (
               <p className="mt-0.5 text-sm text-zinc-500">
-                {activeJournal.currency} · {Number(activeJournal.startingCapital).toLocaleString()} starting capital
+                {activeJournal.currency} · {Number(activeJournal.startingCapital).toLocaleString(undefined, { style: "currency", currency: activeJournal.currency, maximumFractionDigits: 2 })} starting capital
                 {activeJournal.breakEvenMethod && (
                   <> · {BREAK_EVEN_LABEL[activeJournal.breakEvenMethod]} break-even</>
                 )}
@@ -688,7 +590,7 @@ export default function Journal() {
               onClick={() => setActiveTab(tab.id)}
               className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
                 activeTab === tab.id
-                  ? "text-zinc-100 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-emerald-500 after:content-['']"
+                  ? "text-zinc-100 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-zinc-300 after:content-['']"
                   : "text-zinc-500 hover:text-zinc-300"
               }`}
             >
@@ -709,21 +611,13 @@ export default function Journal() {
             />
           </div>
           <div className={activeTab !== "analytics" ? "hidden" : ""}>
-            <AnalyticsTab
+            <JournalAnalyticsTab
+              journal={activeJournal}
               jLoading={jLoading}
-              selectedYears={selectedYears}
-              setSelectedYears={setSelectedYears}
-              openMonth={openMonth}
-              setOpenMonth={setOpenMonth}
-              yearAnalytics={yearAnalytics}
-              monthAnalytics={monthAnalytics}
-              latestMonthAnalytics={latestMonthAnalytics}
-              loading={analyticsLoading}
-              error={analyticsError}
-              refetch={analyticsRefetch}
-              hasData={analyticsHasData}
-              availableYears={availableYears}
-              mergedSummary={mergedSummary}
+              syntheticEnabled={syntheticEnabled}
+              syntheticBusy={syntheticBusy}
+              syntheticError={syntheticError}
+              onToggleSynthetic={handleToggleSynthetic}
             />
           </div>
           <div className={activeTab !== "custom-fields" ? "hidden" : ""}>

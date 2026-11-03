@@ -3,6 +3,8 @@ import { createContext, useCallback, useEffect, useState } from "react";
 import {
   createWorkspace as apiCreate,
   deleteWorkspace as apiDelete,
+  disableSyntheticData as apiDisableSynthetic,
+  enableSyntheticData as apiEnableSynthetic,
   fetchWorkspaces,
   updateWorkspace as apiUpdate,
 } from "@/api/journals.api";
@@ -141,6 +143,23 @@ export function JournalProvider({ children }) {
     [activeJournal?.id, journals]
   );
 
+  const setSyntheticData = useCallback(
+    async (id, enabled) => {
+      const result = enabled
+        ? await apiEnableSynthetic(id)
+        : await apiDisableSynthetic(id);
+
+      const patch = { synthetic_data_enabled: !!result.enabled };
+      setJournals((prev) =>
+        prev.map((j) => (j.id === id ? { ...j, ...patch } : j))
+      );
+      setActiveJournal((prev) => (prev?.id === id ? { ...prev, ...patch } : prev));
+      setAnalyticsVersion((v) => v + 1);
+      return result;
+    },
+    []
+  );
+
   const deleteJournal = useCallback(
     async (id) => {
       await apiDelete(id);
@@ -166,6 +185,7 @@ export function JournalProvider({ children }) {
     renameJournal,
     updateJournal,
     deleteJournal,
+    setSyntheticData,
     refetchJournals: load,
     loading,
     error,

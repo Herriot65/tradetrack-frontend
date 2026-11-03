@@ -59,6 +59,7 @@ export default function TradeDetailPanel({ trade, open, onClose }) {
   const sideColor = SIDE_COLORS[trade.side] ?? "";
 
   return (
+    <>
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent>
         <SheetHeader onClose={onClose}>
@@ -172,5 +173,6 @@ export default function TradeDetailPanel({ trade, open, onClose }) {
     </Sheet>
 
     {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
+    </>
   );
 }

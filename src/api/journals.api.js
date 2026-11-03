@@ -50,6 +50,23 @@ export const deleteCatalogItem = async (journalId, catalogType, itemId) => {
   await api.delete(`/journals/${journalId}/${catalogType}/${itemId}/`);
 };
 
+// ── Synthetic Data ────────────────────────────────────────────────────────────
+
+export const fetchSyntheticDataStatus = async (journalId) => {
+  const { data } = await api.get(`/journals/${journalId}/synthetic-data/`);
+  return data;
+};
+
+export const enableSyntheticData = async (journalId) => {
+  const { data } = await api.post(`/journals/${journalId}/synthetic-data/`);
+  return data;
+};
+
+export const disableSyntheticData = async (journalId) => {
+  const { data } = await api.delete(`/journals/${journalId}/synthetic-data/`);
+  return data;
+};
+
 // ── MT5 Import ────────────────────────────────────────────────────────────────
 
 export const importMT5 = async (journalId, file) => {
