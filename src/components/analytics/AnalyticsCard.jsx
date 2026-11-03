@@ -4,7 +4,7 @@ export default function AnalyticsCard({ className, children }) {
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-xl border border-hairline bg-surface-card",
+        "analytics-card min-w-0 overflow-hidden rounded-xl border border-hairline bg-surface-card",
         className,
       )}
     >
@@ -15,11 +15,11 @@ export default function AnalyticsCard({ className, children }) {
 
 export function CardHeading({ title, detail, action, className }) {
   return (
-    <div className={cn("flex flex-wrap items-start justify-between gap-3 px-4 pt-4", className)}>
+    <div className={cn("flex flex-wrap items-start justify-between gap-4 px-5 pt-5 min-[900px]:px-6 min-[900px]:pt-6", className)}>
       <div className="min-w-0">
         <h2 className="text-[14px] font-medium leading-5 text-ink">{title}</h2>
         {detail && (
-          <p className="mt-0.5 text-[11px] leading-4 text-ink-muted">{detail}</p>
+          <p className="mt-1.5 text-[12px] leading-5 text-ink-muted">{detail}</p>
         )}
       </div>
       {action && <div className="shrink-0">{action}</div>}
@@ -31,7 +31,7 @@ export function SegmentedControl({ options, value, onChange, className, label })
   return (
     <div
       className={cn(
-        "inline-flex items-center rounded-lg border border-hairline bg-surface-card p-0.5",
+        "inline-flex items-center rounded-lg border border-hairline bg-surface-page p-1",
         className,
       )}
       role="group"
@@ -55,10 +55,10 @@ export function SegmentedControl({ options, value, onChange, className, label })
             }}
             onClick={() => onChange(option.value)}
             className={cn(
-              "h-6 rounded-md px-2 text-[12px] font-normal transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white/20",
+              "h-7 rounded-md px-2.5 text-[12px] font-normal transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white/20",
               active
                 ? "bg-surface-raised text-ink ring-1 ring-inset ring-hairline-strong"
-                : "text-ink-muted hover:text-ink-secondary",
+                : "text-ink-secondary hover:text-ink",
             )}
           >
             {option.label}

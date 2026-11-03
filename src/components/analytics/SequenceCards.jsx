@@ -19,9 +19,9 @@ export default function SequenceCards({analytics, onOpenTrade}) {
   const active = hover === null ? null : data[hover];
   const readout = !sequence ? "How your R-multiples are distributed, in 0.5R buckets" : active ? `Trade #${active.seq} \u00b7 ${active.asset} \u00b7 ${formatDateLabel(active.date,"EEE MMM d")} \u00b7 ${formatValue(active.value,unit)}` : "Hover to inspect a trade";
   return <AnalyticsCard>
-    <CardHeading title="R per trade" action={<SegmentedControl label="R per trade view" options={OPTIONS} value={view} onChange={v=>{setView(v);setHover(null);}}/>}/>
-    <p className="min-h-9 px-4 pt-2 text-[12px] text-ink-muted" aria-live="polite">{readout}</p>
-    <svg ref={chartRef} viewBox={`0 0 ${width} 255`} className="block h-[255px] w-full" role="img" aria-label={sequence ? "Trade results in sequence" : "Distribution of R multiples"}>
+    <CardHeading title="R per trade" detail="Individual trade results and their distribution." action={<SegmentedControl label="R per trade view" options={OPTIONS} value={view} onChange={v=>{setView(v);setHover(null);}}/>}/>
+    <p className="min-h-11 px-5 pt-3 min-[900px]:px-6 text-[12px] text-ink-muted" aria-live="polite">{readout}</p>
+    <svg ref={chartRef} viewBox={`0 0 ${width} 255`} className="block mb-4 h-[255px] w-full" role="img" aria-label={sequence ? "Trade results in sequence" : "Distribution of R multiples"}>
       {ticks.map(v=><g key={v}><line x1="48" x2={right} y1={y(v)} y2={y(v)} stroke={v===0?"var(--hairline-strong)":"var(--hairline)"} strokeDasharray={v===0?undefined:"2 4"}/><text x="40" y={y(v)+4} textAnchor="end" fontSize="11" fill="var(--ink-muted)">{sequence?formatAxisTick(v,unit):v}</text></g>)}
       {sequence && <g><line x1="48" x2={right} y1={y(summary.expectancy)} y2={y(summary.expectancy)} stroke="var(--ink-secondary)" strokeDasharray="4 3"/><text x={right} y="12" textAnchor="end" fontSize="11" fill="var(--ink-secondary)">Expectancy {formatValue(summary.expectancy,unit)}</text></g>}
       {data.map((d,i)=>{const value=sequence?d.value:d.count;const zero=sequence && d.status==="BE";const color=sequence?(zero?"ink-muted":value>0?"profit":"loss"):d.tone==="neutral"?"ink-muted":d.tone;

@@ -7,11 +7,11 @@ import { cn } from "@/lib/utils";
 import AnalyticsCard, { CardHeading } from "./AnalyticsCard";
 
 const COLUMNS = [
-  { key: "label", label: "Asset", width: "minmax(150px,1fr)", align: "left" },
+  { key: "label", label: "Asset", width: "minmax(140px,1fr)", align: "left" },
   { key: "count", label: "Trades", width: "64px", align: "right" },
   { key: "winRate", label: "Win rate", width: "72px", align: "right" },
   { key: "expectancy", label: "Expectancy", width: "88px", align: "right" },
-  { key: "net", label: "Net R", width: "minmax(180px,1.1fr)", align: "right" },
+  { key: "net", label: "Net R", width: "minmax(196px,1.1fr)", align: "right" },
 ];
 
 const GRID_TEMPLATE = COLUMNS.map((column) => column.width).join(" ");
@@ -28,7 +28,7 @@ function SortHeader({ column, sort, onSort }) {
       type="button"
       onClick={() => onSort(column.key)}
       className={cn(
-        "inline-flex items-center gap-1 rounded text-[11px] outline-none transition-colors hover:text-ink-secondary focus-visible:ring-2 focus-visible:ring-white/20",
+        "inline-flex items-center gap-1 rounded text-[12px] outline-none transition-colors hover:text-ink-secondary focus-visible:ring-2 focus-visible:ring-white/20",
         column.align === "right" ? "justify-end" : "justify-start",
         active ? "text-ink-secondary" : "text-ink-muted",
       )}
@@ -56,7 +56,7 @@ function NetCell({ value, maxAbs, unit, diverging = false, muted = false, barTop
       </div>
       <span
         className={cn(
-          "w-[68px] shrink-0 text-right text-[11px] tabular-nums",
+          "w-[68px] shrink-0 text-right text-[12px] tabular-nums",
           barTop ? "font-medium text-ink" : "font-medium",
           value > 0 ? "text-profit" : value < 0 ? "text-loss" : "text-ink-secondary",
           muted && "text-ink-secondary",
@@ -75,7 +75,7 @@ function BreakdownRow({ row, unit, maxAbs, diverging, selected, onClick }) {
       onClick={onClick}
       aria-pressed={selected}
       className={cn(
-        "group grid w-full items-center gap-2 rounded-md px-2 py-[7px] text-left outline-none transition-colors",
+        "group grid w-full items-center gap-3 rounded-lg px-3 py-3.5 text-left outline-none transition-colors",
         "hover:bg-surface-raised focus-visible:ring-2 focus-visible:ring-white/20",
         selected && "bg-surface-raised",
       )}
@@ -85,7 +85,7 @@ function BreakdownRow({ row, unit, maxAbs, diverging, selected, onClick }) {
         <span className="flex size-3 shrink-0 items-center justify-center">
           {selected && <Check className="size-3 text-ink" />}
         </span>
-        <span className="truncate text-[11px] text-ink-secondary">{row.label}</span>
+        <span className="truncate text-[13px] font-medium text-ink">{row.label}</span>
       </span>
       <span className="text-right text-[12px] tabular-nums text-ink-muted">{row.count}</span>
       <span className="text-right text-[12px] tabular-nums text-ink-muted">
@@ -109,11 +109,7 @@ export default function BreakdownCard({ analytics, filters, onFilter }) {
   const [sort, setSort] = useState({ key: "net", dir: "desc" });
   const [expanded, setExpanded] = useState(false);
   const { unit, summary } = analytics;
-  const rows = tab === "assets"
-    ? analytics.assets
-    : tab === "setups"
-      ? analytics.setups
-      : analytics.sessions;
+  const rows = analytics.assets;
 
   const sortedRows = [...rows].sort((a, b) => {
     const result = compareRows(a, b, sort.key);
@@ -138,14 +134,14 @@ export default function BreakdownCard({ analytics, filters, onFilter }) {
   return (
     <AnalyticsCard>
       <CardHeading
-        title="By asset" detail="Click a column to sort"
+        title="By asset" detail="Compare your markets. Select an asset to focus the entire report."
 
       />
 
-      <div className="overflow-x-auto px-2 pb-2 pt-2">
+      <div className="overflow-x-auto px-3 pb-3 pt-5 min-[900px]:px-5 min-[900px]:pb-5">
         <div className="min-w-[620px]">
           <div
-            className="grid items-center gap-2 border-b border-hairline px-2 pb-1.5"
+            className="grid items-center gap-3 border-b border-hairline px-3 pb-3"
             style={{ gridTemplateColumns: GRID_TEMPLATE }}
           >
             {COLUMNS.map((column) => (
@@ -156,7 +152,7 @@ export default function BreakdownCard({ analytics, filters, onFilter }) {
           </div>
 
           {visibleRows.length === 0 ? (
-            <p className="py-10 text-center text-[11px] text-ink-muted">
+            <p className="py-10 text-center text-[12px] text-ink-muted">
               No trades in this range.
             </p>
           ) : (
@@ -176,10 +172,10 @@ export default function BreakdownCard({ analytics, filters, onFilter }) {
           )}
 
           <div
-            className="mt-1 grid items-center gap-2 border-t border-hairline px-2 py-2"
+            className="mt-1 grid items-center gap-3 border-t border-hairline px-3 py-4"
             style={{ gridTemplateColumns: GRID_TEMPLATE }}
           >
-            <span className="text-[11px] font-medium text-ink-secondary">All assets</span>
+            <span className="text-[12px] font-medium text-ink-secondary">All assets</span>
             <span className="text-right text-[12px] tabular-nums text-ink-secondary">
               {summary?.closedCount ?? 0}
             </span>

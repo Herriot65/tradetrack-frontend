@@ -68,6 +68,17 @@ try {
  assert.equal(await page.getByRole("heading",{name:"Equity and drawdown"}).count(),0);
  await page.getByRole("button",{name:"Reset filters",exact:true}).click();
  await page.getByText("9 trades",{exact:true}).first().waitFor();
+ // Check the new visual hierarchy with a realistic trade density as well.
+ await page.goto("http://127.0.0.1:4179/tests/analytics.html?dense=1");
+ await page.getByRole("button",{name:"All",exact:true}).click();
+ await page.getByText("126 trades",{exact:true}).first().waitFor();
+ for(const width of [1440,1024,390]) {
+   await page.setViewportSize({width,height:1000});
+   await page.evaluate(()=>window.scrollTo(0,0));
+   await page.waitForTimeout(150);
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth), `Dense layout overflows at ${width}`);
+   await page.screenshot({path:`artifacts/analytics/modern-${width}.png`,fullPage:true});
+ }
  assert.deepEqual(errors,[]);
  console.log("Browser checks passed: filters, KPI text, donuts, crosshair, trade detail, distribution, heatmap, calendar, empty reset, and 1440/1024/390px overflow.");
 } finally {await browser?.close();await server.close();}

@@ -109,7 +109,7 @@ export default function CalendarCard({
   );
 
   const weeks = useMemo(
-    () => buildCalendarWeeks(view.year, view.month, calendar),
+    () => buildCalendarWeeks(view.year, view.month, calendar).filter(week => week.cells.some(cell => cell.inMonth)),
     [calendar, view.year, view.month],
   );
   const summary = useMemo(
@@ -131,20 +131,20 @@ export default function CalendarCard({
 
   return (
     <AnalyticsCard>
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 pb-1 pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 px-5 pb-2 pt-5 min-[900px]:px-6 min-[900px]:pt-6">
         <div className="flex min-w-0 items-center gap-1.5">
           <button
             type="button"
             onClick={() => move(-1)}
             aria-label="Previous month"
             className={cn(
-              "flex size-6 items-center justify-center rounded-md border border-hairline text-ink-muted outline-none transition-colors hover:bg-surface-raised hover:text-ink focus-visible:ring-2 focus-visible:ring-white/20",
+              "flex size-8 items-center justify-center rounded-md border border-hairline text-ink-muted outline-none transition-colors hover:bg-surface-raised hover:text-ink focus-visible:ring-2 focus-visible:ring-white/20",
               atStart && "invisible",
             )}
           >
             <ChevronLeft className="size-3.5" />
           </button>
-          <span className="whitespace-nowrap text-[12px] font-medium tabular-nums text-ink-secondary">
+          <span className="whitespace-nowrap px-2 text-[14px] font-medium tabular-nums text-ink">
             {monthLabel(view.year, view.month)}
           </span>
           <button
@@ -152,7 +152,7 @@ export default function CalendarCard({
             onClick={() => move(1)}
             aria-label="Next month"
             className={cn(
-              "flex size-6 items-center justify-center rounded-md border border-hairline text-ink-muted outline-none transition-colors hover:bg-surface-raised hover:text-ink focus-visible:ring-2 focus-visible:ring-white/20",
+              "flex size-8 items-center justify-center rounded-md border border-hairline text-ink-muted outline-none transition-colors hover:bg-surface-raised hover:text-ink focus-visible:ring-2 focus-visible:ring-white/20",
               atEnd && "invisible",
             )}
           >
@@ -176,15 +176,15 @@ export default function CalendarCard({
         </p>
       </div>
 
-      <div className="overflow-x-auto px-3 pb-3 pt-2">
+      <div className="overflow-x-auto px-3 pb-3 pt-4 min-[900px]:px-6 min-[900px]:pb-6">
         <div className="space-y-1">
           <div className="analytics-calendar grid gap-1" style={{ gridTemplateColumns: GRID_TEMPLATE }}>
             {WEEKDAYS.map((day) => (
-              <div key={day} className="text-center text-[11px] text-ink-muted">
+              <div key={day} className="pb-2 text-center text-[11px] text-ink-muted">
                 {day}
               </div>
             ))}
-            <div className="text-center text-[11px] text-ink-muted">Week</div>
+            <div className="pb-2 text-center text-[11px] text-ink-muted">Week</div>
           </div>
 
           {weeks.map((week, weekIndex) => (
@@ -195,7 +195,7 @@ export default function CalendarCard({
             >
               {week.cells.map((cell) => {
                 if (!cell.inMonth) {
-                  return <div key={cell.key} className="min-h-[54px]" />;
+                  return <div key={cell.key} className="min-h-[58px] min-[900px]:min-h-[76px]" />;
                 }
 
                 const entry = calendar?.[cell.key];
@@ -203,7 +203,7 @@ export default function CalendarCard({
                   return (
                     <div
                       key={cell.key}
-                      className="min-h-[54px] rounded-md border border-hairline px-1.5 py-1"
+                      className="min-h-[58px] min-[900px]:min-h-[76px] rounded-md border border-hairline px-1.5 py-1"
                     >
                       <span className="text-[11px] tabular-nums text-ink-muted">
                         {cell.day}
@@ -224,7 +224,7 @@ export default function CalendarCard({
                         type="button"
                         aria-label={`Open trades for ${cell.key}`}
                         className={cn(
-                          "flex min-h-[54px] flex-col items-start justify-between rounded-md border border-white/[0.04] px-0.5 min-[900px]:px-1.5 py-1 text-left outline-none",
+                          "flex min-h-[58px] min-[900px]:min-h-[76px] flex-col items-start justify-between rounded-md border border-white/[0.04] px-0.5 min-[900px]:px-1.5 py-1 text-left outline-none",
                           "transition-colors hover:border-hairline-strong focus-visible:ring-2 focus-visible:ring-white/20",
                         )}
                         style={{ backgroundColor: dayTone(entry.net) }}
@@ -246,7 +246,7 @@ export default function CalendarCard({
                 );
               })}
 
-              <div className="flex min-h-[54px] flex-col items-start justify-center rounded-md border border-hairline bg-surface-raised px-1.5 py-1">
+              <div className="flex min-h-[58px] min-[900px]:min-h-[76px] flex-col items-start justify-center rounded-md border border-hairline bg-surface-raised px-1.5 py-1">
                 {week.count > 0 ? (
                   <>
                     <span

@@ -19,7 +19,7 @@ export default function MonthlyCard({ analytics, bounds, onOpenMonth }) {
       {months.length === 0 ? (
         <EmptyChart className="h-[180px]">No closed trades in this range.</EmptyChart>
       ) : (
-        <div className="overflow-x-auto px-3 pb-3 pt-2">
+        <div className="overflow-x-auto px-5 pb-5 pt-5 min-[900px]:px-6 min-[900px]:pb-6">
           <div className="min-w-[720px] space-y-1">
             <div className="grid gap-1" style={{ gridTemplateColumns: GRID_TEMPLATE }}>
               <span />
@@ -43,7 +43,7 @@ export default function MonthlyCard({ analytics, bounds, onOpenMonth }) {
                     return (
                       <div
                         key={monthName}
-                        className="h-9 rounded-[4px] border border-hairline bg-surface-raised"
+                        className="h-11 rounded-[4px] border border-hairline bg-surface-raised"
                         aria-label={`${monthName} ${year}: no trades`}
                       />
                     );
@@ -56,7 +56,7 @@ export default function MonthlyCard({ analytics, bounds, onOpenMonth }) {
                       onClick={() => onOpenMonth(year, monthIndex)}
                       title={`${month.label}: ${formatValue(month.totalR, "R")}, ${month.count} trades, ${formatPercent(month.winRate)} win rate`}
                       className={cn(
-                        "flex h-9 min-w-0 items-center justify-center overflow-hidden rounded-[4px] border border-white/[0.04] px-0.5",
+                        "flex h-11 min-w-0 items-center justify-center overflow-hidden rounded-[4px] border border-white/[0.04] px-0.5",
                         "text-[11px] tabular-nums text-ink outline-none transition-transform hover:scale-[1.03]",
                         "focus-visible:ring-2 focus-visible:ring-white/25",
                       )}

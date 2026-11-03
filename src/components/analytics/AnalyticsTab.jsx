@@ -19,31 +19,27 @@ import MonthlyCard from "./MonthlyCard";
 import SequenceCards from "./SequenceCards";
 import TimingCard from "./TimingCard";
 
-function LoadingSkeleton() {
+function LoadingSkeleton({ sampleEnabled }) {
   return (
-    <div className="analytics-page space-y-3">
-      <div className="flex items-center gap-2">
-        <Skeleton className="h-7 w-40 bg-white/[0.05]" />
-        <Skeleton className="h-7 w-20 bg-white/[0.04]" />
-        <Skeleton className="h-7 w-24 bg-white/[0.04]" />
-        <Skeleton className="ml-auto h-7 w-24 bg-white/[0.04]" />
+    <div className="analytics-page space-y-5 min-[900px]:space-y-6" aria-label="Loading performance" aria-busy="true">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-40 bg-surface-raised" />
+        <Skeleton className="h-5 w-64 max-w-full bg-surface-raised" />
       </div>
-      <div className="grid grid-cols-2 gap-3 min-[900px]:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <Skeleton key={index} className="h-[90px] rounded-xl bg-white/[0.04]" />
-        ))}
+      {sampleEnabled && <Skeleton className="h-11 rounded-lg bg-surface-raised" />}
+      <Skeleton className="h-[156px] rounded-xl bg-surface-raised min-[900px]:h-[110px]" />
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4 min-[900px]:grid-cols-4">
+          {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-[140px] rounded-xl bg-surface-raised" />)}
+        </div>
+        <Skeleton className="h-[148px] rounded-xl bg-surface-raised min-[1200px]:h-[74px]" />
       </div>
-      <Skeleton className="h-[58px] rounded-xl bg-white/[0.04]" />
-      <Skeleton className="h-[530px] rounded-xl bg-white/[0.04]" />
-      <div className="grid gap-3 min-[900px]:grid-cols-2">
-        <Skeleton className="h-[190px] rounded-xl bg-white/[0.04]" />
-        <Skeleton className="h-[190px] rounded-xl bg-white/[0.04]" />
+      <Skeleton className="h-[580px] rounded-xl bg-surface-raised" />
+      <div className="grid gap-5 min-[900px]:grid-cols-2">
+        <Skeleton className="h-[224px] rounded-xl bg-surface-raised" />
+        <Skeleton className="h-[224px] rounded-xl bg-surface-raised" />
       </div>
-      <Skeleton className="h-[300px] rounded-xl bg-white/[0.04]" />
-      <Skeleton className="h-[360px] rounded-xl bg-white/[0.04]" />
-      <Skeleton className="h-[280px] rounded-xl bg-white/[0.04]" />
-      <Skeleton className="h-[120px] rounded-xl bg-white/[0.04]" />
-      <Skeleton className="h-[430px] rounded-xl bg-white/[0.04]" />
+      {[370, 420, 340, 580].map((height) => <Skeleton key={height} style={{ height }} className="rounded-xl bg-surface-raised" />)}
     </div>
   );
 }
@@ -151,7 +147,7 @@ export default function AnalyticsTab({
   }
 
   if (isLoading) {
-    return <LoadingSkeleton />;
+    return <LoadingSkeleton sampleEnabled={syntheticEnabled} />;
   }
 
   if (error) {
@@ -191,7 +187,7 @@ export default function AnalyticsTab({
 
   if (!hasData) {
     return (
-      <div className="analytics-page space-y-3">
+      <div className="analytics-page space-y-5 min-[900px]:space-y-6">
         {header}
         <NoticeCard
           title="No data yet"
@@ -217,7 +213,13 @@ export default function AnalyticsTab({
   }
 
   return (
-    <div className="analytics-page space-y-3">
+    <div className="analytics-page space-y-5 min-[900px]:space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-3 pb-1">
+        <div>
+          <h2 className="text-[22px] font-medium leading-8 tracking-tight text-ink">Performance</h2>
+          <p className="mt-1 text-[13px] leading-5 text-ink-secondary">Returns, risk and the patterns behind your trades.</p>
+        </div>
+      </div>
       {header}
       <TradeDetailPanel trade={selectedTrade ? { ...selectedTrade.original, _derivedStatus: selectedTrade.status } : null} open={!!selectedTrade} onClose={() => setSelectedTrade(null)} />
 

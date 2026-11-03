@@ -21,9 +21,9 @@ export default function EquitySection({ analytics }) {
   };
   const readout = point ? `Trade #${point.seq} \u00b7 ${formatValue(point.tradeValue ?? 0, unit)} \u00b7 Equity ${formatValue(point.equity, unit)} \u00b7 DD ${formatValue(point.drawdown, unit)}` : "Hover to inspect a trade";
   return <AnalyticsCard>
-    <CardHeading title="Equity and drawdown" />
-    <p className="min-h-8 px-4 pt-1 text-[12px] text-ink-muted" aria-live="polite">{readout}</p>
-    <svg ref={chartRef} viewBox={`0 0 ${width} 462`} className="block h-[462px] w-full outline-none focus-visible:ring-1 focus-visible:ring-ink-muted" role="img" aria-label={`Equity and drawdown across ${points.length - 1} trades. Use arrow keys to inspect.`} tabIndex={0}
+    <CardHeading title="Equity and drawdown" detail="Your cumulative return and the declines from each peak." />
+    <p className="min-h-10 px-5 pt-3 min-[900px]:px-6 text-[12px] text-ink-muted" aria-live="polite">{readout}</p>
+    <svg ref={chartRef} viewBox={`0 0 ${width} 462`} className="block mb-3 h-[462px] w-full outline-none focus-visible:ring-1 focus-visible:ring-ink-muted" role="img" aria-label={`Equity and drawdown across ${points.length - 1} trades. Use arrow keys to inspect.`} tabIndex={0}
       onPointerMove={select} onPointerDown={select} onPointerLeave={() => setIndex(null)} onFocus={() => setIndex(0)} onBlur={() => setIndex(null)}
       onKeyDown={e => { if (["ArrowLeft", "ArrowRight"].includes(e.key)) { e.preventDefault(); setIndex(i => Math.max(0, Math.min(points.length - 1, (i ?? 0) + (e.key === "ArrowRight" ? 1 : -1)))); } }}>
       {ticks.map(v => <g key={v}><line x1="48" x2={right} y1={y(v)} y2={y(v)} stroke={v === 0 ? "var(--hairline-strong)" : "var(--hairline)"} strokeDasharray={v === 0 ? undefined : "2 4"}/><text x="40" y={y(v)+4} textAnchor="end" fontSize="11" fill="var(--ink-muted)">{formatAxisTick(v, unit)}</text></g>)}

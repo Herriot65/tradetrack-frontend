@@ -22,7 +22,7 @@ const FILTER_GROUPS = [
 
 function FilterChip({ children, onRemove, icon, removeLabel, disabled = false }) {
   return (
-    <span className="inline-flex h-6 items-center gap-1 rounded-md border border-hairline bg-surface-raised pl-2 pr-1 text-[11px] text-ink-secondary">
+    <span className="inline-flex min-h-7 items-center gap-1.5 rounded-md border border-hairline bg-surface-page pl-2.5 pr-1 text-[12px] text-ink-secondary">
       {icon}
       {children}
       <button
@@ -67,9 +67,9 @@ export default function AnalyticsHeader({
 
   return (
     <>
-    {sampleEnabled && <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-400/15 bg-amber-400/5 px-3 py-2 text-[12px] text-amber-200/80"><span>Sample data is enabled</span><button type="button" disabled={sampleBusy} onClick={onRemoveSample} className="rounded px-2 py-1 text-ink-secondary">{sampleBusy ? "Removing sample data..." : "Remove sample data"}</button></div>}
-    <div className="sticky top-14 z-20 border-b border-hairline bg-surface-page py-3">
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+    {sampleEnabled && <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-400/15 bg-amber-400/5 px-4 py-2.5 text-[12px] text-amber-200/80"><span>Sample data is enabled</span><button type="button" disabled={sampleBusy} onClick={onRemoveSample} className="rounded px-2 py-1 text-ink-secondary">{sampleBusy ? "Removing sample data..." : "Remove sample data"}</button></div>}
+    <div className="sticky top-14 z-20 rounded-xl border border-hairline bg-surface-card p-4 min-[900px]:px-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <SegmentedControl
             label="Date range"
@@ -77,7 +77,8 @@ export default function AnalyticsHeader({
             value={range}
             onChange={onRangeChange}
           />
-
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <SegmentedControl
             label="Display unit"
             options={unitOptions}
@@ -90,7 +91,7 @@ export default function AnalyticsHeader({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 border-hairline bg-surface-card text-[11px] text-ink-secondary hover:bg-surface-raised hover:text-ink"
+                className="h-9 border-hairline bg-surface-card px-3 text-[12px] text-ink-secondary hover:bg-surface-raised hover:text-ink"
               >
                 <Filter className="size-3" />
                 Filter
@@ -157,7 +158,7 @@ export default function AnalyticsHeader({
             variant="outline"
             size="sm"
             onClick={onExport}
-            className="h-7 border-hairline bg-surface-card text-[11px] text-ink-secondary hover:bg-surface-raised hover:text-ink"
+            className="h-9 border-hairline bg-surface-card px-3 text-[12px] text-ink-secondary hover:bg-surface-raised hover:text-ink"
           >
             <Download className="size-3" />
             Export CSV
@@ -165,7 +166,7 @@ export default function AnalyticsHeader({
         </div>
 
         {range === "CUSTOM" && (
-          <div className="flex items-center gap-2"><CalendarDays aria-hidden="true" className="size-4 text-ink-muted"/>
+          <div className="flex w-full flex-wrap items-center gap-2 border-t border-hairline pt-3"><CalendarDays aria-hidden="true" className="size-4 text-ink-muted"/>
           <div className="flex flex-wrap items-center gap-2">
             <label className="text-[11px] text-ink-muted" htmlFor="analytics-start">
               From
@@ -178,7 +179,7 @@ export default function AnalyticsHeader({
               onChange={(event) =>
                 onCustomRangeChange({ ...customRange, start: event.target.value })
               }
-              className="h-7 rounded-md border border-hairline bg-surface-raised px-2 text-[11px] text-ink-secondary outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+              className="h-9 rounded-lg border border-hairline bg-surface-raised px-2 text-[11px] text-ink-secondary outline-none focus-visible:ring-2 focus-visible:ring-white/20"
             />
             <label className="text-[11px] text-ink-muted" htmlFor="analytics-end">
               to
@@ -191,17 +192,17 @@ export default function AnalyticsHeader({
               onChange={(event) =>
                 onCustomRangeChange({ ...customRange, end: event.target.value })
               }
-              className="h-7 rounded-md border border-hairline bg-surface-raised px-2 text-[11px] text-ink-secondary outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+              className="h-9 rounded-lg border border-hairline bg-surface-raised px-2 text-[11px] text-ink-secondary outline-none focus-visible:ring-2 focus-visible:ring-white/20"
             />
           </div>
         </div>)}
       </div>
 
       {(
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-hairline pt-3">
           {sampleError && <span className="text-[11px] text-ink-secondary">{sampleError}</span>}
           <FilterChip onRemove={() => onRangeChange("ALL")}>{rangeLabel}</FilterChip>
-          {!(filters?.assets?.length) && <span className="text-[11px] text-ink-muted">All assets</span>}
+          {!(filters?.assets?.length) && <span className="rounded-md border border-hairline px-2.5 py-1 text-[12px] text-ink-secondary">All assets</span>}
           {FILTER_GROUPS.flatMap((group) =>
             (filters?.[group.key] ?? []).map((value) => (
               <FilterChip
