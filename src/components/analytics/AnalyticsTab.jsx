@@ -34,11 +34,11 @@ function LoadingSkeleton({ sampleEnabled }) {
         </div>
         <Skeleton className="h-[148px] rounded-xl bg-surface-raised min-[1200px]:h-[74px]" />
       </div>
-      <Skeleton className="h-[580px] rounded-xl bg-surface-raised" />
       <div className="grid gap-5 min-[900px]:grid-cols-2">
         <Skeleton className="h-[224px] rounded-xl bg-surface-raised" />
         <Skeleton className="h-[224px] rounded-xl bg-surface-raised" />
       </div>
+      <Skeleton className="h-[580px] rounded-xl bg-surface-raised" />
       {[370, 420, 340, 580].map((height) => <Skeleton key={height} style={{ height }} className="rounded-xl bg-surface-raised" />)}
     </div>
   );
@@ -244,9 +244,9 @@ export default function AnalyticsTab({
         <>
           <KpiRow summary={analytics.summary} unit={analytics.unit} />
 
-          <EquitySection analytics={analytics} />
-
           <DonutSection analytics={analytics} />
+
+          <EquitySection analytics={analytics} />
 
           <SequenceCards analytics={analytics} onOpenTrade={setSelectedTrade} />
 
