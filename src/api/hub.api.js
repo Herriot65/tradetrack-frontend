@@ -17,14 +17,12 @@ export const fetchHubTrades = async (workspaceId, { years = [] } = {}) => {
 
   if (totalCount > allResults.length && allResults.length > 0) {
     const totalPages = Math.ceil(totalCount / allResults.length);
-    const settled = await Promise.allSettled(
+    const pages = await Promise.all(
       Array.from({ length: totalPages - 1 }, (_, i) =>
         api.get(`/journals/${workspaceId}/trades/`, { params: { ...params, page: i + 2 } })
       )
     );
-    settled.forEach((r) => {
-      if (r.status === "fulfilled") allResults.push(...(r.value.data.results ?? []));
-    });
+    pages.forEach(response => allResults.push(...(response.data.results ?? [])));
   }
 
   return allResults;
