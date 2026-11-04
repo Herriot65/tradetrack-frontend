@@ -11,13 +11,17 @@ try {
  const errors=[];page.on("pageerror",e=>errors.push(e.message));
  await page.goto("http://127.0.0.1:4180/tests/trade-form.html?edit=1");
  await page.getByRole("combobox",{name:"Reference TF",exact:true}).waitFor();
- assert.match(await page.getByRole("combobox",{name:"Trade score",exact:true}).innerText(),/0 \/ 10/);
+ const sheet=page.locator('[data-slot="sheet-content"]');
+ assert.equal(await sheet.evaluate(el=>getComputedStyle(el).position),"fixed","Trade sheet must stay fixed to the viewport");
+ const bounds=await sheet.boundingBox();
+ assert.ok(bounds&&bounds.y===0&&Math.abs(bounds.x+bounds.width-1280)<2,"Trade sheet must be visible at the right edge");
+ assert.equal(await page.getByRole("slider",{name:"Trade score",exact:true}).inputValue(),"0");
  await page.getByRole("combobox",{name:"Reference TF",exact:true}).click();
  await page.getByRole("option",{name:"H4",exact:true}).click();
- await page.getByRole("combobox",{name:"Trade score",exact:true}).click();
- await page.getByRole("option",{name:"10 / 10",exact:true}).click();
+ await page.getByRole("slider",{name:"Trade score",exact:true}).focus();
+ await page.keyboard.press("End");
  await page.getByRole("button",{name:"Entry date/time",exact:true}).click();
- await page.getByText("Dates and times are recorded in UTC.").waitFor();
+ await page.getByText("Times are shown in UTC. Stored in UTC.").waitFor();
  await page.getByRole("combobox",{name:"Entry date/time hour",exact:true}).click();
  await page.getByRole("option",{name:"09",exact:true}).click();
  await page.getByRole("button",{name:"Done",exact:true}).click();
@@ -34,7 +38,7 @@ try {
  assert.equal(payload.exit_datetime,"2026-12-05T11:30:00.000Z");
  await page.getByRole("button",{name:"Edit saved trade",exact:true}).click();
  assert.match(await page.getByRole("combobox",{name:"Reference TF",exact:true}).innerText(),/H4/);
- assert.match(await page.getByRole("combobox",{name:"Trade score",exact:true}).innerText(),/10 \/ 10/);
+ assert.equal(await page.getByRole("slider",{name:"Trade score",exact:true}).inputValue(),"10");
  await mkdir("artifacts/trade-form",{recursive:true});
  for(const width of [320,390,768,1280]) {
   await page.setViewportSize({width,height:844});
@@ -58,8 +62,8 @@ try {
  await page.getByPlaceholder("e.g. 2.00").fill("0");
  await page.getByRole("combobox",{name:"Reference TF",exact:true}).click();
  await page.getByRole("option",{name:"W1",exact:true}).click();
- await page.getByRole("combobox",{name:"Trade score",exact:true}).click();
- await page.getByRole("option",{name:"0 / 10",exact:true}).click();
+ await page.getByRole("slider",{name:"Trade score",exact:true}).focus();
+ await page.keyboard.press("End");await page.keyboard.press("Home");
  const emotions=page.getByPlaceholder(/Select emotions/);
  await emotions.fill("Calm");await emotions.press("Enter");
  await page.getByRole("button",{name:"Save Trade",exact:true}).click();
@@ -68,9 +72,7 @@ try {
  assert.equal(created.trade_score,0);assert.equal(created.reference_timeframe,"W1");assert.equal(created.pnl_r,0);assert.equal(created.exit_datetime,null);
  // Check clearing optional values and a nested keyboard-driven menu.
  await page.getByRole("button",{name:"Edit saved trade",exact:true}).click();
- const score=page.getByRole("combobox",{name:"Trade score",exact:true});
- await score.focus();await page.keyboard.press("Space");
- await page.getByRole("option",{name:"Not rated",exact:true}).click();
+ await page.getByRole("button",{name:"Clear trade rating",exact:true}).click();
  await page.getByRole("combobox",{name:"Reference TF",exact:true}).click();
  await page.getByRole("option",{name:"Not set",exact:true}).click();
  await page.getByRole("button",{name:"Save Trade",exact:true}).click();

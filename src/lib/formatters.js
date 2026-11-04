@@ -1,4 +1,5 @@
 import { format, parseISO } from "date-fns";
+import { zonedDate } from "./timezone";
 
 export function formatNumber(value, decimals = 2) {
   if (value === null || value === undefined) return "—";
@@ -23,7 +24,7 @@ export function formatR(value) {
 export function formatDateTime(value) {
   if (!value) return "—";
   try {
-    return format(parseISO(value), "MMM d, yyyy HH:mm");
+    return format(zonedDate(value), "MMM d, yyyy HH:mm");
   } catch {
     return value;
   }

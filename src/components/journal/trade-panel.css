@@ -1,0 +1,26 @@
+.trade-panel-body {
+  container-type: inline-size;
+  min-height: 0;
+}
+
+.trade-panel-body > form {
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+/* Follow the sheet's available space rather than the browser width. */
+.trade-panel-body section > .grid,
+.trade-panel-body .trade-custom-fields-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@container (min-width: 460px) {
+  .trade-panel-body section > .grid,
+  .trade-panel-body .trade-custom-fields-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.trade-panel-body form > .mb-6 {
+  flex-wrap: wrap;
+}

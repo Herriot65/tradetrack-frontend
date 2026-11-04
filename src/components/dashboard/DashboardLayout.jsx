@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, LogOut, BarChart3, TrendingUp } from "lucide-react";
+import { LayoutDashboard, LogOut, BarChart3 } from "lucide-react";
 
 import { useAuth } from "@/auth/useAuth";
 import { useWorkspace } from "@/workspaces/useWorkspace";
@@ -18,11 +18,9 @@ export default function DashboardLayout({ children }) {
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <Link to="/dashboard" className="flex items-center gap-2.5">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30">
-                <TrendingUp className="size-4" />
-              </div>
+              <img src="/nexora.png" alt="Nexora" className="size-8 rounded-lg object-contain" />
               <span className="hidden font-semibold tracking-tight sm:inline">
-                TradeTrack
+                Nexora
               </span>
             </Link>
 

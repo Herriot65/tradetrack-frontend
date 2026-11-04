@@ -1,9 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 
 function getErrorMessage(err) {
+  const responseData = err.response?.data;
+  if (responseData && typeof responseData === "object") {
+    const firstError = Object.values(responseData).flat().find(Boolean);
+    if (firstError) return String(firstError);
+  }
   return (
-    err.response?.data?.detail ||
-    err.response?.data?.message ||
+    responseData?.detail ||
+    responseData?.message ||
     err.message ||
     "Something went wrong"
   );

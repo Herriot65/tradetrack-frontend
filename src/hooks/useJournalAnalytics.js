@@ -1,4 +1,6 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useAuth } from "@/auth/useAuth";
+import { getUserTimezone, zonedDate } from "@/lib/timezone";
 
 import { fetchHubTrades } from "@/api/hub.api";
 import {
@@ -67,6 +69,9 @@ export function useJournalAnalytics({
   openMonth = null,
   journal = null,
 } = {}) {
+  const auth = useAuth();
+  const timezone = auth?.user?.timezone || getUserTimezone();
+  const [now] = useState(() => Date.now());
   const { activeWorkspace, analyticsVersion } = useWorkspace();
   const workspaceId = activeWorkspace?.id ?? journal?.id;
   const filters = useMemo(
@@ -91,13 +96,13 @@ export function useJournalAnalytics({
   const breakEvenThreshold = breakEvenThresholdR(journal);
 
   const rangeBounds = useMemo(
-    () => getRangeBounds(range, customRange),
-    [range, customRange],
+    () => getRangeBounds(range, customRange, zonedDate(now,timezone)),
+    [range, customRange, timezone, now],
   );
 
   const dateFilteredTrades = useMemo(
-    () => filterTrades(allTrades ?? [], { range, customRange }),
-    [allTrades, range, customRange],
+    () => filterTrades(allTrades ?? [], { range, customRange, now:zonedDate(now,timezone) }),
+    [allTrades, range, customRange, timezone, now],
   );
 
   const availableOptions = useMemo(
@@ -129,7 +134,7 @@ export function useJournalAnalytics({
     if (!openMonth || !filteredTrades.length) return null;
     const monthTrades = filteredTrades.filter((trade) => {
       if (!trade?.entry_datetime) return false;
-      const date = new Date(trade.entry_datetime);
+      const date = zonedDate(trade.entry_datetime,timezone);
       if (Number.isNaN(date.getTime())) return false;
       if (date.getFullYear() !== openMonth.year || date.getMonth() !== openMonth.month) {
         return false;
@@ -154,6 +159,7 @@ export function useJournalAnalytics({
     openMonth,
     startingCapital,
     unit,
+    timezone,
   ]);
 
   const monthBounds = useMemo(

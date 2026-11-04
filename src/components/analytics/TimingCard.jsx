@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getUserTimezone } from "@/lib/timezone";
 import { formatDateLabel, formatPercent, formatValue, heatmapTone, sessionBands } from "@/lib/analytics";
 import AnalyticsCard, { CardHeading, SegmentedControl } from "./AnalyticsCard";
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
@@ -20,7 +21,7 @@ export default function TimingCard({analytics}) {
   const [metric,setMetric] = useState("netR");
   const [hover,setHover] = useState(null);
   const {dayHour,byDay,byHour,summary,rows} = analytics;
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  const timezone = getUserTimezone();
   const reference = rows.at(-1)?.date ?? new Date();
   const bands = sessionBands(reference,timezone);
   const scales = scale(dayHour.flat());

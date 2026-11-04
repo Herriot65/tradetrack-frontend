@@ -78,7 +78,7 @@ function OnboardingHero({ userName, onCreateClick }) {
 
       {/* Heading */}
       <h2 className="text-2xl font-semibold tracking-tight text-zinc-100">
-        {userName ? `Welcome, ${userName}!` : "Welcome to TradeTrack!"}
+        {userName ? `Welcome, ${userName}!` : "Welcome to Nexora!"}
       </h2>
       <p className="mt-2 max-w-sm text-sm text-zinc-400">
         A journal is your personal trading environment — it holds your trades,

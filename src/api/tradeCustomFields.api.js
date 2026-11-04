@@ -1,6 +1,13 @@
 import api from "./axios";
 import { USE_MOCK } from "@/mocks/mockData";
 const key = journalId => `journal_custom_fields_${journalId}`;
+export async function deleteTradeCustomField(journalId,id) {
+  if(USE_MOCK) {
+    localStorage.setItem(key(journalId),JSON.stringify(read(journalId).filter(field=>String(field.id)!==String(id))));
+    return;
+  }
+  await api.delete(`/journals/${journalId}/custom-fields/${id}/`);
+}
 function read(journalId) {
   try { return JSON.parse(localStorage.getItem(key(journalId)) || "[]"); } catch { return []; }
 }

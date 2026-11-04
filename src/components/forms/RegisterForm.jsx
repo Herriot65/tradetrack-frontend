@@ -59,8 +59,8 @@ export default function RegisterForm() {
       <CardHeader className="space-y-1 text-center">
         <div className="flex justify-center mb-2">
           <img
-            src="/trader_track_logo.png"
-            alt="TraderTrack"
+            src="/nexora.png"
+            alt="Nexora"
             className="h-16 w-16 rounded-xl"
             style={{ animation: "float 3s ease-in-out infinite" }}
           />

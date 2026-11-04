@@ -12,7 +12,6 @@ import {
 export const navLinks = [
   { label: "Features", href: "#features" },
   { label: "How it works", href: "#how-it-works" },
-  { label: "Pricing", href: "#pricing" },
 ];
 
 export const features = [
@@ -126,7 +125,6 @@ export const pricingTiers = [
 export const footerLinks = {
   product: [
     { label: "Features", href: "#features" },
-    { label: "Pricing", href: "#pricing" },
     { label: "Changelog", href: "#" },
   ],
   company: [

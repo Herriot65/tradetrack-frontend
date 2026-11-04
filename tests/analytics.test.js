@@ -1,11 +1,42 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { getUserTimezone, setUserTimezone } from "../src/lib/timezone.js";
+import { riskDisplayAmount } from "../src/lib/analytics.js";
 import { readFileSync, readdirSync } from "node:fs";
 import { computeAnalytics, assertBreakdownTotals, availableUnits, effectiveStatus, breakEvenThresholdR, tradeAmount, filterTrades, getRangeBounds, niceTicks, buildDonutSegments, heatmapTone, buildCalendarGrid, buildCalendarWeeks, rangeMonthBounds, formatValue, sessionBands } from "../src/lib/analytics.js";
 
 const trade = (r, index, extra={}) => ({id:index, pnl_r:r, entry_datetime:`2025-01-${String(index+1).padStart(2,"0")}T10:00:00`,asset:index%2?"EURUSD":"USDJPY",risk_percent:2,...extra});
 const fixture = [2,-1,0,3,-2,-1,0,4].map((r,i)=>trade(r,i));
 const close = (a,b) => assert.ok(Math.abs(a-b)<0.000001, `${a} != ${b}`);
+
+test("saved conversion basis preserves risk and PnL independently of current capital",()=>{
+ const saved={pnl_r:"2.000000",risk_percent:"1.000000",capital_basis:"10000",risk_amount:"100",pnl_amount:"200"};
+ for(const currentCapital of [5000,10000,25000]) {
+  assert.equal(tradeAmount(saved,"R",currentCapital),2);
+  assert.equal(tradeAmount(saved,"USD",currentCapital),200);
+  assert.equal(tradeAmount(saved,"PCT",currentCapital),2);
+  assert.equal(riskDisplayAmount(saved,"R",currentCapital),1);
+  assert.equal(riskDisplayAmount(saved,"USD",currentCapital),100);
+  assert.equal(riskDisplayAmount(saved,"PCT",currentCapital),1);
+ }
+ const imported={...saved,pnl_r:"0.2",pnl_amount:"20",risk_amount:null,risk_percent:null};
+ assert.equal(tradeAmount(imported,"R"),null);
+ assert.equal(tradeAmount(imported,"USD"),20);
+ assert.equal(tradeAmount(imported,"PCT"),0.2);
+ assert.equal(riskDisplayAmount(imported,"USD"),null);
+});
+
+test("calendar and timing use the saved timezone without changing trade instants",()=>{
+ const previous=getUserTimezone();
+ try {
+  setUserTimezone("Africa/Tunis");
+  const instant="2026-11-03T23:45:00Z";
+  const result=computeAnalytics([trade(1,0,{entry_datetime:instant})]);
+  assert.equal(result.rows[0].dateKey,"2026-11-04");
+  assert.equal(result.rows[0].date.getHours(),0);
+  assert.equal(result.rows[0].date.getTime(),Date.parse(instant));
+ } finally {setUserTimezone(previous);}
+});
 
 test("all metric formulas, baseline, ordering and BE-preserving streaks",()=>{
  const a=computeAnalytics([...fixture].reverse()); const s=a.summary;

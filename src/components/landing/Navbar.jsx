@@ -14,12 +14,12 @@ export default function Navbar() {
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link to="/" className="flex items-center gap-2.5">
           <img
-            src="/trader_track_logo.png"
-            alt="TradeTrack"
+            src="/nexora.png"
+            alt="Nexora"
             className="h-9 w-9 rounded-lg"
           />
           <span className="text-sm font-semibold tracking-tight text-white sm:text-base">
-            TradeTrack{" "}
+            Nexora{" "}
             <span className="text-zinc-400">Analytics</span>
           </span>
         </Link>

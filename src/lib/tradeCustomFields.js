@@ -1,7 +1,7 @@
 export const TRADE_SECTIONS = [
-  {value:"execution",label:"Execution"}, {value:"performance",label:"Performance"},
-  {value:"setup",label:"Setup"}, {value:"psychology",label:"Psychology"},
-  {value:"notes",label:"Notes"}, {value:"trade_notes",label:"Trade notes"},
+  {value:"execution",label:"EXECUTION"}, {value:"performance",label:"PERFORMANCE"},
+  {value:"setup",label:"SETUP"}, {value:"psychology",label:"PSYCHOLOGY"},
+  {value:"notes",label:"NOTES"}, {value:"trade_notes",label:"TRADE NOTES"},
 ];
 export const CUSTOM_FIELD_TYPES = [
   {value:"text",label:"Text"}, {value:"number",label:"Number"},

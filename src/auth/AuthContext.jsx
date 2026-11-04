@@ -3,6 +3,8 @@
 // to retrieve user data and perform actions like login and logout...
 
 import { createContext, useEffect, useState } from "react";
+import api from "../api/axios";
+import { setUserTimezone } from "../lib/timezone";
 import {
   loginUser,
   logoutUser,
@@ -17,6 +19,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     const { user } = await loginUser(credentials);
+    setUserTimezone(user.timezone);
     setUser(user);
   };
 
@@ -39,6 +42,7 @@ export const AuthProvider = ({ children }) => {
 
       try {
         const user = await getCurrentUser();
+        setUserTimezone(user.timezone);
         setUser(user);
       } catch (err) {
         console.error(err);
@@ -55,6 +59,12 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         user,
+        updatePreferences: async preferences => {
+          const {data} = await api.patch("/auth/me/", preferences);
+          setUserTimezone(data.timezone);
+          setUser(data);
+          return data;
+        },
         login,
         logout,
         loading,

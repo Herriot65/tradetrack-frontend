@@ -16,7 +16,7 @@ export const tradeSchema = z.object({
   commission:           numOrNull,
   swap:                 numOrNull,
   reference_timeframe:   z.string().max(10).nullable().optional(),
-  trade_score:           z.preprocess(value => value === "" || value == null ? null : Number(value), z.number().int("Use a whole number").min(0, "Score must be between 0 and 10").max(10, "Score must be between 0 and 10").nullable().optional()),
+  trade_score:           z.preprocess(value => value === "" || value == null ? null : Number(value), z.number().min(0, "Score must be between 0 and 10").max(10, "Score must be between 0 and 10").nullable().optional()),
   opportunity_timeframe: z.string().nullable().optional(),
   entry_timeframe:      z.string().nullable().optional(),
   trend_direction:      z.string().nullable().optional(),

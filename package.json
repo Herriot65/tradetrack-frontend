@@ -15,6 +15,7 @@
     "test:trades-list": "node tests/trades-list-browser.mjs"
   },
   "dependencies": {
+    "@date-fns/tz": "^1.4.1",
     "@fontsource-variable/geist": "^5.2.9",
     "@hookform/resolvers": "^5.4.0",
     "axios": "^1.17.0",

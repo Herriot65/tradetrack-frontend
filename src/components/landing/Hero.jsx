@@ -37,7 +37,7 @@ export default function Hero() {
         </h1>
 
         <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-zinc-400 sm:text-lg">
-          TradeTrack Analytics turns your trade log into a complete performance
+          Nexora Analytics turns your trade log into a complete performance
           picture — equity curve, streak analysis, session heatmaps, and
           expectancy — so you stop guessing and start improving.
         </p>

@@ -1,3 +1,4 @@
+import { zonedDate, getUserTimezone } from "./timezone.js";
 import {
   endOfDay,
   endOfMonth,
@@ -67,7 +68,7 @@ export function sessionLabel(session) {
 
 export function parseTradeDate(value) {
   if (!value) return null;
-  const date = value instanceof Date ? value : parseISO(value);
+  const date = value instanceof Date ? value : /T.*(?:Z|[+-]\d\d:\d\d)$/.test(value) ? zonedDate(value) : parseISO(value);
   return isValid(date) ? date : null;
 }
 
@@ -85,7 +86,7 @@ export function breakEvenThresholdR(journal) {
   return round((value / capital) * 100, 2);
 }
 
-export function getRangeBounds(range, customRange = {}, now = new Date()) {
+export function getRangeBounds(range, customRange = {}, now = zonedDate()) {
   const today = startOfDay(now);
   const end = endOfDay(today);
 
@@ -125,8 +126,8 @@ export function monthLabel(year, month, short = false) {
   return `${short ? MONTH_SHORT[month] : MONTH_NAMES[month]} ${year}`;
 }
 
-export function filterTrades(trades = [], { range = "ALL", customRange, assets = [] } = {}) {
-  const { start, end } = getRangeBounds(range, customRange);
+export function filterTrades(trades = [], { range = "ALL", customRange, assets = [], now = zonedDate() } = {}) {
+  const { start, end } = getRangeBounds(range, customRange, now);
   const assetSet = new Set(assets);
 
   return trades.filter((trade) => {
@@ -156,10 +157,23 @@ export function riskPercent(trade) {
 }
 
 export function riskAmount(trade, startingCapital = 0) {
+  if (Object.hasOwn(trade ?? {}, "capital_basis")) {
+    const amount = trade.risk_amount;
+    return amount != null && Number(amount)>0 ? Number(amount) : null;
+  }
   const explicit = trade?.risk_amount ?? trade?.riskAmount;
   if (explicit != null && Number.isFinite(Number(explicit)) && Number(explicit) > 0) return Number(explicit);
   const percent = riskPercent(trade);
   return percent !== null && startingCapital > 0 ? startingCapital * percent / 100 : null;
+}
+
+export function riskDisplayAmount(trade, unit="R", startingCapital=0) {
+  const risk = riskAmount(trade,startingCapital);
+  if (unit==="R") return risk!==null || riskPercent(trade)!==null ? 1 : null;
+  if (unit==="USD") return risk;
+  if (trade.risk_percent!=null && Number.isFinite(Number(trade.risk_percent))) return Number(trade.risk_percent);
+  const capital = Number(trade.capital_basis ?? startingCapital);
+  return risk!==null && capital>0 ? risk/capital*100 : null;
 }
 
 export function availableUnits(trades, startingCapital = 0) {
@@ -169,6 +183,14 @@ export function availableUnits(trades, startingCapital = 0) {
 }
 
 export function tradeAmount(trade, unit = "R", startingCapital = 0) {
+  if (Object.hasOwn(trade ?? {}, "capital_basis")) {
+    const profit = trade.pnl_amount == null ? null : Number(trade.pnl_amount);
+    const risk = riskAmount(trade);
+    const capital = Number(trade.capital_basis);
+    if (unit === "USD") return profit;
+    if (unit === "PCT") return profit !== null && capital>0 ? profit/capital*100 : null;
+    if (profit !== null) return risk ? profit/risk : null;
+  }
   const pnlR = Number(trade?.pnl_r ?? 0);
   if (!Number.isFinite(pnlR)) return 0;
   if (unit === "R") return pnlR;
@@ -354,7 +376,7 @@ export function computeAnalytics(
   const drawdownCurve = [];
   const firstDate = rows[0]?.date;
   if (firstDate) {
-    const startDate = new Date(firstDate);
+    const startDate = zonedDate(firstDate);
     startDate.setDate(startDate.getDate() - 1);
     equityCurve.push({
       seq: 0,
@@ -829,7 +851,7 @@ export { MONTH_NAMES, MONTH_SHORT };
 
 // Session definitions: Tokyo 09:00-18:00, London 08:00-17:00,
 // New York 08:00-17:00 local time. Intl resolves each date's DST offset.
-export function sessionBands(date = new Date(), timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone) {
+export function sessionBands(date = new Date(), timeZone = getUserTimezone()) {
   function hourInZone(instant, zone) {
     return Number(new Intl.DateTimeFormat("en-GB", { timeZone: zone, hour: "2-digit", hourCycle: "h23" }).format(instant));
   }

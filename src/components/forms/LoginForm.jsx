@@ -50,8 +50,8 @@ export default function LoginForm() {
       <CardHeader className="space-y-1 text-center">
         <div className="flex justify-center mb-2">
           <img
-            src="/trader_track_logo.png"
-            alt="TraderTrack"
+            src="/nexora.png"
+            alt="Nexora"
             className="h-16 w-16 rounded-xl animate-[float_3s_ease-in-out_infinite]"
             style={{ animation: "float 3s ease-in-out infinite" }}
           />
@@ -60,7 +60,7 @@ export default function LoginForm() {
           Welcome back
         </CardTitle>
         <CardDescription>
-          Sign in to your TraderTrack account
+          Sign in to your Nexora account
         </CardDescription>
       </CardHeader>
 

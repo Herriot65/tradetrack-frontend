@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
+import { JournalContext } from "@/journals/JournalContext";
+import { tradeAmount, riskDisplayAmount, formatValue } from "@/lib/analytics";
 import { formatDate } from "@/lib/formatters";
+import { getUserTimezone, zonedDate } from "@/lib/timezone";
 import {
   Sheet,
   SheetContent,
@@ -42,16 +45,12 @@ function Badge({ children, colorClass }) {
 
 function formatDatetime(iso) {
   if (!iso) return "—";
-  return iso.replace("T", " ").slice(0, 16) + " UTC";
-}
-
-function formatR(pnlR) {
-  if (pnlR == null) return null;
-  const r = parseFloat(pnlR);
-  return `${r > 0 ? "+" : ""}${pnlR}R`;
+  return zonedDate(iso).toISOString().replace("T", " ").slice(0, 16) + ` ${getUserTimezone()}`;
 }
 
 export default function TradeDetailPanel({ trade, open, onClose }) {
+  const context = useContext(JournalContext);
+  const unit = context?.activeJournal?.display_unit || "R";
   const [lightboxSrc, setLightboxSrc] = useState(null);
   if (!trade) return null;
 
@@ -74,7 +73,7 @@ export default function TradeDetailPanel({ trade, open, onClose }) {
               <Badge colorClass={statusColor}>{trade._derivedStatus === "BE" ? "BREAKEVEN" : trade._derivedStatus}</Badge>
             )}
             <span className="text-xs text-zinc-500">
-              {trade.entry_datetime ? formatDate(trade.entry_datetime.slice(0, 10)) : "—"}
+              {trade.entry_datetime ? formatDate(zonedDate(trade.entry_datetime).toISOString().slice(0, 10)) : "—"}
             </span>
           </SheetDescription>
         </SheetHeader>
@@ -91,7 +90,7 @@ export default function TradeDetailPanel({ trade, open, onClose }) {
                 <Field label="Entry" value={formatDatetime(trade.entry_datetime)} />
                 <Field label="Exit" value={trade.exit_datetime ? formatDatetime(trade.exit_datetime) : "Still open"} />
                 <Field label="Side" value={trade.side} />
-                <Field label="Risk %" value={trade.risk_percent ? `${trade.risk_percent}%` : null} />
+                <Field label="Risk" value={formatValue(riskDisplayAmount(trade,unit),unit,{signed:false})} />
               </div>
             </section>
 
@@ -101,8 +100,7 @@ export default function TradeDetailPanel({ trade, open, onClose }) {
                 Performance
               </h3>
               <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                <Field label="R Multiple" value={formatR(trade.pnl_r)} />
-                <Field label="PnL" value={trade.pnl != null ? String(trade.pnl) : null} />
+                <Field label="PnL" value={formatValue(tradeAmount(trade,unit),unit)} />
                 <Field label="Commission" value={trade.commission != null ? String(trade.commission) : null} />
                 <Field label="Swap" value={trade.swap != null ? String(trade.swap) : null} />
               </div>

@@ -2,6 +2,9 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Columns3 } from "lucide-react";
 import { formatDate } from "@/lib/formatters";
 import { deriveStatus } from "@/lib/deriveStatus";
+import { tradeAmount, riskDisplayAmount, formatValue } from "@/lib/analytics";
+import { zonedDate } from "@/lib/timezone";
+import { useAuth } from "@/auth/useAuth";
 
 // ─── Column definitions ───────────────────────────────────────────────────────
 
@@ -75,14 +78,14 @@ function SidePill({ side }) {
   );
 }
 
-function PnlCell({ pnlR, status }) {
+function PnlCell({ pnlR, status, unit }) {
   if (status === "OPEN") return <span className="text-xs font-medium text-amber-400">Open</span>;
   if (pnlR == null) return <Dash />;
   const r = parseFloat(pnlR);
   const color = r > 0 ? "text-emerald-400" : r < 0 ? "text-red-400" : "text-zinc-400";
   return (
     <span className={`tabular-nums font-bold text-sm ${color}`}>
-      {r > 0 ? "+" : ""}{pnlR}
+      {formatValue(pnlR,unit)}
     </span>
   );
 }
@@ -94,8 +97,8 @@ function DateTimeCell({ iso, openLabel }) {
       ? <span className="text-xs text-amber-400/70">{openLabel}</span>
       : <Dash />;
   }
-  const d    = new Date(iso);
-  const date = formatDate(iso.slice(0, 10));
+  const d    = zonedDate(iso);
+  const date = formatDate(d.toISOString().slice(0, 10));
   const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
   return (
     <div className="whitespace-nowrap">
@@ -187,7 +190,8 @@ function Th({ label, sortKey: sk, sortField, sortDir, onSort, className = "" }) 
   }
 
 
-export default memo(function TradeTable({ trades = [], breakEvenMethod = "ratio", onRowClick, journalId, sort, onSort }) {
+export default memo(function TradeTable({ trades = [], breakEvenMethod = "ratio", onRowClick, journalId, sort, onSort, displayUnit="R" }) {
+  useAuth(); // Subscribe to account timezone changes even when table props stay stable.
   const [localSortField,   setSortField]   = useState("date");
   const [localSortDir,     setSortDir]     = useState("desc");
   const [visibleCols, setVisibleCols] = useState(() => readCols(journalId));
@@ -250,8 +254,8 @@ export default memo(function TradeTable({ trades = [], breakEvenMethod = "ratio"
               {v.oppTf       && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="oppTf"       label="Opp. TF"                    />}
               {v.entryTf     && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="entryTf"     label="Entry TF"                   />}
               {v.trend       && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="trend"       label="Trend"                      />}
-              {v.riskPercent && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="riskPercent" label="Risk %"                     />}
-              {v.pnl         && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="pnl"         label="PnL"        sortKey="r"  className="text-right" />}
+              {v.riskPercent && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="riskPercent" label={`Risk (${displayUnit==="USD"?"$":displayUnit==="PCT"?"%":"R"})`} />}
+              {v.pnl         && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="pnl" label={`PnL (${displayUnit==="USD"?"$":displayUnit==="PCT"?"%":"R"})`} sortKey="r" className="text-right" />}
               {v.status      && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="status"      label="Status"                     />}
               {v.commission  && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="commission"  label="Commission"                 />}
               {v.swap        && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="swap"        label="Swap"                       />}
@@ -272,8 +276,8 @@ export default memo(function TradeTable({ trades = [], breakEvenMethod = "ratio"
                 {v.oppTf       && <td className="px-3 py-3.5 text-xs text-zinc-400">{trade.opportunity_timeframe ?? <Dash />}</td>}
                 {v.entryTf     && <td className="px-3 py-3.5 text-xs text-zinc-400">{trade.entry_timeframe ?? <Dash />}</td>}
                 {v.trend       && <td className="px-3 py-3.5 text-xs text-zinc-400">{trade.trend_direction ?? <Dash />}</td>}
-                {v.riskPercent && <td className="px-3 py-3.5 text-xs tabular-nums text-zinc-400">{trade.risk_percent != null ? `${trade.risk_percent}%` : <Dash />}</td>}
-                {v.pnl         && <td className="px-3 py-3.5 text-right"><PnlCell pnlR={trade.pnl_r} status={trade._status} /></td>}
+                {v.riskPercent && <td className="px-3 py-3.5 text-xs tabular-nums text-zinc-400"><span>{formatValue(riskDisplayAmount(trade,displayUnit),displayUnit,{signed:false})}</span>{displayUnit==="R"&&riskDisplayAmount(trade,"USD")!==null&&<span className="ml-1 text-[10px] text-zinc-600">· {formatValue(riskDisplayAmount(trade,"USD"),"USD",{signed:false})}</span>}</td>}
+                {v.pnl         && <td className="px-3 py-3.5 text-right"><PnlCell pnlR={tradeAmount(trade,displayUnit)} status={trade._status} unit={displayUnit}/></td>}
                 {v.status      && <td className="px-3 py-3.5"><StatusBadge status={trade._status} /></td>}
                 {v.commission  && <td className="px-3 py-3.5 text-xs tabular-nums text-zinc-400">${trade.commission != null ? trade.commission : "0.00"}</td>}
                 {v.swap        && <td className="px-3 py-3.5 text-xs tabular-nums text-zinc-400">${trade.swap != null ? trade.swap : "0.00"}</td>}

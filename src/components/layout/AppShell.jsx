@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import JournalSwitcher from "@/components/dashboard/JournalSwitcher";
+import UserSettings from "./UserSettings";
 
 // ─── Nav data ─────────────────────────────────────────────────────────────────
 
@@ -50,9 +51,9 @@ const TOOL_ITEMS = [
 
 function getInitials(user) {
   if (user?.first_name || user?.last_name) {
-    return `${user.first_name?.[0] ?? ""}${user.last_name?.[0] ?? ""}`.toUpperCase() || "TT";
+    return `${user.first_name?.[0] ?? ""}${user.last_name?.[0] ?? ""}`.toUpperCase() || "NX";
   }
-  return (user?.email ?? "TT").slice(0, 2).toUpperCase();
+  return (user?.email ?? "NX").slice(0, 2).toUpperCase();
 }
 
 function getDisplayName(user) {
@@ -69,6 +70,7 @@ function readCollapsed() {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AppShell({ children }) {
+  const [settingsOpen,setSettingsOpen] = useState(false);
   const { user, logout } = useAuth();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(readCollapsed);
@@ -114,14 +116,14 @@ export default function AppShell({ children }) {
         {/* Brand */}
         <div className={`flex h-14 shrink-0 items-center border-b border-zinc-800/50 ${isCollapsed ? "justify-center px-3" : "px-4"}`}>
           <img
-            src="/trader_track_logo.png"
-            alt="TradeTrack"
+            src="/nexora.png"
+            alt="Nexora"
             className="size-7 shrink-0 rounded-lg object-contain"
           />
           {!isCollapsed && (
             <div className="ml-2.5 overflow-hidden">
               <p className="whitespace-nowrap text-[13px] font-semibold leading-tight tracking-tight text-zinc-100">
-                TradeTrack
+                Nexora
               </p>
               <p className="whitespace-nowrap text-[10px] leading-tight tracking-wide text-zinc-500">
                 Analytics
@@ -241,6 +243,7 @@ export default function AppShell({ children }) {
         {/* Top bar */}
         <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-4 border-b border-zinc-800/50 bg-zinc-950/80 px-6 backdrop-blur-xl">
           <JournalSwitcher />
+          {settingsOpen&&<UserSettings onClose={()=>setSettingsOpen(false)}/>}
 
           <div className="ml-auto">
             <DropdownMenu>
@@ -277,7 +280,7 @@ export default function AppShell({ children }) {
                   <User className="size-3.5" />
                   Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem disabled className="cursor-not-allowed opacity-40">
+                <DropdownMenuItem onClick={()=>setSettingsOpen(true)}>
                   <Settings className="size-3.5" />
                   Settings
                 </DropdownMenuItem>

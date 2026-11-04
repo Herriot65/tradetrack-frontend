@@ -117,8 +117,9 @@ export function JournalProvider({ children }) {
 
   const updateJournal = useCallback(
     async (id, payload) => {
-      const { name, startingCapital, journalType, currency, breakEvenMethod, breakEvenValue } = payload;
+      const { name, startingCapital, journalType, currency, breakEvenMethod, breakEvenValue, displayUnit } = payload;
       const backendPayload = {};
+      if (displayUnit != null) backendPayload.display_unit = displayUnit;
       if (name             != null) backendPayload.name             = name;
       if (startingCapital  != null) backendPayload.starting_capital = startingCapital;
       const updated = Object.keys(backendPayload).length > 0
@@ -137,7 +138,7 @@ export function JournalProvider({ children }) {
       const enriched = { ...updated, ...newMeta };
       setJournals((prev) => prev.map((j) => (j.id === id ? enriched : j)));
       if (activeJournal?.id === id) setActiveJournal(enriched);
-      setAnalyticsVersion((v) => v + 1);
+      if (displayUnit == null) setAnalyticsVersion((v) => v + 1);
       return enriched;
     },
     [activeJournal?.id, journals]

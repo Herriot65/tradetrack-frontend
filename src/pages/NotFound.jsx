@@ -6,8 +6,8 @@ export default function NotFound() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 px-6 text-center">
       {/* Brand mark */}
       <img
-        src="/trader_track_logo.png"
-        alt="TradeTrack"
+        src="/nexora.png"
+        alt="Nexora"
         className="mb-8 size-14 rounded-2xl object-contain"
       />
 

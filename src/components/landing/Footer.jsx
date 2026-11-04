@@ -12,12 +12,12 @@ export default function Footer() {
           <div className="sm:col-span-2 lg:col-span-1">
             <Link to="/" className="flex items-center gap-2.5">
               <img
-                src="/trader_track_logo.png"
-                alt="TradeTrack"
+                src="/nexora.png"
+                alt="Nexora"
                 className="h-8 w-8 rounded-lg"
               />
               <span className="text-sm font-semibold text-white">
-                TradeTrack Analytics
+                Nexora Analytics
               </span>
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-zinc-500">
@@ -77,7 +77,7 @@ export default function Footer() {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-zinc-800/60 pt-8 sm:flex-row">
           <p className="text-sm text-zinc-600">
-            © {year} TradeTrack Analytics. All rights reserved.
+            © {year} Nexora Analytics. All rights reserved.
           </p>
           <div className="flex gap-6">
             <Link

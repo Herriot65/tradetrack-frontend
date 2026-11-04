@@ -5,10 +5,20 @@ import { tradeSchema } from "../src/schemas/tradeSchema.js";
 import { parseTradeDateTime, toTradeDateTimeInput, fromTradeDateTimeInput, changeTradeDate, changeTradeTime } from "../src/lib/tradeDateTime.js";
 const valid = {asset:"EURUSD",side:"BUY",entry_datetime:"2026-11-03T10:00:00.123",exit_datetime:"",emotions:["Calm"],mistakes:[],reference_timeframe:"H4"};
 
+test("timezone conversion preserves instants across midnight, fractional offsets and DST",()=>{
+  for(const zone of ["Africa/Tunis","Asia/Kolkata","America/New_York"]) {
+    for(const instant of ["2026-11-03T23:45:32.123Z","2026-03-08T07:30:00.000Z"]) {
+      assert.equal(fromTradeDateTimeInput(toTradeDateTimeInput(instant,zone),zone),instant);
+    }
+  }
+  assert.equal(toTradeDateTimeInput("2026-11-03T23:45:00Z","Africa/Tunis"),"2026-11-04T00:45:00.000");
+  assert.equal(fromTradeDateTimeInput("2026-03-08T02:30","America/New_York"),null);
+});
+
 test("trade score accepts zero/ten, optional blanks, and rejects invalid scores",()=>{
- for(const value of [0,10,"7"]){const result=tradeSchema.parse({...valid,trade_score:value});assert.equal(result.trade_score,Number(value));}
+ for(const value of [0,10,"7",4.5,7.25]){const result=tradeSchema.parse({...valid,trade_score:value});assert.equal(result.trade_score,Number(value));}
  assert.equal(tradeSchema.parse({...valid,trade_score:""}).trade_score,null);
- for(const value of [-1,11,4.5,"invalid"]) assert.equal(tradeSchema.safeParse({...valid,trade_score:value}).success,false);
+ for(const value of [-1,11,"invalid"]) assert.equal(tradeSchema.safeParse({...valid,trade_score:value}).success,false);
  assert.equal(tradeSchema.parse(valid).reference_timeframe,"H4");
 });
 test("date conversion preserves UTC instants, sub-minute precision, and zero P&L",()=>{
