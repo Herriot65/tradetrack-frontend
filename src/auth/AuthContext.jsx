@@ -7,6 +7,7 @@ import api from "../api/axios";
 import { setUserTimezone } from "../lib/timezone";
 import {
   loginUser,
+  googleLoginUser,
   logoutUser,
   getCurrentUser,
 } from "../api/auth.api";
@@ -66,6 +67,11 @@ export const AuthProvider = ({ children }) => {
           return data;
         },
         login,
+        loginWithGoogle: async credential => {
+          const { user } = await googleLoginUser(credential);
+          setUserTimezone(user.timezone);
+          setUser(user);
+        },
         logout,
         loading,
         isAuthenticated: !!user,

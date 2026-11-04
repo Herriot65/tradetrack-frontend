@@ -1,3 +1,4 @@
+import GoogleSignIn from "../auth/GoogleSignIn";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,6 +51,7 @@ export default function LoginForm() {
       </CardHeader>
 
       <CardContent>
+        <GoogleSignIn />
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <FormErrorBanner message={serverError} />
 
