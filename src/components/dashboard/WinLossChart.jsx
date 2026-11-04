@@ -16,9 +16,9 @@ import EmptyState from "./EmptyState";
 import ErrorMessage from "./ErrorMessage";
 
 const COLORS = {
-  Wins: "hsl(142 70% 45%)",
-  Losses: "hsl(0 72% 51%)",
-  "Break even": "hsl(0 0% 45%)",
+  Wins: "var(--gain)",
+  Losses: "var(--loss)",
+  "Break even": "var(--chart-neutral)",
 };
 
 function ChartTooltip({ active, payload }) {
@@ -63,20 +63,20 @@ export default function WinLossChart() {
           <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <XAxis
               dataKey="name"
-              stroke="hsl(0 0% 40%)"
+              stroke="var(--text-tertiary)"
               fontSize={11}
               tickLine={false}
               axisLine={false}
             />
             <YAxis
               allowDecimals={false}
-              stroke="hsl(0 0% 40%)"
+              stroke="var(--text-tertiary)"
               fontSize={11}
               tickLine={false}
               axisLine={false}
               width={32}
             />
-            <Tooltip content={<ChartTooltip />} cursor={{ fill: "hsl(0 0% 14%)" }} />
+            <Tooltip content={<ChartTooltip />} cursor={{ fill: "var(--chart-grid)" }} />
             <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={64}>
               {chartData.map((entry) => (
                 <Cell key={entry.name} fill={COLORS[entry.name]} />

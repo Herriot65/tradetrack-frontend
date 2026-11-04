@@ -5,10 +5,47 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Geist Variable", "ui-sans-serif", "system-ui", "sans-serif"],
-        heading: ["Geist Variable", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)"],
+        sans: ["var(--font-sans)"],
+        heading: ["var(--font-sans)"],
       },
       colors: {
+        "bg-ground": "var(--bg-ground)",
+        "bg-card": "var(--bg-card)",
+        "border-hairline": "var(--border-hairline)",
+        "border-control": "var(--border-control)",
+        "surface-active": "var(--surface-active)",
+        "text-primary": "var(--text-primary)",
+        "text-secondary": "var(--text-secondary)",
+        "text-tertiary": "var(--text-tertiary)",
+        gain: "var(--gain)",
+        open: "var(--open)",
+        neutral: "var(--neutral)",
+        "chart-neutral": "var(--chart-neutral)",
+        "chart-grid": "var(--chart-grid)",
+        ...Object.fromEntries(
+          Object.entries({
+            emerald: "--gain-rgb",
+            green: "--gain-rgb",
+            teal: "--gain-rgb",
+            cyan: "--gain-rgb",
+            blue: "--gain-rgb",
+            red: "--loss-rgb",
+            rose: "--loss-rgb",
+            amber: "--open-rgb",
+            yellow: "--open-rgb",
+          }).map(([name, rgb]) => [
+            name,
+            Object.fromEntries(
+              [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map((shade) => [
+                shade,
+                shade === 950 ? "rgb(0 0 0 / <alpha-value>)" : `rgb(var(${rgb}) / <alpha-value>)`,
+              ]),
+            ),
+          ]),
+        ),
+        white: "rgb(244 244 245 / <alpha-value>)",
+        black: "rgb(0 0 0 / <alpha-value>)",
         zinc: Object.fromEntries(
           [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map((shade) => [
             shade,

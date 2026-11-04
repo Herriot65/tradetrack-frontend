@@ -37,20 +37,26 @@ api.interceptors.request.use(
 /* =========================
    REFRESH TOKEN LOGIC
 ========================= */
-const refreshAccessToken = async () => {
-  const refresh = getRefreshToken();
+let refreshPromise = null;
 
-  if (!refresh) throw new Error("No refresh token");
+const refreshAccessToken = () => {
+  if (refreshPromise) return refreshPromise;
 
-  const response = await axios.post(`${BASE_URL}/auth/refresh/`, {
-    refresh,
+  refreshPromise = (async () => {
+    const refresh = getRefreshToken();
+    if (!refresh) throw new Error("No refresh token");
+
+    const response = await axios.post(`${BASE_URL}/auth/refresh/`, { refresh });
+    const { access, refresh: rotatedRefresh } = response.data;
+
+    // SimpleJWT rotates refresh tokens, so retain the replacement when supplied.
+    setTokens(access, rotatedRefresh ?? refresh);
+    return access;
+  })().finally(() => {
+    refreshPromise = null;
   });
 
-  const { access } = response.data;
-
-  setTokens(access, refresh);
-
-  return access;
+  return refreshPromise;
 };
 
 /* =========================
@@ -60,12 +66,15 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const isLoginRequest = originalRequest?.url?.includes("/auth/login/");
 
     if (
       error.response?.status === 401 &&
+      !isLoginRequest &&
       !originalRequest._retry
     ) {
       originalRequest._retry = true;
+      const refreshBeforeRetry = getRefreshToken();
 
       try {
         const newAccessToken = await refreshAccessToken();
@@ -75,8 +84,14 @@ api.interceptors.response.use(
 
         return api(originalRequest);
       } catch (refreshError) {
-        clearTokens();
-        window.location.href = "/login";
+        // A login in another request may have replaced the credentials meanwhile.
+        if (
+          getRefreshToken() === refreshBeforeRetry &&
+          [400, 401].includes(refreshError.response?.status)
+        ) {
+          clearTokens();
+          window.location.href = "/login";
+        }
         return Promise.reject(refreshError);
       }
     }

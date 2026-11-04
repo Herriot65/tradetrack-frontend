@@ -2,9 +2,9 @@ import { Cell, Label, Pie, PieChart, ResponsiveContainer, Tooltip } from "rechar
 
 import InfoTip from "@/components/ui/InfoTip";
 
-const WIN_COLOR  = "hsl(142 70% 45%)";
-const LOSS_COLOR = "hsl(0 72% 51%)";
-const BE_COLOR   = "hsl(0 0% 42%)";
+const WIN_COLOR  = "var(--gain)";
+const LOSS_COLOR = "var(--loss)";
+const BE_COLOR   = "var(--chart-neutral)";
 
 function DonutTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
@@ -35,7 +35,7 @@ export default function WinLossDonut({ wins = 0, losses = 0, breakEven = 0 }) {
       <ResponsiveContainer width="100%" height={140}>
         <PieChart>
           <Pie
-            data={total > 0 ? data : [{ name: "Empty", value: 1, fill: "hsl(0 0% 20%)" }]}
+            data={total > 0 ? data : [{ name: "Empty", value: 1, fill: "var(--chart-neutral)" }]}
             cx="50%"
             cy="50%"
             innerRadius={42}
@@ -55,7 +55,7 @@ export default function WinLossDonut({ wins = 0, losses = 0, breakEven = 0 }) {
                     <text x={cx} y={cy - 5} textAnchor="middle" fill="white" fontSize={15} fontWeight={600}>
                       {winRate}%
                     </text>
-                    <text x={cx} y={cy + 12} textAnchor="middle" fill="hsl(0 0% 45%)" fontSize={9}>
+                    <text x={cx} y={cy + 12} textAnchor="middle" fill="var(--text-tertiary)" fontSize={9}>
                       WIN RATE
                     </text>
                   </g>

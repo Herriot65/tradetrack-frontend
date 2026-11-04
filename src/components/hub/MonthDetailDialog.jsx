@@ -119,7 +119,7 @@ export default function MonthDetailDialog({ open, onClose, year, month, monthAna
     setSaving(true);
     try {
       const dataUrl = await toPng(contentRef.current, {
-        backgroundColor: "#09090b",
+        backgroundColor: getComputedStyle(contentRef.current).getPropertyValue("--bg-card").trim(),
         pixelRatio: 2,
       });
       const link = document.createElement("a");

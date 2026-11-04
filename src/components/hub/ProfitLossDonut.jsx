@@ -2,8 +2,8 @@ import { Cell, Label, Pie, PieChart, ResponsiveContainer, Tooltip } from "rechar
 
 import InfoTip from "@/components/ui/InfoTip";
 
-const PROFIT_COLOR = "hsl(142 70% 45%)";
-const LOSS_COLOR   = "hsl(0 72% 51%)";
+const PROFIT_COLOR = "var(--gain)";
+const LOSS_COLOR   = "var(--loss)";
 
 function DonutTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
@@ -24,7 +24,7 @@ export default function ProfitLossDonut({ grossProfit = 0, grossLoss = 0, totalR
   ].filter((d) => d.value > 0);
 
   const sign = totalR > 0 ? "+" : "";
-  const totalColor = totalR > 0 ? "hsl(142 70% 50%)" : totalR < 0 ? "hsl(0 72% 56%)" : "white";
+  const totalColor = totalR > 0 ? "var(--gain)" : totalR < 0 ? "var(--loss)" : "var(--text-primary)";
 
   return (
     <div className="flex flex-col items-center gap-1">
@@ -50,7 +50,7 @@ export default function ProfitLossDonut({ grossProfit = 0, grossLoss = 0, totalR
                 <Cell fill={LOSS_COLOR} />
               </>
             )}
-            {!hasData && <Cell fill="hsl(0 0% 20%)" />}
+            {!hasData && <Cell fill="var(--chart-neutral)" />}
             <Label
               content={({ viewBox }) => {
                 const { cx, cy } = viewBox;
@@ -59,7 +59,7 @@ export default function ProfitLossDonut({ grossProfit = 0, grossLoss = 0, totalR
                     <text x={cx} y={cy - 5} textAnchor="middle" fill={totalColor} fontSize={15} fontWeight={600}>
                       {sign}{totalR}R
                     </text>
-                    <text x={cx} y={cy + 12} textAnchor="middle" fill="hsl(0 0% 45%)" fontSize={9}>
+                    <text x={cx} y={cy + 12} textAnchor="middle" fill="var(--text-tertiary)" fontSize={9}>
                       NET R
                     </text>
                   </g>

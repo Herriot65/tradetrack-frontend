@@ -11,9 +11,9 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const COLORS = {
-  Wins:        "hsl(142 70% 45%)",
-  Losses:      "hsl(0 72% 51%)",
-  "Break Even": "hsl(0 0% 45%)",
+  Wins:        "var(--gain)",
+  Losses:      "var(--loss)",
+  "Break Even": "var(--chart-neutral)",
 };
 
 function WLTooltip({ active, payload }) {
@@ -56,20 +56,20 @@ export default function WinLossDistributionChart({ data, height = 180 }) {
             <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
               <XAxis
                 dataKey="name"
-                stroke="hsl(0 0% 30%)"
+                stroke="var(--text-tertiary)"
                 fontSize={10}
                 tickLine={false}
                 axisLine={false}
               />
               <YAxis
                 allowDecimals={false}
-                stroke="hsl(0 0% 30%)"
+                stroke="var(--text-tertiary)"
                 fontSize={10}
                 tickLine={false}
                 axisLine={false}
                 width={28}
               />
-              <Tooltip content={<WLTooltip />} cursor={{ fill: "hsl(0 0% 12%)" }} />
+              <Tooltip content={<WLTooltip />} cursor={{ fill: "var(--chart-grid)" }} />
               <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={56}>
                 {chartData.map((entry) => (
                   <Cell key={entry.name} fill={COLORS[entry.name]} />

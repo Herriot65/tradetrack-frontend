@@ -40,7 +40,7 @@ export default function AssetBreakdownChart({ data = [], title = "R by Asset" })
             <XAxis
               type="number"
               tickFormatter={(v) => `${v}R`}
-              stroke="hsl(0 0% 30%)"
+              stroke="var(--text-tertiary)"
               fontSize={10}
               tickLine={false}
               axisLine={false}
@@ -48,7 +48,7 @@ export default function AssetBreakdownChart({ data = [], title = "R by Asset" })
             <YAxis
               type="category"
               dataKey="asset"
-              stroke="hsl(0 0% 30%)"
+              stroke="var(--text-tertiary)"
               fontSize={10}
               tickLine={false}
               axisLine={false}
@@ -57,13 +57,13 @@ export default function AssetBreakdownChart({ data = [], title = "R by Asset" })
             <Tooltip
               content={<AssetTooltip />}
               isAnimationActive={false}
-              cursor={{ fill: "hsl(0 0% 100% / 0.04)" }}
+              cursor={{ fill: "var(--surface-active)" }}
             />
             <Bar dataKey="totalR" radius={[0, 3, 3, 0]} isAnimationActive={false}>
               {data.map((entry, i) => (
                 <Cell
                   key={i}
-                  fill={entry.totalR >= 0 ? "hsl(142 70% 45%)" : "hsl(0 72% 51%)"}
+                  fill={entry.totalR >= 0 ? "var(--gain)" : "var(--loss)"}
                   opacity={0.85}
                 />
               ))}

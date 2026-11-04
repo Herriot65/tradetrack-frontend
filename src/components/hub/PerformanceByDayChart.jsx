@@ -37,34 +37,34 @@ export default function PerformanceByDayChart({ data = [], loading = false }) {
         ) : (
           <ResponsiveContainer width="100%" height={160}>
             <BarChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(0 0% 18%)" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
               <XAxis
                 dataKey="day"
                 tickFormatter={(v) => SHORT_DAY[v] ?? v.slice(0, 3)}
-                stroke="hsl(0 0% 30%)"
+                stroke="var(--text-tertiary)"
                 fontSize={10}
                 tickLine={false}
                 axisLine={false}
               />
               <YAxis
                 tickFormatter={(v) => `${v}R`}
-                stroke="hsl(0 0% 30%)"
+                stroke="var(--text-tertiary)"
                 fontSize={10}
                 tickLine={false}
                 axisLine={false}
                 width={38}
               />
-              <ReferenceLine y={0} stroke="hsl(0 0% 35%)" strokeDasharray="4 3" />
+              <ReferenceLine y={0} stroke="var(--text-tertiary)" strokeDasharray="4 3" />
               <Tooltip
                 content={<DayTooltip />}
                 isAnimationActive={false}
-                cursor={{ fill: "hsl(0 0% 100% / 0.04)" }}
+                cursor={{ fill: "var(--surface-active)" }}
               />
               <Bar dataKey="total_r" radius={[3, 3, 0, 0]} maxBarSize={40} isAnimationActive={false}>
                 {data.map((entry, i) => (
                   <Cell
                     key={i}
-                    fill={entry.total_r >= 0 ? "hsl(142 70% 45%)" : "hsl(0 72% 51%)"}
+                    fill={entry.total_r >= 0 ? "var(--gain)" : "var(--loss)"}
                     fillOpacity={0.85}
                   />
                 ))}

@@ -16,7 +16,7 @@ function PnlTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
   const { date, r } = payload[0].payload;
   const sign = r > 0 ? "+" : "";
-  const color = r > 0 ? "hsl(142 70% 45%)" : r < 0 ? "hsl(0 72% 51%)" : "hsl(0 0% 45%)";
+  const color = r > 0 ? "var(--gain)" : r < 0 ? "var(--loss)" : "var(--text-tertiary)";
   return (
     <div className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs shadow-xl space-y-0.5">
       <p className="text-zinc-400">{formatDate(date)}</p>
@@ -48,7 +48,7 @@ export default function PnlByDayChart({ data = [], height = 180 }) {
                   try { return new Date(v).toLocaleDateString(undefined, { day: "numeric", month: "short" }); }
                   catch { return v; }
                 }}
-                stroke="hsl(0 0% 30%)"
+                stroke="var(--text-tertiary)"
                 fontSize={10}
                 tickLine={false}
                 axisLine={false}
@@ -57,24 +57,24 @@ export default function PnlByDayChart({ data = [], height = 180 }) {
               <YAxis
                 domain={domain}
                 tickFormatter={(v) => `${v}R`}
-                stroke="hsl(0 0% 30%)"
+                stroke="var(--text-tertiary)"
                 fontSize={10}
                 tickLine={false}
                 axisLine={false}
                 width={38}
               />
-              <ReferenceLine y={0} stroke="hsl(0 0% 40%)" strokeWidth={1.5} />
-              <Tooltip content={<PnlTooltip />} cursor={{ fill: "hsl(0 0% 12%)" }} />
+              <ReferenceLine y={0} stroke="var(--text-tertiary)" strokeWidth={1.5} />
+              <Tooltip content={<PnlTooltip />} cursor={{ fill: "var(--chart-grid)" }} />
               <Bar dataKey="r" radius={[3, 3, 0, 0]} maxBarSize={40}>
                 {data.map((entry, i) => (
                   <Cell
                     key={i}
                     fill={
                       entry.r > 0
-                        ? "hsl(142 70% 45%)"
+                        ? "var(--gain)"
                         : entry.r < 0
-                        ? "hsl(0 72% 51%)"
-                        : "hsl(0 0% 45%)"
+                        ? "var(--loss)"
+                        : "var(--text-tertiary)"
                     }
                     fillOpacity={0.9}
                   />

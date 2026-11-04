@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/auth/useAuth";
 import { navLinks } from "./landingData";
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, loading } = useAuth();
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-border/60 bg-background/95 backdrop-blur-xl">
       <nav
@@ -29,9 +31,11 @@ export default function Navbar() {
           ))}
         </div>
         <div className="hidden items-center gap-3 md:flex">
-          <Button asChild variant="ghost">
-            <Link to="/login">Log in</Link>
-          </Button>
+          {!loading && (
+            <Button asChild variant="ghost">
+              <Link to={user ? "/dashboard" : "/login"}>{user ? "Dashboard" : "Log in"}</Link>
+            </Button>
+          )}
           <Button asChild>
             <Link to="/register">
               Get started
@@ -69,9 +73,13 @@ export default function Navbar() {
             </a>
           ))}
           <div className="flex gap-3 pt-3">
-            <Button asChild variant="outline" className="flex-1">
-              <Link to="/login">Log in</Link>
-            </Button>
+            {!loading && (
+              <Button asChild variant="outline" className="flex-1">
+                <Link to={user ? "/dashboard" : "/login"}>
+                  {user ? "Dashboard" : "Log in"}
+                </Link>
+              </Button>
+            )}
             <Button asChild className="flex-1">
               <Link to="/register">Get started</Link>
             </Button>

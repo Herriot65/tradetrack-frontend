@@ -81,16 +81,16 @@ export default function DrawdownChart({ data = [], title = "Drawdown (R)", heigh
             <AreaChart data={data} margin={{ top: 4, right: 12, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="ddFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="hsl(0 72% 51%)" stopOpacity={0.30} />
-                  <stop offset="95%" stopColor="hsl(0 72% 51%)" stopOpacity={0.04} />
+                  <stop offset="5%"  stopColor="var(--loss)" stopOpacity={0.28} />
+                  <stop offset="95%" stopColor="var(--loss)" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(0 0% 18%)" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
               <XAxis
                 dataKey="date"
                 ticks={ticks}
                 tickFormatter={formatter}
-                stroke="hsl(0 0% 30%)"
+                stroke="var(--text-tertiary)"
                 fontSize={10}
                 tickLine={false}
                 axisLine={false}
@@ -98,22 +98,22 @@ export default function DrawdownChart({ data = [], title = "Drawdown (R)", heigh
               <YAxis
                 domain={[yMin, 0]}
                 tickFormatter={(v) => `${v}R`}
-                stroke="hsl(0 0% 30%)"
+                stroke="var(--text-tertiary)"
                 fontSize={10}
                 tickLine={false}
                 axisLine={false}
                 width={38}
               />
-              <ReferenceLine y={0} stroke="hsl(0 0% 35%)" strokeDasharray="4 3" />
+              <ReferenceLine y={0} stroke="var(--text-tertiary)" strokeDasharray="4 3" />
               <Tooltip content={<DdTooltip />} isAnimationActive={false} />
               <Area
                 type="monotone"
                 dataKey="drawdown"
-                stroke="hsl(0 72% 51%)"
+                stroke="var(--loss)"
                 strokeWidth={1.5}
                 fill="url(#ddFill)"
                 dot={false}
-                activeDot={{ r: 3, strokeWidth: 0, fill: "hsl(0 72% 51%)" }}
+                activeDot={{ r: 3, strokeWidth: 0, fill: "var(--loss)" }}
                 isAnimationActive={false}
               />
             </AreaChart>

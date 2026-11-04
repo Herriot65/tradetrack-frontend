@@ -63,7 +63,7 @@ export default function PnlBySetupChart() {
           <XAxis
             type="number"
             tickFormatter={(v) => `${v}R`}
-            stroke="hsl(0 0% 40%)"
+            stroke="var(--text-tertiary)"
             fontSize={11}
             tickLine={false}
             axisLine={false}
@@ -71,21 +71,21 @@ export default function PnlBySetupChart() {
           <YAxis
             type="category"
             dataKey="setup"
-            stroke="hsl(0 0% 40%)"
+            stroke="var(--text-tertiary)"
             fontSize={11}
             tickLine={false}
             axisLine={false}
             width={100}
           />
-          <Tooltip content={<ChartTooltip />} cursor={{ fill: "hsl(0 0% 14%)" }} />
+          <Tooltip content={<ChartTooltip />} cursor={{ fill: "var(--chart-grid)" }} />
           <Bar dataKey="total_r" radius={[0, 4, 4, 0]} maxBarSize={20}>
             {data.map((entry) => (
               <Cell
                 key={entry.setup}
                 fill={
                   entry.total_r >= 0
-                    ? "hsl(142 70% 45%)"
-                    : "hsl(0 72% 51%)"
+                    ? "var(--gain)"
+                    : "var(--loss)"
                 }
               />
             ))}

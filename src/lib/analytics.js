@@ -726,9 +726,13 @@ export function heatmapTone(value, maxAbs, count = 1, metric = "netR") {
     ? 0.15 + 0.85 * Math.min(1, count / Math.max(1, maxAbs))
     : 0.18 + 0.82 * Math.min(1, Math.abs(number) / Math.max(maxAbs, Number.EPSILON));
   const token = metric === "trades" || number === 0 ? "ink-muted" : number > 0 ? "profit" : "loss";
+  // Paint only: avoid the narrow tint range where neither ink meets 4.5:1.
+  // Preserve the original intensity returned to callers and all data scaling.
+  const inkThreshold = token === "profit" ? 0.54 : token === "loss" ? 0.74 : 0.93;
+  const paintIntensity = intensity > inkThreshold - 0.04 && intensity < inkThreshold ? inkThreshold : intensity;
   return {
-    background: `color-mix(in srgb, var(--${token}) ${intensity * 100}%, var(--surface-card))`,
-    color: "var(--ink)", intensity,
+    background: `color-mix(in srgb, var(--${token}) ${paintIntensity * 100}%, var(--surface-card))`,
+    color: paintIntensity >= inkThreshold ? "var(--bg-ground)" : "var(--ink)", intensity,
   };
 }
 

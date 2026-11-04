@@ -94,8 +94,8 @@ export default function HubEquityCurve({ data = [], title = "Equity Curve", heig
 
   const lastEquityR  = data.length > 0 ? data[data.length - 1].equity_r : 0;
   const isNegative   = lastEquityR < 0;
-  const lineColor    = isNegative ? "hsl(0 70% 55%)"   : "hsl(142 70% 45%)";
-  const fillColor    = isNegative ? "hsl(0 70% 50%)"   : "hsl(142 70% 45%)";
+  const lineColor    = isNegative ? "var(--loss)"   : "var(--gain)";
+  const fillColor    = isNegative ? "var(--loss)"   : "var(--gain)";
   // For negative equity the fill area is below 0 so the gradient should intensify downward.
   const fillStops    = isNegative
     ? [{ offset: "5%", opacity: 0 }, { offset: "95%", opacity: 0.28 }]
@@ -138,13 +138,13 @@ export default function HubEquityCurve({ data = [], title = "Equity Curve", heig
                 </linearGradient>
               </defs>
 
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(0 0% 18%)" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
 
               <XAxis
                 dataKey="date"
                 ticks={ticks}
                 tickFormatter={formatter}
-                stroke="hsl(0 0% 30%)"
+                stroke="var(--text-tertiary)"
                 fontSize={10}
                 tickLine={false}
                 axisLine={false}
@@ -153,14 +153,14 @@ export default function HubEquityCurve({ data = [], title = "Equity Curve", heig
               <YAxis
                 domain={[yMin, yMax]}
                 tickFormatter={masked ? () => "" : (v) => `${v}R`}
-                stroke="hsl(0 0% 30%)"
+                stroke="var(--text-tertiary)"
                 fontSize={10}
                 tickLine={false}
                 axisLine={false}
                 width={masked ? 8 : 38}
               />
 
-              <ReferenceLine y={0} stroke="hsl(0 0% 35%)" strokeDasharray="4 3" />
+              <ReferenceLine y={0} stroke="var(--text-tertiary)" strokeDasharray="4 3" />
 
               <Tooltip
                 content={<EqTooltip masked={masked} />}

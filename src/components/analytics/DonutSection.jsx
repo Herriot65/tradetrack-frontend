@@ -130,7 +130,7 @@ export default function DonutSection({ analytics }) {
       >
         <Donut
           values={[summary.wins, summary.losses, summary.breakEven]}
-          colors={["var(--profit)", "var(--loss)", "var(--ink-muted)"]}
+          colors={["var(--profit)", "var(--loss)", "var(--chart-neutral)"]}
           centerValue={formatPercent(summary.winRate)}
           labels={["Wins", "Losses", "Break-even"]}
           centerLabel="Win rate"
@@ -157,7 +157,7 @@ export default function DonutSection({ analytics }) {
             index={1}
           />
           <LegendRow
-            color="var(--ink-muted)"
+            color="var(--chart-neutral)"
             label="Break-even"
             value={summary.breakEven}
             detail={formatPercent((summary.breakEven / total) * 100)}

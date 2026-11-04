@@ -60,7 +60,7 @@ export default function MonthlyCard({ analytics, bounds, onOpenMonth }) {
                         "text-[11px] tabular-nums text-ink outline-none transition-transform hover:scale-[1.03]",
                         "focus-visible:ring-2 focus-visible:ring-white/25",
                       )}
-                      style={{ backgroundColor: tone.background }}
+                      style={{ backgroundColor: tone.background, color: tone.color }}
                     >
                       <span className="truncate">{formatValue(month.totalR, "R")}</span>
                     </button>

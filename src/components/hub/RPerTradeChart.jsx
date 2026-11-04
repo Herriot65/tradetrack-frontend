@@ -13,9 +13,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import InfoTip from "@/components/ui/InfoTip";
 import { formatDate } from "@/lib/formatters";
 
-const WIN_COLOR  = "hsl(142 70% 45%)";
-const LOSS_COLOR = "hsl(0 72% 51%)";
-const BE_COLOR   = "hsl(0 0% 45%)";
+const WIN_COLOR  = "var(--gain)";
+const LOSS_COLOR = "var(--loss)";
+const BE_COLOR   = "var(--chart-neutral)";
 
 function barColor(r) {
   if (r > 0) return WIN_COLOR;
@@ -73,18 +73,18 @@ export default function RPerTradeChart({ data = [], title = "R per Trade", heigh
           <BarChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
             <XAxis
               dataKey="seq"
-              stroke="hsl(0 0% 30%)"
+              stroke="var(--text-tertiary)"
               fontSize={10}
               tickLine={false}
               axisLine={false}
-              label={{ value: "Trade #", position: "insideBottom", offset: -2, fontSize: 10, fill: "hsl(0 0% 35%)" }}
+              label={{ value: "Trade #", position: "insideBottom", offset: -2, fontSize: 10, fill: "var(--text-tertiary)" }}
               height={28}
               interval={data.length > 20 ? "preserveStartEnd" : 0}
             />
             <YAxis
               domain={domain}
               tickFormatter={(v) => `${v}R`}
-              stroke="hsl(0 0% 30%)"
+              stroke="var(--text-tertiary)"
               fontSize={10}
               tickLine={false}
               axisLine={false}
@@ -92,11 +92,11 @@ export default function RPerTradeChart({ data = [], title = "R per Trade", heigh
             />
             <ReferenceLine
               y={0}
-              stroke="hsl(0 0% 40%)"
+              stroke="var(--text-tertiary)"
               strokeWidth={1.5}
               strokeDasharray="0"
             />
-            <Tooltip content={<RTooltip />} cursor={{ fill: "hsl(0 0% 12%)" }} />
+            <Tooltip content={<RTooltip />} cursor={{ fill: "var(--chart-grid)" }} />
             <Bar dataKey="r" radius={[2, 2, 0, 0]} maxBarSize={32}>
               {data.map((entry) => (
                 <Cell key={entry.seq} fill={barColor(entry.r)} fillOpacity={0.9} />

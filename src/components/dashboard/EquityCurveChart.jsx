@@ -75,20 +75,20 @@ export default function EquityCurveChart() {
         <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="hsl(0 0% 20%)"
+            stroke="var(--chart-neutral)"
             vertical={false}
           />
           <XAxis
             dataKey="date"
             tickFormatter={(v) => formatDate(v)}
-            stroke="hsl(0 0% 40%)"
+            stroke="var(--text-tertiary)"
             fontSize={11}
             tickLine={false}
             axisLine={false}
           />
           <YAxis
             tickFormatter={(v) => `${v}R`}
-            stroke="hsl(0 0% 40%)"
+            stroke="var(--text-tertiary)"
             fontSize={11}
             tickLine={false}
             axisLine={false}
@@ -98,9 +98,9 @@ export default function EquityCurveChart() {
           <Line
             type="monotone"
             dataKey="equity_r"
-            stroke="hsl(142 70% 45%)"
+            stroke="var(--gain)"
             strokeWidth={2}
-            dot={{ r: 3, fill: "hsl(142 70% 45%)" }}
+            dot={{ r: 3, fill: "var(--gain)" }}
             activeDot={{ r: 5 }}
           />
         </LineChart>
