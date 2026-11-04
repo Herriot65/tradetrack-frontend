@@ -1,4 +1,3 @@
-import * as React from "react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { XIcon } from "lucide-react";
 
@@ -18,7 +17,7 @@ function SheetOverlay({ className, ...props }) {
         "fixed inset-0 z-50 bg-black/60",
         "data-open:animate-in data-open:fade-in-0",
         "data-closed:animate-out data-closed:fade-out-0",
-        className
+        className,
       )}
       {...props}
     />
@@ -37,7 +36,7 @@ function SheetContent({ className, children, ...props }) {
           "duration-200",
           "data-open:animate-in data-open:slide-in-from-right",
           "data-closed:animate-out data-closed:slide-out-to-right",
-          className
+          className,
         )}
         {...props}
       >
@@ -53,18 +52,13 @@ function SheetHeader({ className, children, onClose, ...props }) {
       data-slot="sheet-header"
       className={cn(
         "flex shrink-0 items-start justify-between border-b border-zinc-800 px-6 py-4",
-        className
+        className,
       )}
       {...props}
     >
       <div className="flex-1">{children}</div>
       <DialogPrimitive.Close asChild>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="ml-2 mt-0.5 shrink-0"
-          onClick={onClose}
-        >
+        <Button variant="ghost" size="icon-sm" className="ml-2 mt-0.5 shrink-0" onClick={onClose}>
           <XIcon />
           <span className="sr-only">Close</span>
         </Button>
@@ -77,7 +71,7 @@ function SheetBody({ className, ...props }) {
   return (
     <div
       data-slot="sheet-body"
-      className={cn("flex-1 overflow-y-auto px-6 py-5", className)}
+      className={cn("min-h-0 flex-1 overflow-y-auto px-6 py-5", className)}
       {...props}
     />
   );
@@ -89,7 +83,7 @@ function SheetFooter({ className, ...props }) {
       data-slot="sheet-footer"
       className={cn(
         "flex shrink-0 items-center justify-between gap-3 border-t border-zinc-800 px-6 py-4",
-        className
+        className,
       )}
       {...props}
     />

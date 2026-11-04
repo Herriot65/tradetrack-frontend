@@ -1,4 +1,3 @@
-import * as React from "react";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
@@ -8,15 +7,11 @@ function DropdownMenu({ ...props }) {
 }
 
 function DropdownMenuTrigger({ ...props }) {
-  return (
-    <DropdownMenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />
-  );
+  return <DropdownMenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />;
 }
 
 function DropdownMenuPortal({ ...props }) {
-  return (
-    <DropdownMenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
-  );
+  return <DropdownMenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />;
 }
 
 function DropdownMenuContent({ className, sideOffset = 4, ...props }) {
@@ -29,7 +24,7 @@ function DropdownMenuContent({ className, sideOffset = 4, ...props }) {
           "z-50 min-w-[10rem] overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 p-1 text-sm text-zinc-100 shadow-xl",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
           "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-          className
+          className,
         )}
         {...props}
       />
@@ -44,14 +39,13 @@ function DropdownMenuItem({ className, inset, variant = "default", ...props }) {
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-none transition-colors",
-        "focus:bg-zinc-800 focus:text-zinc-100",
+        "relative flex cursor-default select-none items-center gap-2 rounded-md px-2.5 py-2 text-[12px] outline-none transition-colors",
+        "focus:bg-primary/10 focus:text-primary",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        variant === "destructive" &&
-          "text-rose-400 focus:bg-rose-500/10 focus:text-rose-400",
+        variant === "destructive" && "text-rose-400 focus:bg-rose-500/10 focus:text-rose-400",
         inset && "pl-8",
-        className
+        className,
       )}
       {...props}
     />
@@ -73,11 +67,7 @@ function DropdownMenuLabel({ className, inset, ...props }) {
     <DropdownMenuPrimitive.Label
       data-slot="dropdown-menu-label"
       data-inset={inset}
-      className={cn(
-        "px-2 py-1.5 text-xs font-medium text-zinc-500",
-        inset && "pl-8",
-        className
-      )}
+      className={cn("px-2 py-1.5 text-xs font-medium text-zinc-500", inset && "pl-8", className)}
       {...props}
     />
   );

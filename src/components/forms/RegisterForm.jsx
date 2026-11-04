@@ -8,13 +8,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PasswordInput } from "./PasswordInput";
 import { FormErrorBanner } from "./FormErrorBanner";
 import { FieldError } from "./FieldError";
@@ -48,9 +42,7 @@ export default function RegisterForm() {
       navigate("/dashboard");
     } catch (error) {
       console.error(error);
-      setServerError(
-        "Unable to create your account. Please check your details and try again."
-      );
+      setServerError("Unable to create your account. Please check your details and try again.");
     }
   };
 
@@ -58,19 +50,10 @@ export default function RegisterForm() {
     <Card className="w-full max-w-md border-border/60 bg-card/80 shadow-xl shadow-black/20 backdrop-blur-sm">
       <CardHeader className="space-y-1 text-center">
         <div className="flex justify-center mb-2">
-          <img
-            src="/nexora.png"
-            alt="Nexora"
-            className="h-16 w-16 rounded-xl"
-            style={{ animation: "float 3s ease-in-out infinite" }}
-          />
+          <img src="/nexora.png" alt="Nexora" className="h-16 w-16 rounded-xl" />
         </div>
-        <CardTitle className="text-2xl font-bold tracking-tight">
-          Create account
-        </CardTitle>
-        <CardDescription>
-          Start tracking your trading performance today
-        </CardDescription>
+        <CardTitle className="text-2xl font-bold tracking-tight">Create account</CardTitle>
+        <CardDescription>Start tracking your trading performance today</CardDescription>
       </CardHeader>
 
       <CardContent>

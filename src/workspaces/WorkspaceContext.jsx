@@ -40,15 +40,14 @@ export function WorkspaceProvider({ children }) {
       setActiveWorkspace(toSelect);
       if (toSelect) localStorage.setItem(STORAGE_KEY, String(toSelect.id));
     } catch (err) {
-      setError(
-        err?.response?.data?.detail ?? err.message ?? "Failed to load workspaces"
-      );
+      setError(err?.response?.data?.detail ?? err.message ?? "Failed to load workspaces");
     } finally {
       setLoading(false);
     }
   }, [isAuthenticated]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Bootstrap asynchronous workspace loading when authentication changes.
     load();
   }, [load]);
 
@@ -64,7 +63,7 @@ export function WorkspaceProvider({ children }) {
       selectWorkspace(created);
       return created;
     },
-    [selectWorkspace]
+    [selectWorkspace],
   );
 
   const renameWorkspace = useCallback(
@@ -74,7 +73,7 @@ export function WorkspaceProvider({ children }) {
       if (activeWorkspace?.id === id) setActiveWorkspace(updated);
       return updated;
     },
-    [activeWorkspace?.id]
+    [activeWorkspace?.id],
   );
 
   const deleteWorkspace = useCallback(
@@ -90,7 +89,7 @@ export function WorkspaceProvider({ children }) {
         else localStorage.removeItem(STORAGE_KEY);
       }
     },
-    [activeWorkspace?.id, workspaces]
+    [activeWorkspace?.id, workspaces],
   );
 
   return (

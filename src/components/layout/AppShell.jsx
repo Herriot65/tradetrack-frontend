@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Bot,
+  BookOpen,
   Calculator,
   CalendarDays,
   ChevronsLeft,
@@ -11,13 +12,16 @@ import {
   LayoutDashboard,
   Lightbulb,
   LogOut,
+  Menu,
   Newspaper,
   Settings,
   Shield,
   User,
+  X,
+  ChevronDown,
 } from "lucide-react";
-
 import { useAuth } from "@/auth/useAuth";
+import { useJournal } from "@/journals/useJournal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,281 +31,295 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 import JournalSwitcher from "@/components/dashboard/JournalSwitcher";
 import UserSettings from "./UserSettings";
 
-// ─── Nav data ─────────────────────────────────────────────────────────────────
-
-const NAV_ITEMS = [
-  { label: "Dashboard", icon: LayoutDashboard, to: "/dashboard" },
+const TOOLS = [
+  { label: "Economic Calendar", icon: CalendarDays },
+  { label: "Lot Size Calculator", icon: Calculator },
+  { label: "Market Sessions", icon: Globe },
+  { label: "Forex News", icon: Newspaper },
+  { label: "Risk Calculator", icon: Shield },
+  { label: "AI Market Brief", icon: Bot },
+  { label: "Trading Academy", icon: GraduationCap },
+  { label: "Strategy Builder", icon: Lightbulb },
 ];
-
-const TOOL_ITEMS = [
-  { label: "Economic Calendar",   icon: CalendarDays  },
-  { label: "Lot Size Calculator", icon: Calculator    },
-  { label: "Market Sessions",     icon: Globe         },
-  { label: "Forex News",          icon: Newspaper     },
-  { label: "Risk Calculator",     icon: Shield        },
-  { label: "AI Market Brief",     icon: Bot           },
-  { label: "Trading Academy",     icon: GraduationCap },
-  { label: "Strategy Builder",    icon: Lightbulb     },
-];
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function getInitials(user) {
-  if (user?.first_name || user?.last_name) {
-    return `${user.first_name?.[0] ?? ""}${user.last_name?.[0] ?? ""}`.toUpperCase() || "NX";
-  }
-  return (user?.email ?? "NX").slice(0, 2).toUpperCase();
-}
-
-function getDisplayName(user) {
-  if (user?.first_name || user?.last_name) {
-    return [user.first_name, user.last_name].filter(Boolean).join(" ");
-  }
-  return user?.email?.split("@")[0] ?? "";
-}
-
 function readCollapsed() {
-  try { return localStorage.getItem("sidebar_collapsed") === "true"; } catch { return false; }
+  try {
+    return localStorage.getItem("sidebar_collapsed") === "true";
+  } catch {
+    return false;
+  }
 }
-
-// ─── Component ────────────────────────────────────────────────────────────────
-
+function Hint({ label, children }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
+  );
+}
 export default function AppShell({ children }) {
-  const [settingsOpen,setSettingsOpen] = useState(false);
   const { user, logout } = useAuth();
+  const { journals } = useJournal();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(readCollapsed);
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
-
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [mobile, setMobile] = useState(() => window.innerWidth < 768);
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
+    const resize = () => setMobile(window.innerWidth < 768);
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
   }, []);
-
-  // On mobile the sidebar is always icon-only to avoid covering page content
-  const isCollapsed = isMobile || collapsed;
-
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const navigation = document.getElementById("app-navigation");
+    navigation.querySelector("a,button")?.focus();
+    const close = (event) => {
+      if (event.key === "Escape") setMobileOpen(false);
+      if (event.key === "Tab") {
+        const nodes = [...navigation.querySelectorAll("a[href],button:not(:disabled)")].filter(
+          (node) => node.offsetParent !== null,
+        );
+        const first = nodes[0],
+          last = nodes.at(-1);
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+    window.addEventListener("keydown", close);
+    return () => {
+      window.removeEventListener("keydown", close);
+      document.getElementById("mobile-navigation-trigger")?.focus();
+    };
+  }, [mobileOpen]);
+  const compact = collapsed && !mobile;
+  const name =
+    [user?.first_name, user?.last_name].filter(Boolean).join(" ") ||
+    user?.email?.split("@")[0] ||
+    "Account";
+  const initials =
+    (user?.first_name?.[0] || user?.email?.[0] || "N") + (user?.last_name?.[0] || "");
+  const journalRoute = location.pathname.startsWith("/journal/");
   function toggleCollapsed() {
-    setCollapsed((c) => {
-      const next = !c;
-      try { localStorage.setItem("sidebar_collapsed", String(next)); } catch { /* ignore */ }
-      return next;
+    setCollapsed((value) => {
+      try {
+        localStorage.setItem("sidebar_collapsed", String(!value));
+      } catch {
+        /* Local persistence is optional. */
+      }
+      return !value;
     });
   }
-
-  function isActive(to) {
-    if (to === "/dashboard") {
-      return location.pathname === "/dashboard" || location.pathname.startsWith("/journal");
-    }
-    return location.pathname.startsWith(to);
-  }
-
-  const sidebarW  = isCollapsed ? "w-[60px]"   : "w-[224px]";
-  const contentPl = isCollapsed ? "pl-[60px]"  : "pl-[224px]";
-  const initials  = getInitials(user);
-  const displayName = getDisplayName(user);
-
   return (
-    <div className="flex min-h-screen bg-zinc-950">
-
-      {/* ── Sidebar ── */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-30 flex flex-col border-r border-zinc-800/50 bg-zinc-950 transition-[width] duration-200 ease-in-out ${sidebarW}`}
+    <div className="nx-shell" data-collapsed={compact} data-mobile-open={mobileOpen}>
+      <a
+        href="#main-content"
+        className="fixed left-4 top-2 z-[100] -translate-y-24 rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground focus:translate-y-0"
       >
-
-        {/* Brand */}
-        <div className={`flex h-14 shrink-0 items-center border-b border-zinc-800/50 ${isCollapsed ? "justify-center px-3" : "px-4"}`}>
-          <img
-            src="/nexora.png"
-            alt="Nexora"
-            className="size-7 shrink-0 rounded-lg object-contain"
-          />
-          {!isCollapsed && (
-            <div className="ml-2.5 overflow-hidden">
-              <p className="whitespace-nowrap text-[13px] font-semibold leading-tight tracking-tight text-zinc-100">
-                Nexora
-              </p>
-              <p className="whitespace-nowrap text-[10px] leading-tight tracking-wide text-zinc-500">
-                Analytics
+        Skip to content
+      </a>
+      {mobileOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation"
+          onClick={() => setMobileOpen(false)}
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+        />
+      )}
+      <aside
+        id="app-navigation"
+        className="nx-sidebar"
+        aria-label="Application navigation"
+        inert={mobile && !mobileOpen ? true : undefined}
+      >
+        <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-border/60 px-5">
+          <Link
+            to="/dashboard"
+            aria-label="Nexora dashboard"
+            onClick={() => setMobileOpen(false)}
+            className="flex min-w-0 items-center gap-2.5"
+          >
+            <img src="/nexora.png" alt="" className="size-8 shrink-0 rounded-lg" />
+            {!compact && (
+              <div className="min-w-0">
+                <span className="text-[17px] font-semibold tracking-[-0.05em]">
+                  nexora<span className="text-primary">.</span>
+                </span>
+                <p className="text-[8px] uppercase tracking-[0.22em] text-zinc-500">
+                  Trading intelligence
+                </p>
+              </div>
+            )}
+          </Link>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            className="md:hidden"
+            aria-label="Close navigation"
+            onClick={() => setMobileOpen(false)}
+          >
+            <X />
+          </Button>
+        </div>
+        <nav className="flex-1 overflow-y-auto px-3 pb-5 pt-5">
+          <p className="nx-sidebar-caption !mt-0">Workspace</p>
+          <Hint label="Dashboard">
+            <Link
+              to="/dashboard"
+              className="nx-nav-item"
+              data-active={!journalRoute}
+              aria-current={!journalRoute ? "page" : undefined}
+              onClick={() => setMobileOpen(false)}
+            >
+              <LayoutDashboard className="size-4 shrink-0" />
+              <span className="nx-nav-label">Dashboard</span>
+            </Link>
+          </Hint>
+          {journals.length > 0 && (
+            <>
+              <p className="nx-sidebar-caption">Your journals</p>
+              <div className="space-y-1">
+                {journals.map((journal) => (
+                  <Hint key={journal.id} label={journal.name}>
+                    <Link
+                      to={`/journal/${journal.id}`}
+                      onClick={() => setMobileOpen(false)}
+                      className="nx-nav-item"
+                      data-active={location.pathname === `/journal/${journal.id}`}
+                      aria-current={
+                        location.pathname === `/journal/${journal.id}` ? "page" : undefined
+                      }
+                    >
+                      <BookOpen className="size-4 shrink-0" />
+                      <span className="nx-nav-label truncate">{journal.name}</span>
+                    </Link>
+                  </Hint>
+                ))}
+              </div>
+            </>
+          )}
+          <div className="flex items-center justify-between">
+            <p className="nx-sidebar-caption">Tools</p>
+            {!compact && (
+              <span className="mt-5 rounded border border-border px-1.5 py-0.5 text-[8px] uppercase tracking-wider text-zinc-500">
+                Soon
+              </span>
+            )}
+          </div>
+          <div className="space-y-0.5">
+            {TOOLS.map(({ label, icon: Icon }) => (
+              <Hint key={label} label={`${label} · Coming soon`}>
+                <div aria-disabled="true" className="nx-nav-item cursor-not-allowed opacity-50">
+                  <Icon className="size-4 shrink-0" />
+                  <span className="nx-nav-label">{label}</span>
+                </div>
+              </Hint>
+            ))}
+          </div>
+        </nav>
+        <div className="space-y-3 border-t border-border/60 p-3">
+          {!compact && (
+            <div className="rounded-lg border border-border/50 bg-card p-3">
+              <p className="text-[11px] font-medium text-zinc-300">A clearer view of your edge.</p>
+              <p className="mt-1 text-[10px] leading-4 text-zinc-500">
+                Every trade tells a story. Make yours count.
               </p>
             </div>
           )}
-        </div>
-
-        {/* Nav */}
-        <nav className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden p-2">
-
-          {/* Main items */}
-          {NAV_ITEMS.map(({ label, icon: Icon, to }) => {
-            const active = isActive(to);
-            if (isCollapsed) {
-              return (
-                <Tooltip key={label}>
-                  <TooltipTrigger asChild>
-                    <Link
-                      to={to}
-                      className={`flex h-9 w-full items-center justify-center rounded-md transition-colors ${
-                        active
-                          ? "bg-zinc-800 text-zinc-100"
-                          : "text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100"
-                      }`}
-                    >
-                      <Icon className="size-4 shrink-0" />
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">{label}</TooltipContent>
-                </Tooltip>
-              );
-            }
-            return (
-              <Link
-                key={label}
-                to={to}
-                className={`relative flex h-9 items-center gap-2.5 rounded-md px-2.5 text-sm font-medium transition-colors ${
-                  active
-                    ? "bg-zinc-800 text-zinc-100"
-                    : "text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100"
-                }`}
-              >
-                {active && (
-                  <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-full bg-zinc-300" />
-                )}
-                <Icon className="size-4 shrink-0" />
-                <span className="whitespace-nowrap">{label}</span>
-              </Link>
-            );
-          })}
-
-          {/* Tools section divider */}
-          <div className={`${isCollapsed ? "my-3" : "mt-5 mb-1"}`}>
-            {isCollapsed
-              ? <div className="mx-2 h-px bg-zinc-800/60" />
-              : <p className="px-2.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
-                  Tools
-                </p>
-            }
-          </div>
-
-          {/* Coming soon tools */}
-          {TOOL_ITEMS.map(({ label, icon: Icon }) => {
-            if (isCollapsed) {
-              return (
-                <Tooltip key={label}>
-                  <TooltipTrigger asChild>
-                    <div className="flex h-9 w-full cursor-not-allowed items-center justify-center rounded-md opacity-30">
-                      <Icon className="size-4 shrink-0 text-zinc-500" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">{label} · Coming Soon</TooltipContent>
-                </Tooltip>
-              );
-            }
-            return (
-              <div
-                key={label}
-                className="flex h-9 cursor-not-allowed items-center gap-2.5 rounded-md px-2.5 opacity-35"
-              >
-                <Icon className="size-4 shrink-0 text-zinc-500" />
-                <span className="flex-1 whitespace-nowrap text-sm text-zinc-500">{label}</span>
-                <span className="rounded bg-zinc-800/80 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-zinc-600">
-                  Soon
-                </span>
-              </div>
-            );
-          })}
-        </nav>
-
-        {/* Collapse toggle */}
-        <div className="border-t border-zinc-800/50 p-2">
           <button
+            type="button"
             onClick={toggleCollapsed}
-            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className={`flex h-9 w-full items-center rounded-md text-sm text-zinc-600 transition-colors hover:bg-zinc-800/60 hover:text-zinc-300 ${
-              isCollapsed ? "justify-center" : "gap-2.5 px-2.5"
-            }`}
+            aria-label={compact ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!compact}
+            className="nx-nav-item hidden w-full md:flex"
           >
-            {isCollapsed
-              ? <ChevronsRight className="size-4 shrink-0" />
-              : (
-                <>
-                  <ChevronsLeft className="size-4 shrink-0" />
-                  <span className="whitespace-nowrap">Collapse</span>
-                </>
-              )
-            }
+            {compact ? (
+              <ChevronsRight className="size-4" />
+            ) : (
+              <>
+                <ChevronsLeft className="size-4" />
+                <span className="nx-nav-label">Collapse sidebar</span>
+              </>
+            )}
           </button>
         </div>
       </aside>
-
-      {/* ── Content area ── */}
-      <div className={`flex min-h-screen flex-1 flex-col transition-[padding-left] duration-200 ease-in-out ${contentPl}`}>
-
-        {/* Top bar */}
-        <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-4 border-b border-zinc-800/50 bg-zinc-950/80 px-6 backdrop-blur-xl">
-          <JournalSwitcher />
-          {settingsOpen&&<UserSettings onClose={()=>setSettingsOpen(false)}/>}
-
-          <div className="ml-auto">
+      <div className="nx-shell-body" inert={mobile && mobileOpen ? true : undefined}>
+        <header className="nx-header">
+          <div className="flex min-w-0 items-center gap-3">
+            <Button
+              id="mobile-navigation-trigger"
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="md:hidden"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Open navigation"
+              aria-controls="app-navigation"
+              aria-expanded={mobileOpen}
+            >
+              <Menu />
+            </Button>
+            <span className="hidden text-[12px] text-zinc-500 lg:block">Workspace</span>
+            <span className="hidden text-border lg:block">/</span>
+            <JournalSwitcher />
+          </div>
+          <div className="flex shrink-0 items-center gap-4">
+            <span className="hidden text-[10px] uppercase tracking-[0.14em] text-zinc-500 xl:block">
+              Your process. Your edge.
+            </span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 outline-none transition-colors hover:bg-zinc-800/60">
-                  <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-zinc-300/20 text-[11px] font-bold text-zinc-200 ring-1 ring-white/15">
+                <button
+                  type="button"
+                  aria-label="Account menu"
+                  className="flex items-center gap-2.5 rounded-lg p-1.5 outline-none transition-colors hover:bg-secondary"
+                >
+                  <span className="flex size-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-[11px] font-medium uppercase text-primary">
                     {initials}
-                  </div>
-                  <span className="hidden max-w-[140px] truncate text-sm text-zinc-300 md:block">
-                    {displayName}
                   </span>
-                  <svg className="size-3 text-zinc-500" viewBox="0 0 16 16" fill="none">
-                    <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <span className="hidden max-w-32 truncate text-[12px] text-zinc-300 sm:block">
+                    {name}
+                  </span>
+                  <ChevronDown className="size-3 text-zinc-500" />
                 </button>
               </DropdownMenuTrigger>
-
-              <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuContent align="end" className="w-60">
                 <DropdownMenuLabel className="font-normal">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-zinc-300/20 text-[12px] font-bold text-zinc-200">
-                      {initials}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-zinc-100">{displayName}</p>
-                      <p className="truncate text-[11px] text-zinc-500">{user?.email}</p>
-                    </div>
-                  </div>
+                  <p className="text-[13px] font-medium">{name}</p>
+                  <p className="mt-1 truncate text-[11px] text-muted-foreground">{user?.email}</p>
                 </DropdownMenuLabel>
-
                 <DropdownMenuSeparator />
-
-                <DropdownMenuItem disabled className="cursor-not-allowed opacity-40">
-                  <User className="size-3.5" />
+                <DropdownMenuItem disabled>
+                  <User className="size-4" />
                   Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={()=>setSettingsOpen(true)}>
-                  <Settings className="size-3.5" />
+                <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+                  <Settings className="size-4" />
                   Settings
                 </DropdownMenuItem>
-
                 <DropdownMenuSeparator />
-
-                <DropdownMenuItem onClick={logout} variant="destructive">
-                  <LogOut className="size-3.5" />
+                <DropdownMenuItem onClick={logout}>
+                  <LogOut className="size-4" />
                   Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </header>
-
-        {/* Page content */}
-        <main className="mx-auto w-full max-w-[1440px] flex-1 px-6 py-8">
+        <main id="main-content" className="nx-page">
           {children}
         </main>
       </div>
-
+      {settingsOpen && <UserSettings onClose={() => setSettingsOpen(false)} />}
     </div>
   );
 }

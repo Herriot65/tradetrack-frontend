@@ -1,9 +1,9 @@
 import LoginForm from "../components/forms/LoginForm";
-
+import AuthLayout from "@/components/auth/AuthLayout";
 export default function Login() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950 px-4">
+    <AuthLayout>
       <LoginForm />
-    </div>
+    </AuthLayout>
   );
 }

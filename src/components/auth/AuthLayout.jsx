@@ -1,17 +1,59 @@
-import { Card } from "@/components/ui/card";
-
-export default function AuthLayout({ title, subtitle, children }) {
+import { Link } from "react-router-dom";
+import { ArrowUpRight, BookOpen, BarChart3, ScanLine } from "lucide-react";
+export default function AuthLayout({ children }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950 px-4">
-      <Card className="w-full max-w-md p-6 bg-gray-900 border-gray-800">
-        
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold text-white">{title}</h1>
-          <p className="text-sm text-gray-400 mt-1">{subtitle}</p>
+    <div className="nx-auth">
+      <aside className="nx-auth-story">
+        <Link to="/" className="flex w-fit items-center gap-3">
+          <img src="/nexora.png" alt="" className="size-10 rounded-xl" />
+          <span className="text-2xl font-semibold tracking-[-0.06em]">
+            nexora<span className="text-primary">.</span>
+          </span>
+        </Link>
+        <div className="relative my-16 max-w-md">
+          <p className="nx-eyebrow mb-6">The journal behind your edge</p>
+          <h2 className="text-[clamp(36px,4vw,58px)] font-medium leading-[1.07] tracking-[-0.055em]">
+            Better decisions
+            <br />
+            start with a<br />
+            <span className="text-primary">clearer picture.</span>
+          </h2>
+          <p className="mt-6 max-w-sm text-sm leading-7 text-muted-foreground">
+            Bring your trades, your process, and your performance together. Understand what works.
+            Build on it.
+          </p>
+          <div className="mt-10 space-y-4">
+            {[
+              { icon: BookOpen, text: "A journal for every trading approach" },
+              { icon: BarChart3, text: "Analytics that make your history useful" },
+              { icon: ScanLine, text: "The details behind every decision" },
+            ].map(({ icon: Icon, text }) => (
+              <div key={text} className="flex items-center gap-3 text-[12px] text-zinc-400">
+                <span className="flex size-8 items-center justify-center rounded-lg border border-border bg-card">
+                  <Icon className="size-3.5 text-primary" />
+                </span>
+                {text}
+              </div>
+            ))}
+          </div>
         </div>
-
-        {children}
-      </Card>
+        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+          <span>Nexora Analytics</span>
+          <Link to="/" className="flex items-center gap-1 hover:text-primary">
+            Explore the platform
+            <ArrowUpRight className="size-3" />
+          </Link>
+        </div>
+      </aside>
+      <main className="nx-auth-content">
+        <div className="w-full max-w-[400px]">
+          <Link to="/" className="mb-10 flex items-center justify-center gap-2 md:hidden">
+            <img src="/nexora.png" alt="" className="size-9 rounded-lg" />
+            <span className="text-xl font-semibold tracking-tight">nexora.</span>
+          </Link>
+          {children}
+        </div>
+      </main>
     </div>
   );
 }

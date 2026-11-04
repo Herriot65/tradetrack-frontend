@@ -13,11 +13,11 @@ import { useWorkspace } from "@/workspaces/useWorkspace";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STATUS_FILTERS = [
-  { value: "",     label: "All" },
+  { value: "", label: "All" },
   { value: "OPEN", label: "Open" },
-  { value: "WIN",  label: "Wins" },
+  { value: "WIN", label: "Wins" },
   { value: "LOSS", label: "Losses" },
-  { value: "BE",   label: "Break Even" },
+  { value: "BE", label: "Break Even" },
 ];
 
 // ─── Loading skeleton ─────────────────────────────────────────────────────────
@@ -68,8 +68,8 @@ function EmptyState({ hasFilters }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Workspace() {
-  const { workspaceId }   = useParams();
-  const navigate          = useNavigate();
+  const { workspaceId } = useParams();
+  const navigate = useNavigate();
   const { workspaces, activeWorkspace, selectWorkspace, loading: wsLoading } = useWorkspace();
 
   // Sync workspace selection when URL param changes
@@ -85,12 +85,12 @@ export default function Workspace() {
     }
   }, [workspaceId, workspaces, wsLoading, navigate, selectWorkspace]);
 
-  const [search,       setSearch]       = useState("");
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
   // Search is server-side; status is client-side for instant response
   const { data: tradesData, loading: tradesLoading } = useTrades({ search });
-  const trades = tradesData?.results ?? [];
+  const trades = useMemo(() => tradesData?.results ?? [], [tradesData]);
 
   const filtered = useMemo(() => {
     if (!statusFilter) return trades;
@@ -102,7 +102,6 @@ export default function Workspace() {
   return (
     <AppShell>
       <div className="space-y-5">
-
         {/* ── Header ── */}
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -173,7 +172,6 @@ export default function Workspace() {
         ) : (
           <TradeTable trades={filtered} />
         )}
-
       </div>
     </AppShell>
   );

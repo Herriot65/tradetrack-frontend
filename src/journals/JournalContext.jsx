@@ -25,7 +25,9 @@ function loadMeta(id) {
 function saveMeta(id, meta) {
   try {
     localStorage.setItem(metaKey(id), JSON.stringify(meta));
-  } catch {}
+  } catch {
+    /* Storage may be unavailable in private browsing. */
+  }
 }
 
 function enrichJournal(workspace) {
@@ -59,11 +61,11 @@ export function JournalProvider({ children }) {
       await Promise.all(
         enriched.map(async (j) => {
           const backendCapital = parseFloat(j.starting_capital ?? 0);
-          const localCapital   = parseFloat(j.startingCapital  ?? 0);
+          const localCapital = parseFloat(j.startingCapital ?? 0);
           if (backendCapital === 0 && localCapital > 0) {
             await apiUpdate(j.id, { starting_capital: localCapital }).catch(() => {});
           }
-        })
+        }),
       );
 
       setJournals(enriched);
@@ -81,6 +83,7 @@ export function JournalProvider({ children }) {
   }, [isAuthenticated]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Bootstrap asynchronous journal loading when authentication changes.
     load();
   }, [load]);
 
@@ -91,7 +94,8 @@ export function JournalProvider({ children }) {
 
   const createJournal = useCallback(
     async (payload) => {
-      const { name, journalType, startingCapital, currency, breakEvenMethod, breakEvenValue } = payload;
+      const { name, journalType, startingCapital, currency, breakEvenMethod, breakEvenValue } =
+        payload;
       const created = await apiCreate({ name, starting_capital: startingCapital ?? 0 });
       const meta = { journalType, startingCapital, currency, breakEvenMethod, breakEvenValue };
       saveMeta(created.id, meta);
@@ -100,7 +104,7 @@ export function JournalProvider({ children }) {
       selectJournal(enriched);
       return enriched;
     },
-    [selectJournal]
+    [selectJournal],
   );
 
   const renameJournal = useCallback(
@@ -112,26 +116,35 @@ export function JournalProvider({ children }) {
       if (activeJournal?.id === id) setActiveJournal(enriched);
       return enriched;
     },
-    [activeJournal?.id]
+    [activeJournal?.id],
   );
 
   const updateJournal = useCallback(
     async (id, payload) => {
-      const { name, startingCapital, journalType, currency, breakEvenMethod, breakEvenValue, displayUnit } = payload;
+      const {
+        name,
+        startingCapital,
+        journalType,
+        currency,
+        breakEvenMethod,
+        breakEvenValue,
+        displayUnit,
+      } = payload;
       const backendPayload = {};
       if (displayUnit != null) backendPayload.display_unit = displayUnit;
-      if (name             != null) backendPayload.name             = name;
-      if (startingCapital  != null) backendPayload.starting_capital = startingCapital;
-      const updated = Object.keys(backendPayload).length > 0
-        ? await apiUpdate(id, backendPayload)
-        : (journals.find((j) => j.id === id) ?? {});
+      if (name != null) backendPayload.name = name;
+      if (startingCapital != null) backendPayload.starting_capital = startingCapital;
+      const updated =
+        Object.keys(backendPayload).length > 0
+          ? await apiUpdate(id, backendPayload)
+          : (journals.find((j) => j.id === id) ?? {});
       const prevMeta = loadMeta(id);
       const newMeta = {
         ...prevMeta,
-        ...(journalType     != null && { journalType     }),
-        ...(currency        != null && { currency        }),
+        ...(journalType != null && { journalType }),
+        ...(currency != null && { currency }),
         ...(breakEvenMethod != null && { breakEvenMethod }),
-        ...(breakEvenValue  != null && { breakEvenValue  }),
+        ...(breakEvenValue != null && { breakEvenValue }),
         ...(startingCapital != null && { startingCapital }),
       };
       saveMeta(id, newMeta);
@@ -141,30 +154,27 @@ export function JournalProvider({ children }) {
       if (displayUnit == null) setAnalyticsVersion((v) => v + 1);
       return enriched;
     },
-    [activeJournal?.id, journals]
+    [activeJournal?.id, journals],
   );
 
-  const setSyntheticData = useCallback(
-    async (id, enabled) => {
-      const result = enabled
-        ? await apiEnableSynthetic(id)
-        : await apiDisableSynthetic(id);
+  const setSyntheticData = useCallback(async (id, enabled) => {
+    const result = enabled ? await apiEnableSynthetic(id) : await apiDisableSynthetic(id);
 
-      const patch = { synthetic_data_enabled: !!result.enabled };
-      setJournals((prev) =>
-        prev.map((j) => (j.id === id ? { ...j, ...patch } : j))
-      );
-      setActiveJournal((prev) => (prev?.id === id ? { ...prev, ...patch } : prev));
-      setAnalyticsVersion((v) => v + 1);
-      return result;
-    },
-    []
-  );
+    const patch = { synthetic_data_enabled: !!result.enabled };
+    setJournals((prev) => prev.map((j) => (j.id === id ? { ...j, ...patch } : j)));
+    setActiveJournal((prev) => (prev?.id === id ? { ...prev, ...patch } : prev));
+    setAnalyticsVersion((v) => v + 1);
+    return result;
+  }, []);
 
   const deleteJournal = useCallback(
     async (id) => {
       await apiDelete(id);
-      try { localStorage.removeItem(metaKey(id)); } catch {}
+      try {
+        localStorage.removeItem(metaKey(id));
+      } catch {
+        /* Storage may be unavailable in private browsing. */
+      }
       const remaining = journals.filter((j) => j.id !== id);
       setJournals(remaining);
       if (activeJournal?.id === id) {
@@ -174,7 +184,7 @@ export function JournalProvider({ children }) {
         else localStorage.removeItem(STORAGE_LAST_KEY);
       }
     },
-    [activeJournal?.id, journals]
+    [activeJournal?.id, journals],
   );
 
   const value = {
@@ -202,9 +212,5 @@ export function JournalProvider({ children }) {
     refetchWorkspaces: load,
   };
 
-  return (
-    <JournalContext.Provider value={value}>
-      {children}
-    </JournalContext.Provider>
-  );
+  return <JournalContext.Provider value={value}>{children}</JournalContext.Provider>;
 }

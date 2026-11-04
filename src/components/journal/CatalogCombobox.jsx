@@ -11,14 +11,17 @@ export default function CatalogCombobox({
   placeholder = "Select or type…",
   createLabel = (v) => `Add "${v}"`,
 }) {
-  const [query,     setQuery]     = useState(value ?? "");
-  const [open,      setOpen]      = useState(false);
+  const [query, setQuery] = useState(value ?? "");
+  const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
 
-  useEffect(() => { setQuery(value ?? ""); }, [value]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Synchronize the draft when the external form value resets.
+    setQuery(value ?? "");
+  }, [value]);
 
-  const filtered  = options.filter((o) => o.toLowerCase().includes(query.toLowerCase()));
-  const exact     = options.some((o) => o.toLowerCase() === query.toLowerCase());
+  const filtered = options.filter((o) => o.toLowerCase().includes(query.toLowerCase()));
+  const exact = options.some((o) => o.toLowerCase() === query.toLowerCase());
   const canCreate = query.trim().length > 0 && !exact;
 
   function select(opt) {
@@ -69,7 +72,11 @@ export default function CatalogCombobox({
       <input
         type="text"
         value={query}
-        onChange={(e) => { setQuery(e.target.value); onChange(""); setOpen(true); }}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          onChange("");
+          setOpen(true);
+        }}
         onFocus={() => setOpen(true)}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
@@ -84,17 +91,25 @@ export default function CatalogCombobox({
             <button
               key={opt}
               type="button"
-              onMouseDown={(e) => { e.preventDefault(); select(opt); }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                select(opt);
+              }}
               className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-800"
             >
-              <Check className={`size-3.5 shrink-0 ${value === opt ? "text-emerald-400" : "opacity-0"}`} />
+              <Check
+                className={`size-3.5 shrink-0 ${value === opt ? "text-emerald-400" : "opacity-0"}`}
+              />
               <span className="text-zinc-200">{opt}</span>
             </button>
           ))}
           {canCreate && (
             <button
               type="button"
-              onMouseDown={(e) => { e.preventDefault(); handleCreate(); }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleCreate();
+              }}
               className="flex w-full items-center gap-2 border-t border-zinc-800/60 px-3 py-2 text-sm text-emerald-400 hover:bg-zinc-800"
             >
               <Plus className="size-3.5 shrink-0" />

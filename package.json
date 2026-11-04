@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "node --test tests/analytics.test.js tests/tradeForm.test.js",
+    "test:redesign": "node tests/redesign-qa.mjs",
     "test:browser": "node tests/browser.mjs",
     "test:trade-browser": "node tests/trade-browser.mjs",
     "test:custom-fields": "node tests/custom-fields-browser.mjs",

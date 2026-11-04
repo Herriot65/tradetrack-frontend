@@ -5,32 +5,52 @@
 
 /* The journal sidebar can make the report much narrower than the viewport. */
 @container performance (min-width: 760px) {
-  .analytics-page .analytics-hero-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .analytics-page .analytics-hero-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 @container performance (min-width: 900px) {
-  .analytics-page .analytics-outcomes-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .analytics-page .analytics-stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .analytics-page .analytics-stats-skeleton { height: 74px; }
+  .analytics-page .analytics-outcomes-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .analytics-page .analytics-stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .analytics-page .analytics-stats-skeleton {
+    height: 74px;
+  }
 }
 
 .analytics-kpi-value {
-  font-size: clamp(20px, 2.4cqi, 28px);
+  font-size: clamp(22px, 2.6cqi, 32px);
   overflow-wrap: anywhere;
 }
 
-.analytics-outcome { container: outcome / inline-size; }
+.analytics-outcome {
+  container: outcome / inline-size;
+}
 
 @container outcome (min-width: 340px) {
-  .analytics-outcome .analytics-donut-layout { flex-direction: row; }
+  .analytics-outcome .analytics-donut-layout {
+    flex-direction: row;
+  }
 }
 
 @container outcome (min-width: 440px) {
-  .analytics-outcome .analytics-donut { width: 136px; height: 136px; }
-  .analytics-outcome .analytics-donut-layout { gap: 24px; padding: 24px; }
+  .analytics-outcome .analytics-donut {
+    width: 136px;
+    height: 136px;
+  }
+  .analytics-outcome .analytics-donut-layout {
+    gap: 24px;
+    padding: 24px;
+  }
 }
 
 /* Leave the content visible when a landscape phone has little vertical space. */
 @media (max-height: 500px) {
-  .analytics-page .analytics-filters { position: static; }
+  .analytics-page .analytics-filters {
+    position: static;
+  }
 }

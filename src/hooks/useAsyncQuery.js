@@ -6,15 +6,14 @@ function getErrorMessage(err) {
     const firstError = Object.values(responseData).flat().find(Boolean);
     if (firstError) return String(firstError);
   }
-  return (
-    responseData?.detail ||
-    responseData?.message ||
-    err.message ||
-    "Something went wrong"
-  );
+  return responseData?.detail || responseData?.message || err.message || "Something went wrong";
 }
 
-export function useAsyncQuery(fetchFn, deps = [], { enabled = true, keepPreviousData = false } = {}) {
+export function useAsyncQuery(
+  fetchFn,
+  deps = [],
+  { enabled = true, keepPreviousData = false } = {},
+) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState(null);
@@ -26,6 +25,7 @@ export function useAsyncQuery(fetchFn, deps = [], { enabled = true, keepPrevious
 
   useEffect(() => {
     if (!enabled) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Clear externally fetched state when the query is disabled.
       if (!keepPreviousData) setData(null);
       setLoading(false);
       setError(null);

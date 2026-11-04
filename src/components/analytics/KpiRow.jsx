@@ -8,15 +8,30 @@ function valueTone(value) {
 
 const DEFINITIONS = {
   "Net result": "Sum of all closed trade results in the active filters.",
-  "Expectancy": "Net result divided by the number of closed trades.",
+  Expectancy: "Net result divided by the number of closed trades.",
   "Payoff ratio": "Average win divided by the absolute average loss.",
   "Max drawdown": "Largest decline from an equity peak, including the initial zero baseline.",
 };
 function KpiCard({ label, value, detail, tone = "text-ink" }) {
   return (
-    <div className="min-w-0 rounded-xl border border-hairline bg-surface-card px-4 py-5 min-[900px]:px-5 min-[900px]:py-6">
-      <p tabIndex={0} title={DEFINITIONS[label]} className="text-[12px] leading-4 text-ink-secondary">{label}</p>
-      <p className={cn("analytics-kpi-value mt-3 font-medium leading-8 tracking-tight tabular-nums", tone)}>
+    <div className="analytics-card relative min-w-0 overflow-hidden rounded-xl border border-hairline bg-surface-card px-4 py-5 min-[900px]:px-5 min-[900px]:py-6">
+      <span
+        aria-hidden="true"
+        className="absolute right-4 top-5 size-1 rounded-full bg-current opacity-50"
+      />
+      <p
+        tabIndex={0}
+        title={DEFINITIONS[label]}
+        className="text-[12px] leading-4 text-ink-secondary"
+      >
+        {label}
+      </p>
+      <p
+        className={cn(
+          "analytics-kpi-value mt-4 font-medium leading-9 tracking-[-0.045em] tabular-nums",
+          tone,
+        )}
+      >
         {value}
       </p>
       <p className="mt-2 text-[12px] leading-5 text-ink-muted">{detail}</p>
@@ -27,9 +42,22 @@ function KpiCard({ label, value, detail, tone = "text-ink" }) {
 function StripCell({ label, value, detail, tone = "text-ink" }) {
   return (
     <div className="min-w-0 bg-surface-card px-4 py-3.5 min-[900px]:px-5">
-      <p tabIndex={0} title={label.includes("streak") ? "Break-even trades neither extend nor break a streak." : label === "Avg win" ? "Gross profit divided by winning trades." : "Gross loss divided by losing trades."} className="text-[12px] leading-4 text-ink-secondary">{label}</p>
+      <p
+        tabIndex={0}
+        title={
+          label.includes("streak")
+            ? "Break-even trades neither extend nor break a streak."
+            : label === "Avg win"
+              ? "Gross profit divided by winning trades."
+              : "Gross loss divided by losing trades."
+        }
+        className="text-[12px] leading-4 text-ink-secondary"
+      >
+        {label}
+      </p>
       <p className={cn("mt-1.5 text-[15px] font-medium leading-5 tabular-nums", tone)}>
-        {value} {detail && <span className="ml-1 text-[12px] font-normal text-ink-muted">{detail}</span>}
+        {value}{" "}
+        {detail && <span className="ml-1 text-[12px] font-normal text-ink-muted">{detail}</span>}
       </p>
     </div>
   );

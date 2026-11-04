@@ -9,24 +9,33 @@ import { useAuth } from "@/auth/useAuth";
 // ─── Column definitions ───────────────────────────────────────────────────────
 
 const COLUMNS = [
-  { id: "asset",       label: "Asset",      sortKey: "asset" },
-  { id: "entryDate",   label: "Entry",      sortKey: "date"  },
-  { id: "exitDate",    label: "Exit",       sortKey: null    },
-  { id: "side",        label: "Side",       sortKey: null    },
-  { id: "oppTf",       label: "Opp. TF",    sortKey: null    },
-  { id: "entryTf",     label: "Entry TF",   sortKey: null    },
-  { id: "trend",       label: "Trend",      sortKey: null    },
-  { id: "riskPercent", label: "Risk %",     sortKey: null    },
-  { id: "pnl",         label: "PnL",        sortKey: "r"     },
-  { id: "status",      label: "Status",     sortKey: null    },
-  { id: "commission",  label: "Commission", sortKey: null    },
-  { id: "swap",        label: "Swap",       sortKey: null    },
+  { id: "asset", label: "Asset", sortKey: "asset" },
+  { id: "entryDate", label: "Entry", sortKey: "date" },
+  { id: "exitDate", label: "Exit", sortKey: null },
+  { id: "side", label: "Side", sortKey: null },
+  { id: "oppTf", label: "Opp. TF", sortKey: null },
+  { id: "entryTf", label: "Entry TF", sortKey: null },
+  { id: "trend", label: "Trend", sortKey: null },
+  { id: "riskPercent", label: "Risk %", sortKey: null },
+  { id: "pnl", label: "PnL", sortKey: "r" },
+  { id: "status", label: "Status", sortKey: null },
+  { id: "commission", label: "Commission", sortKey: null },
+  { id: "swap", label: "Swap", sortKey: null },
 ];
 
 const DEFAULT_VISIBLE = {
-  asset: true, entryDate: true, exitDate: true, side: true,
-  oppTf: false, entryTf: false, trend: false, riskPercent: true,
-  pnl: true, status: true, commission: false, swap: false,
+  asset: true,
+  entryDate: true,
+  exitDate: true,
+  side: true,
+  oppTf: false,
+  entryTf: false,
+  trend: false,
+  riskPercent: true,
+  pnl: true,
+  status: true,
+  commission: false,
+  swap: false,
 };
 
 function readCols(journalId) {
@@ -34,37 +43,47 @@ function readCols(journalId) {
   try {
     const raw = localStorage.getItem(`journal_columns_${journalId}`);
     return raw ? { ...DEFAULT_VISIBLE, ...JSON.parse(raw) } : DEFAULT_VISIBLE;
-  } catch { return DEFAULT_VISIBLE; }
+  } catch {
+    return DEFAULT_VISIBLE;
+  }
 }
 
 function writeCols(journalId, cols) {
   if (!journalId) return;
-  try { localStorage.setItem(`journal_columns_${journalId}`, JSON.stringify(cols)); } catch { /* Storage may be disabled. */ }
+  try {
+    localStorage.setItem(`journal_columns_${journalId}`, JSON.stringify(cols));
+  } catch {
+    /* Storage may be disabled. */
+  }
 }
 
 // ─── Style maps ───────────────────────────────────────────────────────────────
 
 const STATUS_STYLE = {
-  WIN:  { bg: "bg-emerald-500/15", text: "text-emerald-400", ring: "ring-emerald-500/20" },
-  LOSS: { bg: "bg-red-500/15",     text: "text-red-400",     ring: "ring-red-500/20"     },
-  BE:   { bg: "bg-zinc-700/40",    text: "text-zinc-400",    ring: "ring-zinc-600/20"    },
-  OPEN: { bg: "bg-amber-500/15",   text: "text-amber-400",   ring: "ring-amber-500/20"   },
+  WIN: { bg: "bg-emerald-500/15", text: "text-emerald-400", ring: "ring-emerald-500/20" },
+  LOSS: { bg: "bg-red-500/15", text: "text-red-400", ring: "ring-red-500/20" },
+  BE: { bg: "bg-zinc-700/40", text: "text-zinc-400", ring: "ring-zinc-600/20" },
+  OPEN: { bg: "bg-amber-500/15", text: "text-amber-400", ring: "ring-amber-500/20" },
 };
 
 const SIDE_STYLE = {
-  BUY:  "bg-emerald-500/10 text-emerald-400",
+  BUY: "bg-emerald-500/10 text-emerald-400",
   SELL: "bg-red-500/10 text-red-400",
 };
 
 // ─── Cell helpers ─────────────────────────────────────────────────────────────
 
-function Dash() { return <span className="text-zinc-600">—</span>; }
+function Dash() {
+  return <span className="text-zinc-600">—</span>;
+}
 
 function StatusBadge({ status }) {
   const c = STATUS_STYLE[status] ?? STATUS_STYLE.BE;
   const label = status === "BE" ? "B/E" : status;
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ${c.bg} ${c.text} ${c.ring}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ${c.bg} ${c.text} ${c.ring}`}
+    >
       {label}
     </span>
   );
@@ -72,7 +91,9 @@ function StatusBadge({ status }) {
 
 function SidePill({ side }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${SIDE_STYLE[side] ?? ""}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${SIDE_STYLE[side] ?? ""}`}
+    >
       {side}
     </span>
   );
@@ -84,20 +105,16 @@ function PnlCell({ pnlR, status, unit }) {
   const r = parseFloat(pnlR);
   const color = r > 0 ? "text-emerald-400" : r < 0 ? "text-red-400" : "text-zinc-400";
   return (
-    <span className={`tabular-nums font-bold text-sm ${color}`}>
-      {formatValue(pnlR,unit)}
-    </span>
+    <span className={`tabular-nums font-bold text-sm ${color}`}>{formatValue(pnlR, unit)}</span>
   );
 }
 
 // Shows date on first line, HH:MM on second line
 function DateTimeCell({ iso, openLabel }) {
   if (!iso) {
-    return openLabel
-      ? <span className="text-xs text-amber-400/70">{openLabel}</span>
-      : <Dash />;
+    return openLabel ? <span className="text-xs text-amber-400/70">{openLabel}</span> : <Dash />;
   }
-  const d    = zonedDate(iso);
+  const d = zonedDate(iso);
   const date = formatDate(d.toISOString().slice(0, 10));
   const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
   return (
@@ -167,33 +184,45 @@ function ColPicker({ visibleCols, onToggle }) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 function Th({ label, sortKey: sk, sortField, sortDir, onSort, className = "" }) {
-    const sortable = !!sk;
-    const active   = sortable && sortField === sk;
-    return (
-      <th
-        onClick={() => sortable && onSort(sk)}
-        tabIndex={sortable ? 0 : undefined}
-        aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
-        onKeyDown={event => { if(sortable && ["Enter", " "].includes(event.key)) { event.preventDefault(); onSort(sk); } }}
-        className={`px-3 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider text-zinc-500 ${
-          sortable ? "cursor-pointer select-none transition-colors hover:text-zinc-300" : ""
-        } ${className}`}
-      >
-        {label}
-        {sortable && (
-          <span className={`ml-1 ${active ? "text-zinc-300" : "text-zinc-700"}`}>
-            {active ? (sortDir === "asc" ? "↑" : "↓") : "↕"}
-          </span>
-        )}
-      </th>
-    );
-  }
+  const sortable = !!sk;
+  const active = sortable && sortField === sk;
+  return (
+    <th
+      onClick={() => sortable && onSort(sk)}
+      tabIndex={sortable ? 0 : undefined}
+      aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
+      onKeyDown={(event) => {
+        if (sortable && ["Enter", " "].includes(event.key)) {
+          event.preventDefault();
+          onSort(sk);
+        }
+      }}
+      className={`px-3 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider text-zinc-500 ${
+        sortable ? "cursor-pointer select-none transition-colors hover:text-zinc-300" : ""
+      } ${className}`}
+    >
+      {label}
+      {sortable && (
+        <span className={`ml-1 ${active ? "text-zinc-300" : "text-zinc-700"}`}>
+          {active ? (sortDir === "asc" ? "↑" : "↓") : "↕"}
+        </span>
+      )}
+    </th>
+  );
+}
 
-
-export default memo(function TradeTable({ trades = [], breakEvenMethod = "ratio", onRowClick, journalId, sort, onSort, displayUnit="R" }) {
+export default memo(function TradeTable({
+  trades = [],
+  breakEvenMethod = "ratio",
+  onRowClick,
+  journalId,
+  sort,
+  onSort,
+  displayUnit = "R",
+}) {
   useAuth(); // Subscribe to account timezone changes even when table props stay stable.
-  const [localSortField,   setSortField]   = useState("date");
-  const [localSortDir,     setSortDir]     = useState("desc");
+  const [localSortField, setSortField] = useState("date");
+  const [localSortDir, setSortDir] = useState("desc");
   const [visibleCols, setVisibleCols] = useState(() => readCols(journalId));
 
   const sortField = sort?.field ?? localSortField;
@@ -208,57 +237,179 @@ export default memo(function TradeTable({ trades = [], breakEvenMethod = "ratio"
   }
 
   function handleSort(key) {
-    if(onSort) { onSort(key); return; }
+    if (onSort) {
+      onSort(key);
+      return;
+    }
     if (sortField === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else { setSortField(key); setSortDir("desc"); }
+    else {
+      setSortField(key);
+      setSortDir("desc");
+    }
   }
 
   const enriched = useMemo(
-    () => trades.map((t) => ({ ...t, _status: t.effective_status ?? deriveStatus(t, breakEvenMethod) })),
-    [trades, breakEvenMethod]
+    () =>
+      trades.map((t) => ({
+        ...t,
+        _status: t.effective_status ?? deriveStatus(t, breakEvenMethod),
+      })),
+    [trades, breakEvenMethod],
   );
 
-  const sorted = useMemo(() => onSort ? enriched : [...enriched].sort((a, b) => {
-    let va, vb;
-    if (sortField === "date") {
-      va = a.entry_datetime ?? ""; vb = b.entry_datetime ?? "";
-    } else if (sortField === "r") {
-      va = a.pnl_r == null ? -Infinity : parseFloat(a.pnl_r);
-      vb = b.pnl_r == null ? -Infinity : parseFloat(b.pnl_r);
-    } else {
-      va = (typeof a.asset === "object" ? (a.asset?.symbol ?? "") : (a.asset ?? "")).toLowerCase();
-      vb = (typeof b.asset === "object" ? (b.asset?.symbol ?? "") : (b.asset ?? "")).toLowerCase();
-    }
-    if (va < vb) return sortDir === "asc" ? -1 : 1;
-    if (va > vb) return sortDir === "asc" ? 1 : -1;
-    return 0;
-  }), [enriched, sortField, sortDir, onSort]);
+  const sorted = useMemo(
+    () =>
+      onSort
+        ? enriched
+        : [...enriched].sort((a, b) => {
+            let va, vb;
+            if (sortField === "date") {
+              va = a.entry_datetime ?? "";
+              vb = b.entry_datetime ?? "";
+            } else if (sortField === "r") {
+              va = a.pnl_r == null ? -Infinity : parseFloat(a.pnl_r);
+              vb = b.pnl_r == null ? -Infinity : parseFloat(b.pnl_r);
+            } else {
+              va = (
+                typeof a.asset === "object" ? (a.asset?.symbol ?? "") : (a.asset ?? "")
+              ).toLowerCase();
+              vb = (
+                typeof b.asset === "object" ? (b.asset?.symbol ?? "") : (b.asset ?? "")
+              ).toLowerCase();
+            }
+            if (va < vb) return sortDir === "asc" ? -1 : 1;
+            if (va > vb) return sortDir === "asc" ? 1 : -1;
+            return 0;
+          }),
+    [enriched, sortField, sortDir, onSort],
+  );
 
   const v = visibleCols;
 
   return (
-    <div className="rounded-xl border border-zinc-800/60 [overflow:clip]">
+    <div className="nx-table [overflow:clip]">
       {/* Column picker toolbar */}
-      <div className="flex items-center justify-end border-b border-zinc-800/40 bg-zinc-900/50 px-3 py-2">
+      <div className="flex items-center justify-between border-b border-border/60 px-4 py-2.5">
+        <span className="nx-eyebrow !text-muted-foreground">Trade ledger</span>
         <ColPicker visibleCols={v} onToggle={toggleCol} />
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="sticky top-14 z-10">
+          <thead>
             <tr className="border-b border-zinc-800/60 bg-zinc-900/95 backdrop-blur-sm">
-              {v.asset       && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="asset"       label="Asset"      sortKey="asset" />}
-              {v.entryDate   && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="entryDate"   label="Entry"      sortKey="date"  />}
-              {v.exitDate    && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="exitDate"    label="Exit"                       />}
-              {v.side        && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="side"        label="Side"                       />}
-              {v.oppTf       && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="oppTf"       label="Opp. TF"                    />}
-              {v.entryTf     && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="entryTf"     label="Entry TF"                   />}
-              {v.trend       && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="trend"       label="Trend"                      />}
-              {v.riskPercent && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="riskPercent" label={`Risk (${displayUnit==="USD"?"$":displayUnit==="PCT"?"%":"R"})`} />}
-              {v.pnl         && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="pnl" label={`PnL (${displayUnit==="USD"?"$":displayUnit==="PCT"?"%":"R"})`} sortKey="r" className="text-right" />}
-              {v.status      && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="status"      label="Status"                     />}
-              {v.commission  && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="commission"  label="Commission"                 />}
-              {v.swap        && <Th sortField={sortField} sortDir={sortDir} onSort={handleSort} colId="swap"        label="Swap"                       />}
+              {v.asset && (
+                <Th
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                  colId="asset"
+                  label="Asset"
+                  sortKey="asset"
+                />
+              )}
+              {v.entryDate && (
+                <Th
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                  colId="entryDate"
+                  label="Entry"
+                  sortKey="date"
+                />
+              )}
+              {v.exitDate && (
+                <Th
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                  colId="exitDate"
+                  label="Exit"
+                />
+              )}
+              {v.side && (
+                <Th
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                  colId="side"
+                  label="Side"
+                />
+              )}
+              {v.oppTf && (
+                <Th
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                  colId="oppTf"
+                  label="Opp. TF"
+                />
+              )}
+              {v.entryTf && (
+                <Th
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                  colId="entryTf"
+                  label="Entry TF"
+                />
+              )}
+              {v.trend && (
+                <Th
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                  colId="trend"
+                  label="Trend"
+                />
+              )}
+              {v.riskPercent && (
+                <Th
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                  colId="riskPercent"
+                  label={`Risk (${displayUnit === "USD" ? "$" : displayUnit === "PCT" ? "%" : "R"})`}
+                />
+              )}
+              {v.pnl && (
+                <Th
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                  colId="pnl"
+                  label={`PnL (${displayUnit === "USD" ? "$" : displayUnit === "PCT" ? "%" : "R"})`}
+                  sortKey="r"
+                  className="text-right"
+                />
+              )}
+              {v.status && (
+                <Th
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                  colId="status"
+                  label="Status"
+                />
+              )}
+              {v.commission && (
+                <Th
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                  colId="commission"
+                  label="Commission"
+                />
+              )}
+              {v.swap && (
+                <Th
+                  sortField={sortField}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                  colId="swap"
+                  label="Swap"
+                />
+              )}
             </tr>
           </thead>
 
@@ -266,21 +417,90 @@ export default memo(function TradeTable({ trades = [], breakEvenMethod = "ratio"
             {sorted.map((trade) => (
               <tr
                 key={trade.id}
+                tabIndex={0}
+                aria-label={`Open trade ${trade.id}`}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onRowClick?.(trade);
+                  }
+                }}
                 onClick={() => onRowClick?.(trade)}
                 className="cursor-pointer transition-colors duration-100 hover:bg-zinc-800/50"
               >
-                {v.asset       && <td className="px-3 py-3.5 text-sm font-semibold text-zinc-100">{typeof trade.asset === "object" ? trade.asset?.symbol : trade.asset}</td>}
-                {v.entryDate   && <td className="px-3 py-3.5"><DateTimeCell iso={trade.entry_datetime} /></td>}
-                {v.exitDate    && <td className="px-3 py-3.5"><DateTimeCell iso={trade.exit_datetime} openLabel="Open" /></td>}
-                {v.side        && <td className="px-3 py-3.5"><SidePill side={trade.side} /></td>}
-                {v.oppTf       && <td className="px-3 py-3.5 text-xs text-zinc-400">{trade.opportunity_timeframe ?? <Dash />}</td>}
-                {v.entryTf     && <td className="px-3 py-3.5 text-xs text-zinc-400">{trade.entry_timeframe ?? <Dash />}</td>}
-                {v.trend       && <td className="px-3 py-3.5 text-xs text-zinc-400">{trade.trend_direction ?? <Dash />}</td>}
-                {v.riskPercent && <td className="px-3 py-3.5 text-xs tabular-nums text-zinc-400"><span>{formatValue(riskDisplayAmount(trade,displayUnit),displayUnit,{signed:false})}</span>{displayUnit==="R"&&riskDisplayAmount(trade,"USD")!==null&&<span className="ml-1 text-[10px] text-zinc-600">· {formatValue(riskDisplayAmount(trade,"USD"),"USD",{signed:false})}</span>}</td>}
-                {v.pnl         && <td className="px-3 py-3.5 text-right"><PnlCell pnlR={tradeAmount(trade,displayUnit)} status={trade._status} unit={displayUnit}/></td>}
-                {v.status      && <td className="px-3 py-3.5"><StatusBadge status={trade._status} /></td>}
-                {v.commission  && <td className="px-3 py-3.5 text-xs tabular-nums text-zinc-400">${trade.commission != null ? trade.commission : "0.00"}</td>}
-                {v.swap        && <td className="px-3 py-3.5 text-xs tabular-nums text-zinc-400">${trade.swap != null ? trade.swap : "0.00"}</td>}
+                {v.asset && (
+                  <td className="px-3 py-3.5 text-sm font-semibold text-zinc-100">
+                    {typeof trade.asset === "object" ? trade.asset?.symbol : trade.asset}
+                  </td>
+                )}
+                {v.entryDate && (
+                  <td className="px-3 py-3.5">
+                    <DateTimeCell iso={trade.entry_datetime} />
+                  </td>
+                )}
+                {v.exitDate && (
+                  <td className="px-3 py-3.5">
+                    <DateTimeCell iso={trade.exit_datetime} openLabel="Open" />
+                  </td>
+                )}
+                {v.side && (
+                  <td className="px-3 py-3.5">
+                    <SidePill side={trade.side} />
+                  </td>
+                )}
+                {v.oppTf && (
+                  <td className="px-3 py-3.5 text-xs text-zinc-400">
+                    {trade.opportunity_timeframe ?? <Dash />}
+                  </td>
+                )}
+                {v.entryTf && (
+                  <td className="px-3 py-3.5 text-xs text-zinc-400">
+                    {trade.entry_timeframe ?? <Dash />}
+                  </td>
+                )}
+                {v.trend && (
+                  <td className="px-3 py-3.5 text-xs text-zinc-400">
+                    {trade.trend_direction ?? <Dash />}
+                  </td>
+                )}
+                {v.riskPercent && (
+                  <td className="px-3 py-3.5 text-xs tabular-nums text-zinc-400">
+                    <span>
+                      {formatValue(riskDisplayAmount(trade, displayUnit), displayUnit, {
+                        signed: false,
+                      })}
+                    </span>
+                    {displayUnit === "R" && riskDisplayAmount(trade, "USD") !== null && (
+                      <span className="ml-1 text-[10px] text-zinc-600">
+                        · {formatValue(riskDisplayAmount(trade, "USD"), "USD", { signed: false })}
+                      </span>
+                    )}
+                  </td>
+                )}
+                {v.pnl && (
+                  <td className="px-3 py-3.5 text-right">
+                    <PnlCell
+                      pnlR={tradeAmount(trade, displayUnit)}
+                      status={trade._status}
+                      unit={displayUnit}
+                    />
+                  </td>
+                )}
+                {v.status && (
+                  <td className="px-3 py-3.5">
+                    <StatusBadge status={trade._status} />
+                  </td>
+                )}
+                {v.commission && (
+                  <td className="px-3 py-3.5 text-xs tabular-nums text-zinc-400">
+                    ${trade.commission != null ? trade.commission : "0.00"}
+                  </td>
+                )}
+                {v.swap && (
+                  <td className="px-3 py-3.5 text-xs tabular-nums text-zinc-400">
+                    ${trade.swap != null ? trade.swap : "0.00"}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

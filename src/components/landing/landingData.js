@@ -1,13 +1,4 @@
-import {
-  BookOpen,
-  LineChart,
-  BarChart3,
-  Clock,
-  Upload,
-  TrendingUp,
-  Target,
-  Flame,
-} from "lucide-react";
+import { BookOpen, LineChart, BarChart3, Clock, Upload, Target, Flame } from "lucide-react";
 
 export const navLinks = [
   { label: "Features", href: "#features" },

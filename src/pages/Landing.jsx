@@ -6,7 +6,7 @@ import Footer from "@/components/landing/Footer";
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-zinc-950 text-foreground">
+    <div className="nx-market min-h-screen">
       <Navbar />
       <main>
         <Hero />

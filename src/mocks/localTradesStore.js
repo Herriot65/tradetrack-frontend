@@ -10,7 +10,11 @@ function load(wid) {
 }
 
 function save(wid, store) {
-  try { localStorage.setItem(storeKey(wid), JSON.stringify(store)); } catch {}
+  try {
+    localStorage.setItem(storeKey(wid), JSON.stringify(store));
+  } catch {
+    /* Local demo persistence is optional. */
+  }
 }
 
 // Merge local CRUD changes on top of base mock trade array.

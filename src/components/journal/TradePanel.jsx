@@ -17,7 +17,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import SelectField from "@/components/ui/select-field";
 import DateTimePicker from "@/components/ui/date-time-picker";
-import { toTradeDateTimeInput as toInputDt, fromTradeDateTimeInput as fromInputDt } from "@/lib/tradeDateTime";
+import {
+  toTradeDateTimeInput as toInputDt,
+  fromTradeDateTimeInput as fromInputDt,
+} from "@/lib/tradeDateTime";
 import {
   Sheet,
   SheetContent,
@@ -46,8 +49,12 @@ import { uploadScreenshot, deleteScreenshot, fetchTrade } from "@/api/trades.api
 
 // ─── Options ──────────────────────────────────────────────────────────────────
 
-const TF_OPTIONS      = ["M1", "M5", "M15", "M30", "H1", "H4", "D1", "W1", "MN"];
-const TREND_OPTIONS   = [{ value: "BULLISH", label: "Bullish" }, { value: "BEARISH", label: "Bearish" }, { value: "RANGE", label: "Range" }];
+const TF_OPTIONS = ["M1", "M5", "M15", "M30", "H1", "H4", "D1", "W1", "MN"];
+const TREND_OPTIONS = [
+  { value: "BULLISH", label: "Bullish" },
+  { value: "BEARISH", label: "Bearish" },
+  { value: "RANGE", label: "Range" },
+];
 const SESSION_OPTIONS = ["Asian", "London", "New York", "London/NY Overlap", "Pre-Market"];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -55,51 +62,63 @@ const SESSION_OPTIONS = ["Asian", "London", "New York", "London/NY Overlap", "Pr
 function tradeToDefaults(trade, timezone = "UTC") {
   if (!trade) {
     return {
-      asset: "", side: "BUY",
-      entry_datetime: "", exit_datetime: "",
-      risk_percent: "", pnl_r: "",
-      commission: "", swap: "",
-      reference_timeframe: "", trade_score: "",
-      opportunity_timeframe: "", entry_timeframe: "",
-      trend_direction: "", setup: "", session: "",
+      asset: "",
+      side: "BUY",
+      entry_datetime: "",
+      exit_datetime: "",
+      risk_percent: "",
+      pnl_r: "",
+      commission: "",
+      swap: "",
+      reference_timeframe: "",
+      trade_score: "",
+      opportunity_timeframe: "",
+      entry_timeframe: "",
+      trend_direction: "",
+      setup: "",
+      session: "",
       status: null,
-      emotions: [], mistakes: [], notes: "", custom_fields: {},
+      emotions: [],
+      mistakes: [],
+      notes: "",
+      custom_fields: {},
     };
   }
   // Handle asset: {id, symbol} (API) or string (legacy mock)
-  const asset = trade.asset && typeof trade.asset === "object"
-    ? trade.asset.symbol
-    : (trade.asset ?? "");
+  const asset =
+    trade.asset && typeof trade.asset === "object" ? trade.asset.symbol : (trade.asset ?? "");
   // Handle emotions: [{id, label}] (API) or string[] or single legacy string
   const emotions = Array.isArray(trade.emotions)
     ? trade.emotions.map((e) => (typeof e === "object" ? e.label : e))
-    : trade.emotion ? [trade.emotion] : [];
+    : trade.emotion
+      ? [trade.emotion]
+      : [];
   // Handle mistakes: [{id, label}] (API) or string[]
   const mistakes = Array.isArray(trade.mistakes)
     ? trade.mistakes.map((m) => (typeof m === "object" ? m.label : m))
     : [];
   // Handle setup: {id, label} (API) or string (legacy mock)
-  const setup = trade.setup && typeof trade.setup === "object"
-    ? trade.setup.label
-    : (trade.setup ?? "");
+  const setup =
+    trade.setup && typeof trade.setup === "object" ? trade.setup.label : (trade.setup ?? "");
   return {
     asset,
-    side:                  trade.side ?? "BUY",
-    entry_datetime:        toInputDt(trade.entry_datetime, timezone),
-    exit_datetime:         toInputDt(trade.exit_datetime, timezone),
-    risk_percent:          trade.risk_percent ?? "",
-    pnl_r:                 tradeAmount(trade,"R") ?? "",
-    commission:            trade.commission ?? "",
-    swap:                  trade.swap ?? "",
-    reference_timeframe:   trade.reference_timeframe ?? "",
-    trade_score:           trade.trade_score ?? "",
+    side: trade.side ?? "BUY",
+    entry_datetime: toInputDt(trade.entry_datetime, timezone),
+    exit_datetime: toInputDt(trade.exit_datetime, timezone),
+    risk_percent: trade.risk_percent ?? "",
+    pnl_r: tradeAmount(trade, "R") ?? "",
+    commission: trade.commission ?? "",
+    swap: trade.swap ?? "",
+    reference_timeframe: trade.reference_timeframe ?? "",
+    trade_score: trade.trade_score ?? "",
     opportunity_timeframe: trade.opportunity_timeframe ?? "",
-    entry_timeframe:       trade.entry_timeframe ?? "",
-    trend_direction:       trade.trend_direction ?? "",
+    entry_timeframe: trade.entry_timeframe ?? "",
+    trend_direction: trade.trend_direction ?? "",
     setup,
-    session:               trade.session ?? "",
-    status:                trade.status === "OPEN" ? null : (trade.status ?? null),
-    emotions, mistakes,
+    session: trade.session ?? "",
+    status: trade.status === "OPEN" ? null : (trade.status ?? null),
+    emotions,
+    mistakes,
     notes: trade.notes ?? "",
     custom_fields: trade.custom_fields ?? {},
   };
@@ -109,9 +128,7 @@ function tradeToDefaults(trade, timezone = "UTC") {
 // Each screenshot carries a `section` string (its section title); nulls fall into
 // the first default section.
 function buildSections(screenshots = []) {
-  const map = new Map(
-    DEFAULT_SECTIONS.map((s) => [s.title, { ...s, text: "", images: [] }])
-  );
+  const map = new Map(DEFAULT_SECTIONS.map((s) => [s.title, { ...s, text: "", images: [] }]));
   for (const sc of screenshots) {
     const title = sc.section ?? DEFAULT_SECTIONS[0].title;
     if (!map.has(title)) {
@@ -195,8 +212,12 @@ export default function TradePanel({
   const timezone = auth?.user?.timezone || getUserTimezone();
   const journalContext = useJournal();
   const journal = journalContext?.activeJournal ?? journalContext?.activeWorkspace;
-  const capital = Number(trade && Object.hasOwn(trade,"capital_basis") ? trade.capital_basis : journal?.startingCapital ?? journal?.starting_capital ?? 0);
-  const customFields = useTradeCustomFields(journalId, {enabled:open});
+  const capital = Number(
+    trade && Object.hasOwn(trade, "capital_basis")
+      ? trade.capital_basis
+      : (journal?.startingCapital ?? journal?.starting_capital ?? 0),
+  );
+  const customFields = useTradeCustomFields(journalId, { enabled: open });
 
   const [notesSections, setNotesSections] = useState(() => buildSections(trade?.screenshots));
   const [draftSource, setDraftSource] = useState({ open, trade, mode });
@@ -205,21 +226,24 @@ export default function TradePanel({
     setDraftSource({ open, trade, mode });
     if (open) setNotesSections(buildSections(trade?.screenshots));
   }
-  const [deleteOpen,     setDeleteOpen]     = useState(false);
-  const [deleting,           setDeleting]           = useState(false);
-  const [manageAssetsOpen,   setManageAssetsOpen]   = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [manageAssetsOpen, setManageAssetsOpen] = useState(false);
   const [manageEmotionsOpen, setManageEmotionsOpen] = useState(false);
   const [manageMistakesOpen, setManageMistakesOpen] = useState(false);
-  const [manageSetupsOpen,   setManageSetupsOpen]   = useState(false);
+  const [manageSetupsOpen, setManageSetupsOpen] = useState(false);
   const [panelWidth, setPanelWidth] = useState(560);
-  const [pnlUnit,setPnlUnit] = useState(defaultUnit);
-  const [riskUnit,setRiskUnit] = useState(defaultUnit==="USD"?"USD":"PCT");
-  const [unitSource,setUnitSource] = useState({open,trade});
-  if(unitSource.open!==open || unitSource.trade!==trade) {
-    setUnitSource({open,trade});
-    if(open) {setPnlUnit(defaultUnit);setRiskUnit(defaultUnit==="USD"?"USD":"PCT");}
+  const [pnlUnit, setPnlUnit] = useState(defaultUnit);
+  const [riskUnit, setRiskUnit] = useState(defaultUnit === "USD" ? "USD" : "PCT");
+  const [unitSource, setUnitSource] = useState({ open, trade });
+  if (unitSource.open !== open || unitSource.trade !== trade) {
+    setUnitSource({ open, trade });
+    if (open) {
+      setPnlUnit(defaultUnit);
+      setRiskUnit(defaultUnit === "USD" ? "USD" : "PCT");
+    }
   }
-  const [ratingStyle,setRatingStyle] = useState("score");
+  const [ratingStyle, setRatingStyle] = useState("score");
   const [resizing, setResizing] = useState(false);
   const resizeFrame = useRef(null);
   const resizeWidth = useRef(560);
@@ -227,7 +251,10 @@ export default function TradePanel({
 
   function resizePanel(event) {
     const sheet = event.currentTarget.closest('[data-slot="sheet-content"]');
-    resizeWidth.current = Math.min(window.innerWidth, Math.min(1100, Math.max(420, window.innerWidth - event.clientX)));
+    resizeWidth.current = Math.min(
+      window.innerWidth,
+      Math.min(1100, Math.max(420, window.innerWidth - event.clientX)),
+    );
     cancelAnimationFrame(resizeFrame.current);
     resizeFrame.current = requestAnimationFrame(() => {
       sheet.style.maxWidth = `${resizeWidth.current}px`;
@@ -269,9 +296,15 @@ export default function TradePanel({
       // The list endpoint doesn't include screenshots; fetch the detail to populate them.
       let cancelled = false;
       fetchTrade(journalId, trade.id)
-        .then((full) => { if (!cancelled) setNotesSections(buildSections(full.screenshots)); })
-        .catch(() =>   { if (!cancelled) setNotesSections(buildSections(trade?.screenshots)); });
-      return () => { cancelled = true; };
+        .then((full) => {
+          if (!cancelled) setNotesSections(buildSections(full.screenshots));
+        })
+        .catch(() => {
+          if (!cancelled) setNotesSections(buildSections(trade?.screenshots));
+        });
+      return () => {
+        cancelled = true;
+      };
     }
   }, [open, trade, reset, mode, journalId, timezone]);
 
@@ -280,62 +313,86 @@ export default function TradePanel({
   const watchedSide = useWatch({ control, name: "side" });
   const watchedStatus = useWatch({ control, name: "status" });
   const watchedRisk = useWatch({ control, name: "risk_percent" });
-  const canConvertPnl = riskAmount({risk_percent:watchedRisk},capital)!==null;
-  const unresolvedProfit = trade?.pnl_amount!=null && trade?.risk_amount==null ? Number(trade.pnl_amount) : null;
-  const effectivePnlUnit = unresolvedProfit!==null&&!canConvertPnl ? "USD" : pnlUnit;
+  const canConvertPnl = riskAmount({ risk_percent: watchedRisk }, capital) !== null;
+  const unresolvedProfit =
+    trade?.pnl_amount != null && trade?.risk_amount == null ? Number(trade.pnl_amount) : null;
+  const effectivePnlUnit = unresolvedProfit !== null && !canConvertPnl ? "USD" : pnlUnit;
 
   async function removeCustomField(id) {
     await customFields.remove(id);
-    const values = {...getValues("custom_fields")};
+    const values = { ...getValues("custom_fields") };
     delete values[String(id)];
-    setValue("custom_fields", values, {shouldDirty:true});
+    setValue("custom_fields", values, { shouldDirty: true });
   }
 
   async function submit(values) {
     // Keep the original instant when editing an unchanged repeated DST hour.
-    const entry = trade?.entry_datetime && values.entry_datetime===toInputDt(trade.entry_datetime,timezone) ? new Date(trade.entry_datetime).toISOString() : fromInputDt(values.entry_datetime, timezone);
-    const exit = trade?.exit_datetime && values.exit_datetime===toInputDt(trade.exit_datetime,timezone) ? new Date(trade.exit_datetime).toISOString() : fromInputDt(values.exit_datetime, timezone);
+    const entry =
+      trade?.entry_datetime && values.entry_datetime === toInputDt(trade.entry_datetime, timezone)
+        ? new Date(trade.entry_datetime).toISOString()
+        : fromInputDt(values.entry_datetime, timezone);
+    const exit =
+      trade?.exit_datetime && values.exit_datetime === toInputDt(trade.exit_datetime, timezone)
+        ? new Date(trade.exit_datetime).toISOString()
+        : fromInputDt(values.exit_datetime, timezone);
     if (!entry || (values.exit_datetime && !exit)) {
-      setError(!entry?"entry_datetime":"exit_datetime", {message:"This local time does not exist in your timezone. Choose another time."});
+      setError(!entry ? "entry_datetime" : "exit_datetime", {
+        message: "This local time does not exist in your timezone. Choose another time.",
+      });
       return;
     }
     if (exit && exit <= entry) {
-      setError("exit_datetime", {message:"Exit must be after entry."});return;
+      setError("exit_datetime", { message: "Exit must be after entry." });
+      return;
     }
     const payload = {
       // Non-catalog fields
-      side:                  values.side,
-      entry_datetime:        entry,
-      exit_datetime:         exit,
-      risk_percent:          values.risk_percent == null ? null : Number(Number(values.risk_percent).toFixed(6)),
-      pnl_r:                 values.pnl_r == null && unresolvedProfit!==null ? (canConvertPnl ? Number((unresolvedProfit/(capital*Number(values.risk_percent)/100)).toFixed(6)) : trade.pnl_r) : values.pnl_r == null ? null : Number(Number(values.pnl_r).toFixed(6)),
-      commission:            values.commission ?? null,
-      swap:                  values.swap ?? null,
-      reference_timeframe:   values.reference_timeframe || null,
-      trade_score:           values.trade_score ?? null,
+      side: values.side,
+      entry_datetime: entry,
+      exit_datetime: exit,
+      risk_percent:
+        values.risk_percent == null ? null : Number(Number(values.risk_percent).toFixed(6)),
+      pnl_r:
+        values.pnl_r == null && unresolvedProfit !== null
+          ? canConvertPnl
+            ? Number(
+                (unresolvedProfit / ((capital * Number(values.risk_percent)) / 100)).toFixed(6),
+              )
+            : trade.pnl_r
+          : values.pnl_r == null
+            ? null
+            : Number(Number(values.pnl_r).toFixed(6)),
+      commission: values.commission ?? null,
+      swap: values.swap ?? null,
+      reference_timeframe: values.reference_timeframe || null,
+      trade_score: values.trade_score ?? null,
       opportunity_timeframe: values.opportunity_timeframe || null,
-      entry_timeframe:       values.entry_timeframe || null,
-      trend_direction:       values.trend_direction || null,
-      session:               values.session || null,
-      status:                values.status,
-      notes:                 values.notes || null,
-      custom_fields:         values.custom_fields ?? {},
+      entry_timeframe: values.entry_timeframe || null,
+      trend_direction: values.trend_direction || null,
+      session: values.session || null,
+      status: values.status,
+      notes: values.notes || null,
+      custom_fields: values.custom_fields ?? {},
       // Catalog ID fields — replace raw strings with backend IDs
-      asset_id:    catalog.assetMap.get(values.asset) ?? null,
+      asset_id: catalog.assetMap.get(values.asset) ?? null,
       emotion_ids: values.emotions.map((l) => catalog.emotionMap.get(l)).filter(Boolean),
       mistake_ids: values.mistakes.map((l) => catalog.mistakeMap.get(l)).filter(Boolean),
-      setup_id:    values.setup ? (catalog.setupMap.get(values.setup) ?? null) : null,
+      setup_id: values.setup ? (catalog.setupMap.get(values.setup) ?? null) : null,
     };
     try {
       const savedTrade = await onSave(payload);
       const tradeId = isEdit ? trade.id : savedTrade?.id;
       if (tradeId && journalId) {
         const pendingImages = notesSections.flatMap((s) =>
-          s.images.filter((img) => img.file).map((img) => ({ file: img.file, preview: img.preview, section: s.title }))
+          s.images
+            .filter((img) => img.file)
+            .map((img) => ({ file: img.file, preview: img.preview, section: s.title })),
         );
         if (pendingImages.length > 0) {
           await Promise.allSettled(
-            pendingImages.map(({ file, section }) => uploadScreenshot(journalId, tradeId, file, section))
+            pendingImages.map(({ file, section }) =>
+              uploadScreenshot(journalId, tradeId, file, section),
+            ),
           );
           pendingImages.forEach(({ preview }) => URL.revokeObjectURL(preview));
         }
@@ -343,8 +400,13 @@ export default function TradePanel({
       onClose();
     } catch (err) {
       const fieldErrors = err?.response?.data?.custom_fields;
-      if(fieldErrors && typeof fieldErrors === "object") {
-        Object.entries(fieldErrors).forEach(([id,message]) => setError(`custom_fields.${id}`,{type:"server",message:Array.isArray(message)?message.join(" "):String(message)}));
+      if (fieldErrors && typeof fieldErrors === "object") {
+        Object.entries(fieldErrors).forEach(([id, message]) =>
+          setError(`custom_fields.${id}`, {
+            type: "server",
+            message: Array.isArray(message) ? message.join(" ") : String(message),
+          }),
+        );
       }
       setError("root", {
         message: err?.response?.data?.detail ?? err.message ?? "Failed to save trade",
@@ -375,7 +437,10 @@ export default function TradePanel({
   return (
     <>
       <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-        <SheetContent className={`flex flex-col ${resizing ? "select-none" : ""}`} style={{ maxWidth: `${panelWidth}px`, transition: "none" }}>
+        <SheetContent
+          className={`flex flex-col ${resizing ? "select-none" : ""}`}
+          style={{ maxWidth: `${panelWidth}px`, transition: "none" }}
+        >
           <div
             role="separator"
             aria-label="Resize trade form"
@@ -393,9 +458,9 @@ export default function TradePanel({
             <div className="flex items-center justify-between gap-3">
               <SheetTitle>
                 {isEdit
-                  ? (trade?.asset && typeof trade.asset === "object"
+                  ? ((trade?.asset && typeof trade.asset === "object"
                       ? trade.asset.symbol
-                      : trade?.asset) ?? "Edit Trade"
+                      : trade?.asset) ?? "Edit Trade")
                   : "New Trade"}
               </SheetTitle>
             </div>
@@ -412,21 +477,42 @@ export default function TradePanel({
                 </p>
               )}
 
-              {customFields.error&&<div role="alert" className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-zinc-800 p-3 text-xs text-zinc-400"><span>Custom fields could not be loaded.</span><Button type="button" variant="outline" size="sm" onClick={customFields.refetch}>Retry</Button></div>}
-              <div className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-dashed border-zinc-800/80 bg-zinc-900/30 px-3 py-2.5">
-                <div><p className="text-xs font-medium text-zinc-300">Custom fields</p><p className="mt-0.5 text-[11px] text-zinc-600">Add a field to any section of this trade form.</p></div>
-                <AddCustomFieldButton onCreate={customFields.create} disabled={customFields.loading || !!customFields.error} />
+              {customFields.error && (
+                <div
+                  role="alert"
+                  className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-zinc-800 p-3 text-xs text-zinc-400"
+                >
+                  <span>Custom fields could not be loaded.</span>
+                  <Button type="button" variant="outline" size="sm" onClick={customFields.refetch}>
+                    Retry
+                  </Button>
+                </div>
+              )}
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
+                <div>
+                  <p className="text-xs font-medium text-zinc-300">Custom fields</p>
+                  <p className="mt-0.5 text-[11px] text-zinc-600">
+                    Add a field to any section of this trade form.
+                  </p>
+                </div>
+                <AddCustomFieldButton
+                  onCreate={customFields.create}
+                  disabled={customFields.loading || !!customFields.error}
+                />
               </div>
-              {capital>0&&<p className="mb-4 text-[11px] text-zinc-500">Conversions use {isEdit?"this trade’s saved":"the journal’s current"} capital basis: ${capital.toLocaleString(undefined,{maximumFractionDigits:2})}.</p>}
+              {capital > 0 && (
+                <p className="mb-4 text-[11px] text-zinc-500">
+                  Conversions use {isEdit ? "this trade’s saved" : "the journal’s current"} capital
+                  basis: ${capital.toLocaleString(undefined, { maximumFractionDigits: 2 })}.
+                </p>
+              )}
               <div className="space-y-7">
-
                 {/* ── Execution ── */}
                 <section>
                   <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">
                     Execution
                   </h3>
                   <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-x-4 gap-y-4">
-
                     <F
                       label="Asset *"
                       error={errors.asset?.message}
@@ -458,8 +544,12 @@ export default function TradePanel({
                               onClick={() => setValue("side", s, { shouldValidate: true })}
                               className={`flex-1 rounded-md border px-3 py-1.5 text-xs font-bold uppercase transition-colors ${
                                 s === "BUY"
-                                  ? active ? "border-emerald-500/50 bg-emerald-500/20 text-emerald-400" : "border-zinc-800 text-zinc-500 hover:border-zinc-600"
-                                  : active ? "border-red-500/50 bg-red-500/20 text-red-400"           : "border-zinc-800 text-zinc-500 hover:border-zinc-600"
+                                  ? active
+                                    ? "border-emerald-500/50 bg-emerald-500/20 text-emerald-400"
+                                    : "border-zinc-800 text-zinc-500 hover:border-zinc-600"
+                                  : active
+                                    ? "border-red-500/50 bg-red-500/20 text-red-400"
+                                    : "border-zinc-800 text-zinc-500 hover:border-zinc-600"
                               }`}
                             >
                               {s}
@@ -469,24 +559,93 @@ export default function TradePanel({
                       </div>
                     </F>
 
-                    <F label="Entry date/time *" id="trade-entry_datetime" error={errors.entry_datetime?.message}>
-                      <Controller name="entry_datetime" control={control} render={({ field }) => (
-                        <DateTimePicker id="trade-entry_datetime" label="Entry date/time" value={field.value} onChange={field.onChange} onBlur={field.onBlur} ref={field.ref} invalid={!!errors.entry_datetime} />
-                      )} />
+                    <F
+                      label="Entry date/time *"
+                      id="trade-entry_datetime"
+                      error={errors.entry_datetime?.message}
+                    >
+                      <Controller
+                        name="entry_datetime"
+                        control={control}
+                        render={({ field }) => (
+                          <DateTimePicker
+                            id="trade-entry_datetime"
+                            label="Entry date/time"
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            ref={field.ref}
+                            invalid={!!errors.entry_datetime}
+                          />
+                        )}
+                      />
                     </F>
 
-                    <F label="Exit date/time" id="trade-exit_datetime" error={errors.exit_datetime?.message}>
-                      <Controller name="exit_datetime" control={control} render={({ field }) => (
-                        <DateTimePicker id="trade-exit_datetime" label="Exit date/time" value={field.value} onChange={field.onChange} onBlur={field.onBlur} ref={field.ref} invalid={!!errors.exit_datetime} />
-                      )} />
+                    <F
+                      label="Exit date/time"
+                      id="trade-exit_datetime"
+                      error={errors.exit_datetime?.message}
+                    >
+                      <Controller
+                        name="exit_datetime"
+                        control={control}
+                        render={({ field }) => (
+                          <DateTimePicker
+                            id="trade-exit_datetime"
+                            label="Exit date/time"
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            ref={field.ref}
+                            invalid={!!errors.exit_datetime}
+                          />
+                        )}
+                      />
                     </F>
 
-                    <F label="Risk" id="trade-risk" error={errors.risk_percent?.message} action={<FieldModeToggle label="Risk unit" options={[{value:"PCT",label:"%"},{value:"USD",label:"$",disabled:!(capital>0),title:capital>0?"$":"Set journal starting capital to enter risk in dollars"}]} value={capital>0?riskUnit:"PCT"} onChange={setRiskUnit}/>}>
-                      <Controller name="risk_percent" control={control} render={({field})=><TradeRiskInput {...field} capital={capital} unit={riskUnit}/>}/>
+                    <F
+                      label="Risk"
+                      id="trade-risk"
+                      error={errors.risk_percent?.message}
+                      action={
+                        <FieldModeToggle
+                          label="Risk unit"
+                          options={[
+                            { value: "PCT", label: "%" },
+                            {
+                              value: "USD",
+                              label: "$",
+                              disabled: !(capital > 0),
+                              title:
+                                capital > 0
+                                  ? "$"
+                                  : "Set journal starting capital to enter risk in dollars",
+                            },
+                          ]}
+                          value={capital > 0 ? riskUnit : "PCT"}
+                          onChange={setRiskUnit}
+                        />
+                      }
+                    >
+                      <Controller
+                        name="risk_percent"
+                        control={control}
+                        render={({ field }) => (
+                          <TradeRiskInput {...field} capital={capital} unit={riskUnit} />
+                        )}
+                      />
                     </F>
-
                   </div>
-                <TradeCustomFields section="execution" fields={customFields.fields} control={control} errors={errors} onCreate={customFields.create} onRemove={removeCustomField} disabled={customFields.loading || !!customFields.error} showAdd={false} />
+                  <TradeCustomFields
+                    section="execution"
+                    fields={customFields.fields}
+                    control={control}
+                    errors={errors}
+                    onCreate={customFields.create}
+                    onRemove={removeCustomField}
+                    disabled={customFields.loading || !!customFields.error}
+                    showAdd={false}
+                  />
                 </section>
 
                 {/* ── Performance ── */}
@@ -495,26 +654,72 @@ export default function TradePanel({
                     Performance
                   </h3>
                   <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-x-4 gap-y-4">
-
-                    <F label="PnL" error={errors.pnl_r?.message} span2 action={<FieldModeToggle label="PnL unit" options={UNIT_OPTIONS.map(option=>({...option,disabled:!canConvertPnl&&(unresolvedProfit!==null?option.value!=="USD":option.value!=="R"),title:!canConvertPnl?"Set positive risk and a capital basis for conversion":option.label}))} value={canConvertPnl?effectivePnlUnit:unresolvedProfit!==null?"USD":"R"} onChange={setPnlUnit}/>}>
-                      <Controller name="pnl_r" control={control} render={({field})=><TradePnlInput {...field} value={(field.value==null||field.value==="")&&unresolvedProfit!==null&&canConvertPnl?unresolvedProfit/(capital*Number(watchedRisk)/100):field.value} risk={watchedRisk} capital={capital} unit={effectivePnlUnit} knownProfit={unresolvedProfit}/>}/>
+                    <F
+                      label="PnL"
+                      error={errors.pnl_r?.message}
+                      span2
+                      action={
+                        <FieldModeToggle
+                          label="PnL unit"
+                          options={UNIT_OPTIONS.map((option) => ({
+                            ...option,
+                            disabled:
+                              !canConvertPnl &&
+                              (unresolvedProfit !== null
+                                ? option.value !== "USD"
+                                : option.value !== "R"),
+                            title: !canConvertPnl
+                              ? "Set positive risk and a capital basis for conversion"
+                              : option.label,
+                          }))}
+                          value={
+                            canConvertPnl
+                              ? effectivePnlUnit
+                              : unresolvedProfit !== null
+                                ? "USD"
+                                : "R"
+                          }
+                          onChange={setPnlUnit}
+                        />
+                      }
+                    >
+                      <Controller
+                        name="pnl_r"
+                        control={control}
+                        render={({ field }) => (
+                          <TradePnlInput
+                            {...field}
+                            value={
+                              (field.value == null || field.value === "") &&
+                              unresolvedProfit !== null &&
+                              canConvertPnl
+                                ? unresolvedProfit / ((capital * Number(watchedRisk)) / 100)
+                                : field.value
+                            }
+                            risk={watchedRisk}
+                            capital={capital}
+                            unit={effectivePnlUnit}
+                            knownProfit={unresolvedProfit}
+                          />
+                        )}
+                      />
                     </F>
 
                     <F label="Status" span2>
                       <div className="flex flex-wrap gap-1.5">
                         {[
-                          { value: null,   label: "Auto"      },
-                          { value: "WIN",  label: "WIN"       },
-                          { value: "LOSS", label: "LOSS"      },
-                          { value: "BE",   label: "Breakeven" },
+                          { value: null, label: "Auto" },
+                          { value: "WIN", label: "WIN" },
+                          { value: "LOSS", label: "LOSS" },
+                          { value: "BE", label: "Breakeven" },
                         ].map(({ value, label }) => {
                           const active = watchedStatus === value;
                           const activeClass = {
-                            null:   "border-zinc-600 bg-zinc-800 text-zinc-200",
-                            WIN:    "border-emerald-500/50 bg-emerald-500/20 text-emerald-400",
-                            LOSS:   "border-red-500/50 bg-red-500/20 text-red-400",
-                            BE:     "border-zinc-500/40 bg-zinc-700/40 text-zinc-300",
-                            OPEN:   "border-amber-500/50 bg-amber-500/20 text-amber-400",
+                            null: "border-zinc-600 bg-zinc-800 text-zinc-200",
+                            WIN: "border-emerald-500/50 bg-emerald-500/20 text-emerald-400",
+                            LOSS: "border-red-500/50 bg-red-500/20 text-red-400",
+                            BE: "border-zinc-500/40 bg-zinc-700/40 text-zinc-300",
+                            OPEN: "border-amber-500/50 bg-amber-500/20 text-amber-400",
                           }[String(value)];
                           return (
                             <button
@@ -533,7 +738,9 @@ export default function TradePanel({
                         })}
                       </div>
                       {watchedStatus === null && (
-                        <p className="mt-1 text-[10px] text-zinc-600">Derived automatically from PnL value</p>
+                        <p className="mt-1 text-[10px] text-zinc-600">
+                          Derived automatically from PnL value
+                        </p>
                       )}
                     </F>
 
@@ -544,9 +751,17 @@ export default function TradePanel({
                     <F label="Swap" error={errors.swap?.message}>
                       <DollarInput placeholder="0.00" {...register("swap")} />
                     </F>
-
                   </div>
-                <TradeCustomFields section="performance" fields={customFields.fields} control={control} errors={errors} onCreate={customFields.create} onRemove={removeCustomField} disabled={customFields.loading || !!customFields.error} showAdd={false} />
+                  <TradeCustomFields
+                    section="performance"
+                    fields={customFields.fields}
+                    control={control}
+                    errors={errors}
+                    onCreate={customFields.create}
+                    onRemove={removeCustomField}
+                    disabled={customFields.loading || !!customFields.error}
+                    showAdd={false}
+                  />
                 </section>
 
                 {/* ── Setup ── */}
@@ -555,41 +770,140 @@ export default function TradePanel({
                     Setup
                   </h3>
                   <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-x-4 gap-y-4">
-
                     <F label="Reference TF" id="trade-reference_timeframe">
-                      <Controller name="reference_timeframe" control={control} render={({ field }) => (
-                        <SelectField id="trade-reference_timeframe" label="Reference TF" value={field.value} onValueChange={field.onChange} onBlur={field.onBlur} ref={field.ref} options={TF_OPTIONS} placeholder="Select timeframe" />
-                      )} />
+                      <Controller
+                        name="reference_timeframe"
+                        control={control}
+                        render={({ field }) => (
+                          <SelectField
+                            id="trade-reference_timeframe"
+                            label="Reference TF"
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            onBlur={field.onBlur}
+                            ref={field.ref}
+                            options={TF_OPTIONS}
+                            placeholder="Select timeframe"
+                          />
+                        )}
+                      />
                     </F>
 
-                    <F label="Trade score" id="trade-trade_score" error={errors.trade_score?.message} action={<FieldModeToggle label="Quality rating style" options={[{value:"score",label:"Score",title:"Numeric score",icon:<Hash className="size-3"/>},{value:"stars",label:"Stars",title:"Star rating",icon:<Star className="size-3"/>}]} value={ratingStyle} onChange={setRatingStyle}/>}>
-                      <Controller name="trade_score" control={control} render={({ field }) => (
-                        <TradeQualityInput id="trade-trade_score" value={field.value} onChange={field.onChange} onBlur={field.onBlur} style={ratingStyle}/>
-                      )} />
+                    <F
+                      label="Trade score"
+                      id="trade-trade_score"
+                      error={errors.trade_score?.message}
+                      action={
+                        <FieldModeToggle
+                          label="Quality rating style"
+                          options={[
+                            {
+                              value: "score",
+                              label: "Score",
+                              title: "Numeric score",
+                              icon: <Hash className="size-3" />,
+                            },
+                            {
+                              value: "stars",
+                              label: "Stars",
+                              title: "Star rating",
+                              icon: <Star className="size-3" />,
+                            },
+                          ]}
+                          value={ratingStyle}
+                          onChange={setRatingStyle}
+                        />
+                      }
+                    >
+                      <Controller
+                        name="trade_score"
+                        control={control}
+                        render={({ field }) => (
+                          <TradeQualityInput
+                            id="trade-trade_score"
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            style={ratingStyle}
+                          />
+                        )}
+                      />
                     </F>
 
                     <F label="Opportunity TF" id="trade-opportunity_timeframe">
-                      <Controller name="opportunity_timeframe" control={control} render={({ field }) => (
-                        <SelectField id="trade-opportunity_timeframe" label="Opportunity TF" value={field.value} onValueChange={field.onChange} onBlur={field.onBlur} ref={field.ref} options={TF_OPTIONS} placeholder="Select timeframe" />
-                      )} />
+                      <Controller
+                        name="opportunity_timeframe"
+                        control={control}
+                        render={({ field }) => (
+                          <SelectField
+                            id="trade-opportunity_timeframe"
+                            label="Opportunity TF"
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            onBlur={field.onBlur}
+                            ref={field.ref}
+                            options={TF_OPTIONS}
+                            placeholder="Select timeframe"
+                          />
+                        )}
+                      />
                     </F>
 
                     <F label="Entry TF" id="trade-entry_timeframe">
-                      <Controller name="entry_timeframe" control={control} render={({ field }) => (
-                        <SelectField id="trade-entry_timeframe" label="Entry TF" value={field.value} onValueChange={field.onChange} onBlur={field.onBlur} ref={field.ref} options={TF_OPTIONS} placeholder="Select timeframe" />
-                      )} />
+                      <Controller
+                        name="entry_timeframe"
+                        control={control}
+                        render={({ field }) => (
+                          <SelectField
+                            id="trade-entry_timeframe"
+                            label="Entry TF"
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            onBlur={field.onBlur}
+                            ref={field.ref}
+                            options={TF_OPTIONS}
+                            placeholder="Select timeframe"
+                          />
+                        )}
+                      />
                     </F>
 
                     <F label="Trend" id="trade-trend_direction">
-                      <Controller name="trend_direction" control={control} render={({ field }) => (
-                        <SelectField id="trade-trend_direction" label="Trend" value={field.value} onValueChange={field.onChange} onBlur={field.onBlur} ref={field.ref} options={TREND_OPTIONS} placeholder="Select trend" />
-                      )} />
+                      <Controller
+                        name="trend_direction"
+                        control={control}
+                        render={({ field }) => (
+                          <SelectField
+                            id="trade-trend_direction"
+                            label="Trend"
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            onBlur={field.onBlur}
+                            ref={field.ref}
+                            options={TREND_OPTIONS}
+                            placeholder="Select trend"
+                          />
+                        )}
+                      />
                     </F>
 
                     <F label="Session" id="trade-session">
-                      <Controller name="session" control={control} render={({ field }) => (
-                        <SelectField id="trade-session" label="Session" value={field.value} onValueChange={field.onChange} onBlur={field.onBlur} ref={field.ref} options={SESSION_OPTIONS} placeholder="Select session" />
-                      )} />
+                      <Controller
+                        name="session"
+                        control={control}
+                        render={({ field }) => (
+                          <SelectField
+                            id="trade-session"
+                            label="Session"
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            onBlur={field.onBlur}
+                            ref={field.ref}
+                            options={SESSION_OPTIONS}
+                            placeholder="Select session"
+                          />
+                        )}
+                      />
                     </F>
 
                     <F
@@ -612,9 +926,17 @@ export default function TradePanel({
                         )}
                       />
                     </F>
-
                   </div>
-                <TradeCustomFields section="setup" fields={customFields.fields} control={control} errors={errors} onCreate={customFields.create} onRemove={removeCustomField} disabled={customFields.loading || !!customFields.error} showAdd={false} />
+                  <TradeCustomFields
+                    section="setup"
+                    fields={customFields.fields}
+                    control={control}
+                    errors={errors}
+                    onCreate={customFields.create}
+                    onRemove={removeCustomField}
+                    disabled={customFields.loading || !!customFields.error}
+                    showAdd={false}
+                  />
                 </section>
 
                 {/* ── Psychology ── */}
@@ -623,7 +945,6 @@ export default function TradePanel({
                     Psychology
                   </h3>
                   <div className="space-y-3">
-
                     <F
                       label="Emotion *"
                       error={errors.emotions?.message}
@@ -653,9 +974,17 @@ export default function TradePanel({
                         emptyText="No errors"
                       />
                     </F>
-
                   </div>
-                <TradeCustomFields section="psychology" fields={customFields.fields} control={control} errors={errors} onCreate={customFields.create} onRemove={removeCustomField} disabled={customFields.loading || !!customFields.error} showAdd={false} />
+                  <TradeCustomFields
+                    section="psychology"
+                    fields={customFields.fields}
+                    control={control}
+                    errors={errors}
+                    onCreate={customFields.create}
+                    onRemove={removeCustomField}
+                    disabled={customFields.loading || !!customFields.error}
+                    showAdd={false}
+                  />
                 </section>
 
                 {/* ── Notes ── */}
@@ -669,7 +998,16 @@ export default function TradePanel({
                     className="w-full resize-none rounded-md border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-zinc-400/40"
                     {...register("notes")}
                   />
-                <TradeCustomFields section="notes" fields={customFields.fields} control={control} errors={errors} onCreate={customFields.create} onRemove={removeCustomField} disabled={customFields.loading || !!customFields.error} showAdd={false} />
+                  <TradeCustomFields
+                    section="notes"
+                    fields={customFields.fields}
+                    control={control}
+                    errors={errors}
+                    onCreate={customFields.create}
+                    onRemove={removeCustomField}
+                    disabled={customFields.loading || !!customFields.error}
+                    showAdd={false}
+                  />
                 </section>
 
                 {/* ── Trade Notes ── */}
@@ -682,10 +1020,17 @@ export default function TradePanel({
                     onChange={setNotesSections}
                     onDeleteImage={handleDeleteBackendImage}
                   />
-                <TradeCustomFields section="trade_notes" fields={customFields.fields} control={control} errors={errors} onCreate={customFields.create} onRemove={removeCustomField} disabled={customFields.loading || !!customFields.error} showAdd={false} />
+                  <TradeCustomFields
+                    section="trade_notes"
+                    fields={customFields.fields}
+                    control={control}
+                    errors={errors}
+                    onCreate={customFields.create}
+                    onRemove={removeCustomField}
+                    disabled={customFields.loading || !!customFields.error}
+                    showAdd={false}
+                  />
                 </section>
-
-
               </div>
             </form>
           </SheetBody>
@@ -730,7 +1075,9 @@ export default function TradePanel({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>
+              Cancel
+            </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
               {deleting ? "Deleting…" : "Delete"}
             </Button>
@@ -775,7 +1122,6 @@ export default function TradePanel({
         onRemove={catalog.removeSetup}
         onUpdate={catalog.updateSetup}
       />
-
     </>
   );
 }

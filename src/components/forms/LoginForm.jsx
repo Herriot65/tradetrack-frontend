@@ -9,13 +9,7 @@ import { loginSchema } from "../../schemas/loginSchema";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PasswordInput } from "./PasswordInput";
 import { FormErrorBanner } from "./FormErrorBanner";
 import { FieldError } from "./FieldError";
@@ -49,19 +43,10 @@ export default function LoginForm() {
     <Card className="w-full max-w-md border-border/60 bg-card/80 shadow-xl shadow-black/20 backdrop-blur-sm">
       <CardHeader className="space-y-1 text-center">
         <div className="flex justify-center mb-2">
-          <img
-            src="/nexora.png"
-            alt="Nexora"
-            className="h-16 w-16 rounded-xl animate-[float_3s_ease-in-out_infinite]"
-            style={{ animation: "float 3s ease-in-out infinite" }}
-          />
+          <img src="/nexora.png" alt="Nexora" className="h-12 w-12 rounded-xl" />
         </div>
-        <CardTitle className="text-2xl font-bold tracking-tight">
-          Welcome back
-        </CardTitle>
-        <CardDescription>
-          Sign in to your Nexora account
-        </CardDescription>
+        <CardTitle className="text-2xl font-bold tracking-tight">Welcome back</CardTitle>
+        <CardDescription>Sign in to your Nexora account</CardDescription>
       </CardHeader>
 
       <CardContent>

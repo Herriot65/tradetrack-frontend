@@ -6,12 +6,6 @@ import { useAuth } from "@/auth/useAuth";
 import { useJournal } from "@/journals/useJournal";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -28,45 +22,51 @@ const JOURNAL_TYPE_LABEL = {
   backtest: "Backtest Journal",
 };
 
-function JournalCard({ journal, onDelete }) {
+function JournalCard({ journal, onDelete, onOpen }) {
   const typeLabel = JOURNAL_TYPE_LABEL[journal.journalType] ?? "Journal";
-  const meta = [
-    typeLabel,
-    journal.currency,
-    journal.startingCapital
-      ? `$${Number(journal.startingCapital).toLocaleString()}`
-      : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
   return (
-    <Card className="group cursor-pointer border-zinc-800/60 bg-zinc-950/50 ring-zinc-800/40 transition-colors hover:border-emerald-500/30 hover:bg-zinc-900/50">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div className="flex items-center gap-2.5">
-          <div className="flex size-7 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20">
-            <BookOpen className="size-3.5" />
-          </div>
-          <CardTitle className="text-sm font-medium">{journal.name}</CardTitle>
+    <article className="nx-surface group relative overflow-hidden p-5 transition-colors hover:border-primary/25">
+      <div className="mb-6 flex items-center justify-between">
+        <span className="flex size-10 items-center justify-center rounded-xl border border-primary/15 bg-primary/[0.07] text-primary">
+          <BookOpen className="size-[18px]" />
+        </span>
+        <button
+          type="button"
+          onClick={() => onDelete(journal)}
+          className="rounded-md p-2 text-zinc-500 transition-colors hover:bg-destructive/10 hover:text-destructive"
+          aria-label={`Delete ${journal.name}`}
+        >
+          <Trash2 className="size-3.5" />
+        </button>
+      </div>
+      <p className="nx-eyebrow !text-muted-foreground">{typeLabel}</p>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="mt-2 flex w-full items-center justify-between gap-3 rounded-sm text-left"
+      >
+        <span className="truncate text-[20px] font-medium tracking-[-0.035em]">{journal.name}</span>
+        <ChevronRight className="size-4 text-zinc-600 transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+      </button>
+      <dl className="mt-6 flex items-end justify-between border-t border-border/60 pt-4">
+        <div>
+          <dt className="text-[10px] text-muted-foreground">Starting capital</dt>
+          <dd className="mt-1 text-[15px] font-medium tabular-nums">
+            {journal.startingCapital != null
+              ? Number(journal.startingCapital).toLocaleString(undefined, {
+                  maximumFractionDigits: 2,
+                })
+              : "—"}
+          </dd>
         </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(journal); }}
-            className="invisible group-hover:visible rounded p-1 text-zinc-600 transition-colors hover:bg-red-500/10 hover:text-red-400"
-            aria-label={`Delete ${journal.name}`}
-          >
-            <Trash2 className="size-3.5" />
-          </button>
-          <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+        <div className="text-right">
+          <dt className="text-[10px] text-muted-foreground">Currency</dt>
+          <dd className="mt-1 text-[12px] text-zinc-300">{journal.currency || "—"}</dd>
         </div>
-      </CardHeader>
-      <CardContent>
-        <p className="text-xs text-muted-foreground">{meta}</p>
-      </CardContent>
-    </Card>
+      </dl>
+    </article>
   );
 }
-
 
 function OnboardingHero({ userName, onCreateClick }) {
   return (
@@ -81,16 +81,28 @@ function OnboardingHero({ userName, onCreateClick }) {
         {userName ? `Welcome, ${userName}!` : "Welcome to Nexora!"}
       </h2>
       <p className="mt-2 max-w-sm text-sm text-zinc-400">
-        A journal is your personal trading environment — it holds your trades,
-        analytics, and settings all in one place.
+        A journal is your personal trading environment — it holds your trades, analytics, and
+        settings all in one place.
       </p>
 
       {/* Steps */}
       <div className="mt-8 grid w-full max-w-lg gap-3 text-left sm:grid-cols-3">
         {[
-          { step: "1", title: "Create a journal", desc: "Set your starting capital, currency, and break-even method." },
-          { step: "2", title: "Log your trades",  desc: "Record entries, exits, emotions, and setups as you trade." },
-          { step: "3", title: "Track your edge",  desc: "See your equity curve, win rate, and performance heatmap." },
+          {
+            step: "1",
+            title: "Create a journal",
+            desc: "Set your starting capital, currency, and break-even method.",
+          },
+          {
+            step: "2",
+            title: "Log your trades",
+            desc: "Record entries, exits, emotions, and setups as you trade.",
+          },
+          {
+            step: "3",
+            title: "Track your edge",
+            desc: "See your equity curve, win rate, and performance heatmap.",
+          },
         ].map(({ step, title, desc }) => (
           <div key={step} className="rounded-lg border border-zinc-800/60 bg-zinc-900/40 p-4">
             <div className="mb-2 flex size-6 items-center justify-center rounded-full bg-emerald-500/15 text-[11px] font-bold text-emerald-400 ring-1 ring-emerald-500/20">
@@ -115,10 +127,10 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { journals, loading, createJournal, deleteJournal } = useJournal();
-  const [createOpen,      setCreateOpen]      = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const [journalToDelete, setJournalToDelete] = useState(null);
-  const [deleting,        setDeleting]        = useState(false);
-  const [deleteError,     setDeleteError]     = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
 
   const handleCreate = async (payload) => {
     const created = await createJournal(payload);
@@ -144,17 +156,15 @@ export default function Dashboard() {
   return (
     <AppShell>
       <div className="space-y-8">
-
         {/* Page header — only shown when journals exist */}
         {(loading || hasJournals) && (
-          <div className="flex items-start justify-between gap-4">
+          <div className="nx-page-header">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight">
+              <p className="nx-eyebrow mb-3">Your trading workspace</p>
+              <h1 className="nx-page-title">
                 {user?.first_name ? `Welcome back, ${user.first_name}` : "Your Journals"}
               </h1>
-              <p className="text-sm text-muted-foreground">
-                Select a journal to view your trades and analytics.
-              </p>
+              <p className="nx-subtitle">Select a journal to view your trades and analytics.</p>
             </div>
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="size-4" />
@@ -174,39 +184,38 @@ export default function Dashboard() {
 
         {/* Onboarding — shown only on first visit with no journals */}
         {!loading && journals.length === 0 && (
-          <OnboardingHero
-            userName={user?.first_name}
-            onCreateClick={() => setCreateOpen(true)}
-          />
+          <OnboardingHero userName={user?.first_name} onCreateClick={() => setCreateOpen(true)} />
         )}
 
         {/* Journal grid — shown only when journals exist */}
         {hasJournals && (
           <div>
-            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Your Journals
-            </h2>
+            <h2 className="nx-eyebrow mb-4 !text-muted-foreground">Your Journals</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {journals.map((j) => (
-                <div key={j.id} onClick={() => navigate(`/journal/${j.id}`)}>
-                  <JournalCard journal={j} onDelete={setJournalToDelete} />
+                <div key={j.id}>
+                  <JournalCard
+                    journal={j}
+                    onDelete={setJournalToDelete}
+                    onOpen={() => navigate(`/journal/${j.id}`)}
+                  />
                 </div>
               ))}
             </div>
           </div>
         )}
-
       </div>
 
-      <JournalFormDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        onSubmit={handleCreate}
-      />
+      <JournalFormDialog open={createOpen} onOpenChange={setCreateOpen} onSubmit={handleCreate} />
 
       <Dialog
         open={!!journalToDelete}
-        onOpenChange={(v) => { if (!v) { setJournalToDelete(null); setDeleteError(null); } }}
+        onOpenChange={(v) => {
+          if (!v) {
+            setJournalToDelete(null);
+            setDeleteError(null);
+          }
+        }}
       >
         <DialogContent className="border-zinc-800 bg-zinc-950 sm:max-w-sm">
           <DialogHeader>
@@ -220,7 +229,10 @@ export default function Dashboard() {
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => { setJournalToDelete(null); setDeleteError(null); }}
+              onClick={() => {
+                setJournalToDelete(null);
+                setDeleteError(null);
+              }}
               disabled={deleting}
             >
               Cancel

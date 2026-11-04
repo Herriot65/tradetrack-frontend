@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
     register,
     handleSubmit,
     reset,
-    watch,
+    control,
     setError,
     formState: { errors, isSubmitting },
   } = useForm({
@@ -42,17 +42,18 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
     },
   });
 
-  const breakEvenMethod = watch("breakEvenMethod");
+  const breakEvenMethod = useWatch({ control, name: "breakEvenMethod" });
 
   useEffect(() => {
-    if (open) reset({
-      name: "",
-      journalType: "trading",
-      startingCapital: "",
-      currency: "USD",
-      breakEvenMethod: "ratio",
-      breakEvenValue: "",
-    });
+    if (open)
+      reset({
+        name: "",
+        journalType: "trading",
+        startingCapital: "",
+        currency: "USD",
+        breakEvenMethod: "ratio",
+        breakEvenValue: "",
+      });
   }, [open, reset]);
 
   const submit = async (values) => {
@@ -98,11 +99,7 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
           {/* Journal Type */}
           <div className="space-y-1.5">
             <Label htmlFor="journal-type">Journal Type</Label>
-            <select
-              id="journal-type"
-              className={selectClass}
-              {...register("journalType")}
-            >
+            <select id="journal-type" className={selectClass} {...register("journalType")}>
               <option value="trading">Trading Journal</option>
               <option value="backtest">Backtest Journal</option>
             </select>
@@ -127,13 +124,11 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
 
             <div className="space-y-1.5">
               <Label htmlFor="currency">Currency</Label>
-              <select
-                id="currency"
-                className={selectClass}
-                {...register("currency")}
-              >
+              <select id="currency" className={selectClass} {...register("currency")}>
                 {CURRENCIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
               </select>
               <FieldError message={errors.currency?.message} />
@@ -143,11 +138,7 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
           {/* Break-Even Method */}
           <div className="space-y-1.5">
             <Label htmlFor="break-even-method">Break-Even Method</Label>
-            <select
-              id="break-even-method"
-              className={selectClass}
-              {...register("breakEvenMethod")}
-            >
+            <select id="break-even-method" className={selectClass} {...register("breakEvenMethod")}>
               <option value="ratio">Ratio Based</option>
               <option value="profit">Profit Based</option>
             </select>

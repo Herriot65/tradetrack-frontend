@@ -13,8 +13,13 @@ function Donut({ values, colors, centerValue, centerLabel, labels, hovered, onHo
   const segments = buildDonutSegments(values);
 
   return (
-    <div className="analytics-donut relative size-[112px] shrink-0">
-      <svg role="img" aria-label={centerLabel} viewBox="0 0 124 124" className="size-full -rotate-90">
+    <div className="analytics-donut relative size-[124px] shrink-0">
+      <svg
+        role="img"
+        aria-label={centerLabel}
+        viewBox="0 0 124 124"
+        className="size-full -rotate-90"
+      >
         <circle
           cx="62"
           cy="62"
@@ -52,7 +57,9 @@ function Donut({ values, colors, centerValue, centerLabel, labels, hovered, onHo
         <span className="text-[20px] font-medium leading-6 tabular-nums text-ink">
           {hovered === null ? centerValue : formatPercent(segments[hovered]?.ratio * 100)}
         </span>
-        <span className="mt-0.5 text-[11px] leading-4 text-ink-muted">{hovered === null ? centerLabel : labels[hovered]}</span>
+        <span className="mt-0.5 text-[11px] leading-4 text-ink-muted">
+          {hovered === null ? centerLabel : labels[hovered]}
+        </span>
       </div>
     </div>
   );
@@ -75,10 +82,10 @@ function LegendRow({ color, label, value, detail, hovered, onHover, index }) {
     >
       <span className="size-2 rounded-[2px]" style={{ backgroundColor: color }} />
       <span className="min-w-0 break-words text-ink-secondary">{label}</span>
-      <span className="whitespace-nowrap font-medium text-right tabular-nums text-ink">{value}</span>
-      <span className="whitespace-nowrap text-right tabular-nums text-ink-muted">
-        {detail}
+      <span className="whitespace-nowrap font-medium text-right tabular-nums text-ink">
+        {value}
       </span>
+      <span className="whitespace-nowrap text-right tabular-nums text-ink-muted">{detail}</span>
     </div>
   );
 }
@@ -91,7 +98,9 @@ function DonutCard({ title, children, footnote }) {
         {children}
       </div>
       {footnote && (
-        <p className="px-5 pb-5 min-[900px]:px-6 text-[12px] leading-4 text-ink-muted">{footnote}</p>
+        <p className="px-5 pb-5 min-[900px]:px-6 text-[12px] leading-4 text-ink-muted">
+          {footnote}
+        </p>
       )}
     </AnalyticsCard>
   );
@@ -102,17 +111,22 @@ export default function DonutSection({ analytics }) {
   const [outcomeHover, setOutcomeHover] = useState(null);
   const [profitHover, setProfitHover] = useState(null);
   const total = Math.max(1, summary.closedCount);
-  const profitFactor = summary.profitFactor === null
-    ? (summary.grossProfit > 0 ? "\u221e" : "\u2014")
-    : formatRatio(summary.profitFactor);
+  const profitFactor =
+    summary.profitFactor === null
+      ? summary.grossProfit > 0
+        ? "\u221e"
+        : "\u2014"
+      : formatRatio(summary.profitFactor);
 
   return (
     <div className="analytics-outcomes-grid grid grid-cols-1 items-stretch gap-5">
       <DonutCard
         title="Win / loss"
-        footnote={summary.decidedCount > 0
-          ? `${formatPercent(summary.decidedWinRate)} excluding break-even`
-          : null}
+        footnote={
+          summary.decidedCount > 0
+            ? `${formatPercent(summary.decidedWinRate)} excluding break-even`
+            : null
+        }
       >
         <Donut
           values={[summary.wins, summary.losses, summary.breakEven]}
@@ -170,7 +184,10 @@ export default function DonutSection({ analytics }) {
               color="var(--profit)"
               label="Gross profit"
               value={formatValue(summary.grossProfit, unit)}
-              detail={formatPercent(summary.grossProfit / (summary.grossProfit + Math.abs(summary.grossLoss) || 1) * 100)}
+              detail={formatPercent(
+                (summary.grossProfit / (summary.grossProfit + Math.abs(summary.grossLoss) || 1)) *
+                  100,
+              )}
               hovered={profitHover}
               onHover={setProfitHover}
               index={0}
@@ -179,7 +196,11 @@ export default function DonutSection({ analytics }) {
               color="var(--loss)"
               label="Gross loss"
               value={formatValue(summary.grossLoss, unit)}
-              detail={formatPercent(Math.abs(summary.grossLoss) / (summary.grossProfit + Math.abs(summary.grossLoss) || 1) * 100)}
+              detail={formatPercent(
+                (Math.abs(summary.grossLoss) /
+                  (summary.grossProfit + Math.abs(summary.grossLoss) || 1)) *
+                  100,
+              )}
               hovered={profitHover}
               onHover={setProfitHover}
               index={1}
@@ -201,4 +222,3 @@ export default function DonutSection({ analytics }) {
     </div>
   );
 }
-

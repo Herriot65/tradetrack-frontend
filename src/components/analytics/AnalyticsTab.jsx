@@ -22,7 +22,11 @@ import TimingCard from "./TimingCard";
 
 function LoadingSkeleton({ sampleEnabled }) {
   return (
-    <div className="analytics-page space-y-5 min-[900px]:space-y-6" aria-label="Loading performance" aria-busy="true">
+    <div
+      className="analytics-page space-y-5 min-[900px]:space-y-6"
+      aria-label="Loading performance"
+      aria-busy="true"
+    >
       <div className="space-y-2">
         <Skeleton className="h-8 w-40 bg-surface-raised" />
         <Skeleton className="h-5 w-64 max-w-full bg-surface-raised" />
@@ -35,12 +39,16 @@ function LoadingSkeleton({ sampleEnabled }) {
       </div>
       <div className="space-y-4">
         <div className="analytics-hero-grid grid grid-cols-2 gap-4">
-          {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-[140px] rounded-xl bg-surface-raised" />)}
+          {Array.from({ length: 4 }, (_, index) => (
+            <Skeleton key={index} className="h-[140px] rounded-xl bg-surface-raised" />
+          ))}
         </div>
         <Skeleton className="analytics-stats-skeleton h-[148px] rounded-xl bg-surface-raised" />
       </div>
       <Skeleton className="h-[580px] rounded-xl bg-surface-raised" />
-      {[370, 420, 340, 580].map((height) => <Skeleton key={height} style={{ height }} className="rounded-xl bg-surface-raised" />)}
+      {[370, 420, 340, 580].map((height) => (
+        <Skeleton key={height} style={{ height }} className="rounded-xl bg-surface-raised" />
+      ))}
     </div>
   );
 }
@@ -52,9 +60,7 @@ function NoticeCard({ title, description, action }) {
         <BarChart3 className="size-4 text-ink-muted" />
       </div>
       <p className="mt-4 text-[13px] font-medium text-ink">{title}</p>
-      <p className="mx-auto mt-1 max-w-sm text-[11px] leading-5 text-ink-muted">
-        {description}
-      </p>
+      <p className="mx-auto mt-1 max-w-sm text-[11px] leading-5 text-ink-muted">{description}</p>
       {action && <div className="mt-4 flex justify-center">{action}</div>}
     </div>
   );
@@ -128,7 +134,10 @@ export default function AnalyticsTab({
   function openMonth(year, month) {
     setCalendarMonth({ year, month });
     requestAnimationFrame(() => {
-      calendarRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      calendarRef.current?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        block: "start",
+      });
     });
   }
 
@@ -173,7 +182,10 @@ export default function AnalyticsTab({
       unitOptions={unitOptions}
       onUnitChange={setUnit}
       customRange={customRange}
-      onCustomRangeChange={value => { setCustomRange(value); setCalendarMonth(null); }}
+      onCustomRangeChange={(value) => {
+        setCustomRange(value);
+        setCalendarMonth(null);
+      }}
       availableOptions={availableOptions}
       filters={filters}
       onToggleFilter={toggleFilter}
@@ -195,17 +207,11 @@ export default function AnalyticsTab({
           description="Add closed trades to this journal, or explore the board with a realistic sample dataset."
           action={
             <div className="flex flex-col items-center gap-2">
-              <Button
-                size="sm"
-                onClick={() => onToggleSynthetic(true)}
-                disabled={syntheticBusy}
-              >
+              <Button size="sm" onClick={() => onToggleSynthetic(true)} disabled={syntheticBusy}>
                 <Sparkles className="size-3.5" />
                 {syntheticBusy ? "Generating..." : "Use sample data"}
               </Button>
-              {syntheticError && (
-                <p className="max-w-xs text-[11px] text-loss">{syntheticError}</p>
-              )}
+              {syntheticError && <p className="max-w-xs text-[11px] text-loss">{syntheticError}</p>}
             </div>
           }
         />
@@ -218,11 +224,19 @@ export default function AnalyticsTab({
       <div className="flex flex-wrap items-end justify-between gap-3 pb-1">
         <div>
           <h2 className="text-[22px] font-medium leading-8 tracking-tight text-ink">Performance</h2>
-          <p className="mt-1 text-[13px] leading-5 text-ink-secondary">Returns, risk and the patterns behind your trades.</p>
+          <p className="mt-1 text-[13px] leading-5 text-ink-secondary">
+            Returns, risk and the patterns behind your trades.
+          </p>
         </div>
       </div>
       {header}
-      <TradeDetailPanel trade={selectedTrade ? { ...selectedTrade.original, _derivedStatus: selectedTrade.status } : null} open={!!selectedTrade} onClose={() => setSelectedTrade(null)} />
+      <TradeDetailPanel
+        trade={
+          selectedTrade ? { ...selectedTrade.original, _derivedStatus: selectedTrade.status } : null
+        }
+        open={!!selectedTrade}
+        onClose={() => setSelectedTrade(null)}
+      />
 
       {!hasRangeData ? (
         <NoticeCard
@@ -230,7 +244,14 @@ export default function AnalyticsTab({
           description="Try a longer date range or clear the active filters."
           action={
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={() => { handleRangeChange("ALL"); clearFilters(); }}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  handleRangeChange("ALL");
+                  clearFilters();
+                }}
+              >
                 Reset filters
               </Button>
               {selectedFilterCount > 0 && (
@@ -251,14 +272,9 @@ export default function AnalyticsTab({
 
           <SequenceCards analytics={analytics} onOpenTrade={setSelectedTrade} />
 
-          <BreakdownCard
-            analytics={analytics}
-            filters={filters}
-            onFilter={toggleFilter}
-          />
+          <BreakdownCard analytics={analytics} filters={filters} onFilter={toggleFilter} />
 
           <TimingCard analytics={analytics} />
-
 
           <div ref={calendarRef} className="scroll-mt-32">
             <CalendarCard
@@ -270,7 +286,9 @@ export default function AnalyticsTab({
               onOpenTrade={setSelectedTrade}
             />
           </div>
-          {monthBounds.minYear !== monthBounds.maxYear && <MonthlyCard analytics={analytics} bounds={monthBounds} onOpenMonth={openMonth} />}
+          {monthBounds.minYear !== monthBounds.maxYear && (
+            <MonthlyCard analytics={analytics} bounds={monthBounds} onOpenMonth={openMonth} />
+          )}
         </>
       )}
     </div>

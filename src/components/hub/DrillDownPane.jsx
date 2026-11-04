@@ -2,7 +2,7 @@ import { BarChart3, MousePointerClick } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatPercent, formatR } from "@/lib/formatters";
+import { formatR } from "@/lib/formatters";
 
 import HubEquityCurve from "./HubEquityCurve";
 import ProfitLossDonut from "./ProfitLossDonut";
@@ -10,8 +10,18 @@ import RPerTradeChart from "./RPerTradeChart";
 import WinLossDonut from "./WinLossDonut";
 
 const MONTHS = [
-  "January","February","March","April","May","June",
-  "July","August","September","October","November","December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 function EmptyState() {
@@ -40,14 +50,11 @@ function StatRow({ label, value, valueClass = "text-zinc-200" }) {
 }
 
 function MonthStatsBlock({ summary, monthName, year }) {
-  const { totalTrades, wins, losses, breakEven, avgR, maxDrawdownR, totalR } = summary;
+  const { totalTrades, wins, losses, breakEven, maxDrawdownR, totalR } = summary;
 
-  const avgWinR = wins > 0
-    ? formatR(Math.round((summary.grossProfit / wins) * 100) / 100)
-    : "—";
-  const avgLossR = losses > 0
-    ? formatR(-Math.round((summary.grossLoss / losses) * 100) / 100)
-    : "—";
+  const avgWinR = wins > 0 ? formatR(Math.round((summary.grossProfit / wins) * 100) / 100) : "—";
+  const avgLossR =
+    losses > 0 ? formatR(-Math.round((summary.grossLoss / losses) * 100) / 100) : "—";
 
   return (
     <div className="flex flex-col gap-4">
@@ -59,17 +66,15 @@ function MonthStatsBlock({ summary, monthName, year }) {
 
       {/* Stats */}
       <div className="rounded-lg border border-zinc-800/60 bg-zinc-900/60 px-4 py-1">
-        <StatRow label="Total Trades"   value={totalTrades} />
-        <StatRow label="Wins"           value={wins}     valueClass="text-emerald-400" />
-        <StatRow label="Losses"         value={losses}   valueClass="text-red-400" />
-        {breakEven > 0 && <StatRow label="Break Even" value={breakEven} valueClass="text-zinc-400" />}
-        <StatRow label="Avg Win (R)"    value={avgWinR}  valueClass="text-emerald-400" />
-        <StatRow label="Avg Loss (R)"   value={avgLossR} valueClass="text-red-400" />
-        <StatRow
-          label="Max Drawdown"
-          value={formatR(-maxDrawdownR)}
-          valueClass="text-red-400"
-        />
+        <StatRow label="Total Trades" value={totalTrades} />
+        <StatRow label="Wins" value={wins} valueClass="text-emerald-400" />
+        <StatRow label="Losses" value={losses} valueClass="text-red-400" />
+        {breakEven > 0 && (
+          <StatRow label="Break Even" value={breakEven} valueClass="text-zinc-400" />
+        )}
+        <StatRow label="Avg Win (R)" value={avgWinR} valueClass="text-emerald-400" />
+        <StatRow label="Avg Loss (R)" value={avgLossR} valueClass="text-red-400" />
+        <StatRow label="Max Drawdown" value={formatR(-maxDrawdownR)} valueClass="text-red-400" />
         <StatRow
           label="Net R"
           value={formatR(totalR)}

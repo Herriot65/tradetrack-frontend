@@ -1,21 +1,24 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-
 export default function FeatureCard({ icon: Icon, title, description, className }) {
   return (
-    <Card
+    <article
       className={cn(
-        "group border-zinc-800/80 bg-zinc-900/50 py-0 ring-zinc-800/60 backdrop-blur-sm transition-colors hover:border-emerald-500/30 hover:bg-zinc-900/80",
-        className
+        "group relative rounded-xl border border-border/60 bg-card/70 p-6 transition-colors hover:border-primary/25 sm:p-8",
+        className,
       )}
     >
-      <CardContent className="p-6">
-        <div className="mb-4 inline-flex rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-emerald-400 transition-colors group-hover:border-emerald-500/40 group-hover:bg-emerald-500/15">
-          <Icon className="size-5" />
-        </div>
-        <h3 className="mb-2 text-lg font-semibold text-white">{title}</h3>
-        <p className="text-sm leading-relaxed text-zinc-400">{description}</p>
-      </CardContent>
-    </Card>
+      <div className="mb-7 flex items-center justify-between">
+        <span className="flex size-10 items-center justify-center rounded-xl border border-primary/15 bg-primary/[0.06] text-primary">
+          <Icon className="size-[18px]" />
+        </span>
+        <ArrowUpRight
+          aria-hidden="true"
+          className="size-4 text-zinc-700 transition-colors group-hover:text-primary"
+        />
+      </div>
+      <h3 className="text-[18px] font-medium tracking-[-0.025em]">{title}</h3>
+      <p className="mt-3 max-w-lg text-[13px] leading-7 text-muted-foreground">{description}</p>
+    </article>
   );
 }

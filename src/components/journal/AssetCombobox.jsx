@@ -2,17 +2,20 @@ import { useEffect, useRef, useState } from "react";
 import { Check, Plus } from "lucide-react";
 
 export default function AssetCombobox({ value, onChange, options = [], onCreateAsset }) {
-  const [query,     setQuery]     = useState(value ?? "");
-  const [open,      setOpen]      = useState(false);
-  const inputRef     = useRef(null);
+  const [query, setQuery] = useState(value ?? "");
+  const [open, setOpen] = useState(false);
+  const inputRef = useRef(null);
   const containerRef = useRef(null);
 
   // Keep input in sync when value changes from outside (form reset)
-  useEffect(() => { setQuery(value ?? ""); }, [value]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Synchronize the draft when the external form value resets.
+    setQuery(value ?? "");
+  }, [value]);
 
-  const qUpper   = query.toUpperCase();
+  const qUpper = query.toUpperCase();
   const filtered = options.filter((o) => o.toUpperCase().includes(qUpper));
-  const exact    = options.some((o) => o.toUpperCase() === qUpper);
+  const exact = options.some((o) => o.toUpperCase() === qUpper);
   const canCreate = qUpper.length > 0 && !exact;
 
   function select(asset) {
@@ -86,7 +89,10 @@ export default function AssetCombobox({ value, onChange, options = [], onCreateA
             <button
               key={asset}
               type="button"
-              onMouseDown={(e) => { e.preventDefault(); select(asset); }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                select(asset);
+              }}
               className="flex w-full items-center gap-2 px-3 py-2 text-sm font-mono hover:bg-zinc-800"
             >
               <Check
@@ -98,7 +104,10 @@ export default function AssetCombobox({ value, onChange, options = [], onCreateA
           {canCreate && (
             <button
               type="button"
-              onMouseDown={(e) => { e.preventDefault(); handleCreate(); }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleCreate();
+              }}
               className="flex w-full items-center gap-2 border-t border-zinc-800/60 px-3 py-2 text-sm text-emerald-400 hover:bg-zinc-800"
             >
               <Plus className="size-3.5 shrink-0" />
