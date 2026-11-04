@@ -67,5 +67,14 @@ try {
   if(path==='/api/auth/me/'){await reply(401,{});return true;}
   if(path==='/api/auth/refresh/'){await reply(200,{access:'still-invalid',refresh:'rotated'});return true;}
  },async page=>{await page.getByText('Your session has expired. Please sign in again to continue.',{exact:true}).waitFor();});
- console.log('PASS: expired refresh, missing refresh, silent refresh with rotation, network recovery, stalled refresh timeout, rejected renewed token.');
+ await scenario({access:'valid'},async()=>{},async page=>{
+  await page.getByRole('heading',{name:'Welcome, Session!'}).waitFor();
+  await page.getByRole('button',{name:'Account menu',exact:true}).click();
+  await page.getByRole('menuitem',{name:'Sign out',exact:true}).click();
+  await page.getByRole('button',{name:'Sign in',exact:true}).waitFor();
+  assert.equal(await page.evaluate(()=>localStorage.getItem('access')),null);
+  await page.reload();
+  await page.getByRole('button',{name:'Sign in',exact:true}).waitFor();
+ });
+ console.log('PASS: access-only logout, expired refresh, missing refresh, silent refresh with rotation, network recovery, stalled refresh timeout, rejected renewed token.');
 }finally{await browser?.close();await new Promise(resolve=>server.httpServer.close(resolve));}

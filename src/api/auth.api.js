@@ -29,9 +29,8 @@ export const loginUser = async (credentials) => {
 export const logoutUser = async () => {
   const refresh = getRefreshToken();
 
-  if (!refresh) return;
-
   clearTokens();
+  if (!refresh) return;
   await api.post("/auth/logout/", { refresh }, { timeout: 15000 });
 };
 
