@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { BookOpen, Check, ChevronDown, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,8 @@ import JournalFormDialog from "./JournalFormDialog";
 
 export default function JournalSwitcher() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const showingAll = location.pathname === "/dashboard";
   const {
     journals,
     activeJournal,
@@ -58,7 +60,7 @@ export default function JournalSwitcher() {
     }
   };
 
-  if (!activeJournal) {
+  if (!activeJournal && journals.length === 0) {
     return (
       <>
         <Button variant="outline" size="sm" onClick={() => setCreateOpen(true)}>
@@ -85,13 +87,19 @@ export default function JournalSwitcher() {
             aria-label="Switch journal"
           >
             <BookOpen className="size-3.5 shrink-0 text-muted-foreground" />
-            <span className="truncate">{activeJournal.name}</span>
+            <span className="truncate">{showingAll ? "All journals" : activeJournal?.name ?? "All journals"}</span>
             <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
           </Button>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="start" className="w-56">
           <DropdownMenuLabel>Journals</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem onClick={() => navigate("/dashboard")} className="gap-2">
+            <Check className={cn("size-3.5 shrink-0", showingAll ? "opacity-100" : "opacity-0")} />
+            All journals
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
 
           {journals.map((j) => (
@@ -106,7 +114,7 @@ export default function JournalSwitcher() {
               <Check
                 className={cn(
                   "size-3.5 shrink-0",
-                  activeJournal.id === j.id ? "opacity-100" : "opacity-0"
+                  !showingAll && activeJournal?.id === j.id ? "opacity-100" : "opacity-0"
                 )}
               />
               <span className="truncate">{j.name}</span>
@@ -120,7 +128,7 @@ export default function JournalSwitcher() {
             New journal
           </DropdownMenuItem>
 
-          {journals.length > 1 && (
+          {!showingAll && activeJournal && journals.length > 1 && (
             <DropdownMenuItem
               variant="destructive"
               onClick={() => {

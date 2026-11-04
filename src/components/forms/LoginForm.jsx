@@ -14,7 +14,7 @@ import { PasswordInput } from "./PasswordInput";
 import { FormErrorBanner } from "./FormErrorBanner";
 import { FieldError } from "./FieldError";
 
-export default function LoginForm() {
+export default function LoginForm({ sessionExpired = false }) {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [serverError, setServerError] = useState("");
@@ -35,7 +35,9 @@ export default function LoginForm() {
       navigate("/dashboard");
     } catch (error) {
       console.error(error);
-      setServerError("Invalid email or password. Please try again.");
+      setServerError([400, 401].includes(error.response?.status)
+        ? "Invalid email or password. Please try again."
+        : "Unable to sign in right now. Check your connection and try again.");
     }
   };
 
@@ -50,6 +52,7 @@ export default function LoginForm() {
       </CardHeader>
 
       <CardContent>
+        {sessionExpired && <p role="status" className="mb-4 rounded-lg border border-border bg-secondary/50 p-3 text-sm text-muted-foreground">Your session has expired. Please sign in again to continue.</p>}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <FormErrorBanner message={serverError} />
 

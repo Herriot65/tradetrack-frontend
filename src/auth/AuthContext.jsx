@@ -4,6 +4,7 @@
 
 import { createContext, useEffect, useState } from "react";
 import api from "../api/axios";
+import { getAccessToken, getRefreshToken, clearTokens } from "./tokenService";
 import { setUserTimezone } from "../lib/timezone";
 import {
   loginUser,
@@ -16,14 +17,21 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sessionError, setSessionError] = useState(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   const login = async (credentials) => {
     const { user } = await loginUser(credentials);
     setUserTimezone(user.timezone);
+    setSessionError(null);
+    setSessionExpired(false);
     setUser(user);
   };
 
   const logout = async () => {
+    setUser(null);
+    setSessionError(null);
     try {
       await logoutUser();
     } catch (err) {
@@ -33,27 +41,47 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    const expire = () => {
+      setUser(null);
+      setSessionError(null);
+      setSessionExpired(true);
+      setLoading(false);
+    };
+    window.addEventListener("auth:expired", expire);
+    return () => window.removeEventListener("auth:expired", expire);
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
     const loadUser = async () => {
-      const token = localStorage.getItem("access");
-      if (!token) {
+      if (!getAccessToken() && !getRefreshToken()) {
         setLoading(false);
         return;
       }
-
+      setLoading(true);
+      setSessionError(null);
       try {
-        const user = await getCurrentUser();
+        const user = await getCurrentUser({ signal: controller.signal });
+        if (controller.signal.aborted) return;
         setUserTimezone(user.timezone);
         setUser(user);
+        setSessionExpired(false);
       } catch (err) {
-        console.error(err);
-        // Optionally clear tokens if invalid
+        if (controller.signal.aborted) return;
+        // Authentication rejection is handled centrally; keep credentials for
+        // temporary network/server failures so Retry can restore the session.
+        if (getAccessToken() || getRefreshToken()) {
+          setSessionError(err.response?.status >= 500
+            ? "The server is temporarily unavailable. Please try again."
+            : "We couldn’t reconnect to your account. Check your connection and try again.");
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
       }
-
-      setLoading(false);
     };
-
     loadUser();
-  }, []);
+    return () => controller.abort();
+  }, [retryKey]);
 
   return (
     <AuthContext.Provider
@@ -68,6 +96,15 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         loading,
+        sessionError,
+        sessionExpired,
+        retrySession: () => setRetryKey(key => key + 1),
+        resetSession: () => {
+          clearTokens();
+          setSessionError(null);
+          setSessionExpired(false);
+          setUser(null);
+        },
         isAuthenticated: !!user,
       }}
     >

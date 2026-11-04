@@ -9,10 +9,12 @@ import {
   Rows3,
   ChartNoAxesCombined,
   SlidersHorizontal,
+  ChartNoAxesColumn,
 } from "lucide-react";
 
 import AppShell from "@/components/layout/AppShell";
 import { MT5ImportDialog } from "@/components/journal/MT5ImportDialog";
+import BreakdownTab from "@/components/journal/BreakdownTab";
 import CustomFieldsTab from "@/components/journal/CustomFieldsTab";
 import TradesTab from "@/components/journal/TradesTab";
 import JournalAnalyticsTab from "@/components/analytics/AnalyticsTab";
@@ -40,6 +42,7 @@ import { useJournal } from "@/journals/useJournal";
 const TABS = [
   { id: "trades", label: "Trades", icon: Rows3 },
   { id: "analytics", label: "Analytics", icon: ChartNoAxesCombined },
+  { id: "breakdown", label: "Breakdown", icon: ChartNoAxesColumn },
   { id: "custom-fields", label: "Custom Fields", icon: SlidersHorizontal },
 ];
 
@@ -399,14 +402,14 @@ export default function Journal() {
         </div>
 
         {/* ── Tab navigation ── */}
-        <nav className="nx-tabs" aria-label="Journal sections">
+        <nav className="nx-tabs max-w-full overflow-x-auto" aria-label="Journal sections">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
               aria-current={activeTab === tab.id ? "page" : undefined}
               onClick={() => setActiveTab(tab.id)}
-              className="nx-tab"
+              className="nx-tab shrink-0"
             >
               <tab.icon aria-hidden="true" className="size-3.5" />
               {tab.label}
@@ -415,7 +418,7 @@ export default function Journal() {
         </nav>
 
         {/* ── Tab content ──
-             All three panels stay mounted so data isn't lost on tab switches.
+             All panels stay mounted so data isn't lost on tab switches.
              CSS `hidden` hides the inactive ones without unmounting them. */}
         <div className="pt-5">
           <div className={activeTab !== "trades" ? "hidden" : ""}>
@@ -435,6 +438,9 @@ export default function Journal() {
               syntheticError={syntheticError}
               onToggleSynthetic={handleToggleSynthetic}
             />
+          </div>
+          <div className={activeTab !== "breakdown" ? "hidden" : ""}>
+            <BreakdownTab key={activeJournal?.id} journal={activeJournal} active={activeTab === "breakdown"} syntheticEnabled={syntheticEnabled} />
           </div>
           <div className={activeTab !== "custom-fields" ? "hidden" : ""}>
             <CustomFieldsTab journalId={activeJournal?.id} active={activeTab === "custom-fields"} />

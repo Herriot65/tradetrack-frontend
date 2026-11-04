@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Bot,
-  BookOpen,
   Calculator,
   CalendarDays,
   ChevronsLeft,
@@ -21,7 +20,6 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useAuth } from "@/auth/useAuth";
-import { useJournal } from "@/journals/useJournal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,7 +60,6 @@ function Hint({ label, children }) {
 }
 export default function AppShell({ children }) {
   const { user, logout } = useAuth();
-  const { journals } = useJournal();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -183,29 +180,6 @@ export default function AppShell({ children }) {
               <span className="nx-nav-label">Dashboard</span>
             </Link>
           </Hint>
-          {journals.length > 0 && (
-            <>
-              <p className="nx-sidebar-caption">Your journals</p>
-              <div className="space-y-1">
-                {journals.map((journal) => (
-                  <Hint key={journal.id} label={journal.name}>
-                    <Link
-                      to={`/journal/${journal.id}`}
-                      onClick={() => setMobileOpen(false)}
-                      className="nx-nav-item"
-                      data-active={location.pathname === `/journal/${journal.id}`}
-                      aria-current={
-                        location.pathname === `/journal/${journal.id}` ? "page" : undefined
-                      }
-                    >
-                      <BookOpen className="size-4 shrink-0" />
-                      <span className="nx-nav-label truncate">{journal.name}</span>
-                    </Link>
-                  </Hint>
-                ))}
-              </div>
-            </>
-          )}
           <div className="flex items-center justify-between">
             <p className="nx-sidebar-caption">Tools</p>
             {!compact && (
@@ -273,9 +247,6 @@ export default function AppShell({ children }) {
             <JournalSwitcher />
           </div>
           <div className="flex shrink-0 items-center gap-4">
-            <span className="hidden text-[10px] uppercase tracking-[0.14em] text-zinc-500 xl:block">
-              Your process. Your edge.
-            </span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button

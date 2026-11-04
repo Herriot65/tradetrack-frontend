@@ -31,16 +31,15 @@ export const logoutUser = async () => {
 
   if (!refresh) return;
 
-  await api.post("/auth/logout/", { refresh });
-
   clearTokens();
+  await api.post("/auth/logout/", { refresh }, { timeout: 15000 });
 };
 
 /* =========================
    GET CURRENT USER
 ========================= */
-export const getCurrentUser = async () => {
-  const response = await api.get("/auth/me/");
+export const getCurrentUser = async (config = {}) => {
+  const response = await api.get("/auth/me/", { timeout: 15000, ...config });
   return response.data;
 };
 

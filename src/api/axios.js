@@ -38,18 +38,30 @@ api.interceptors.request.use(
    REFRESH TOKEN LOGIC
 ========================= */
 let refreshPromise = null;
+const expireSession = () => {
+  clearTokens();
+  window.dispatchEvent(new Event("auth:expired"));
+};
 
 const refreshAccessToken = () => {
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
     const refresh = getRefreshToken();
-    if (!refresh) throw new Error("No refresh token");
+    if (!refresh) {
+      const error = new Error("Session expired");
+      error.code = "SESSION_EXPIRED";
+      throw error;
+    }
 
-    const response = await axios.post(`${BASE_URL}/auth/refresh/`, { refresh });
+    const response = await axios.post(`${BASE_URL}/auth/refresh/`, { refresh }, { timeout: 15000 });
     const { access, refresh: rotatedRefresh } = response.data;
 
     // SimpleJWT rotates refresh tokens, so retain the replacement when supplied.
+    if (getRefreshToken() !== refresh) {
+      throw new axios.CanceledError("Session changed while refreshing");
+    }
+    if (!access) throw new Error("Invalid session response");
     setTokens(access, rotatedRefresh ?? refresh);
     return access;
   })().finally(() => {
@@ -66,11 +78,12 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    const isLoginRequest = originalRequest?.url?.includes("/auth/login/");
+    const isLoginRequest = ["/auth/login/", "/auth/register/", "/auth/logout/"].some(path => originalRequest?.url?.includes(path));
 
     if (
       error.response?.status === 401 &&
       !isLoginRequest &&
+      originalRequest &&
       !originalRequest._retry
     ) {
       originalRequest._retry = true;
@@ -87,15 +100,18 @@ api.interceptors.response.use(
         // A login in another request may have replaced the credentials meanwhile.
         if (
           getRefreshToken() === refreshBeforeRetry &&
-          [400, 401].includes(refreshError.response?.status)
+          (refreshError.code === "SESSION_EXPIRED" || [400, 401].includes(refreshError.response?.status))
         ) {
-          clearTokens();
-          window.location.href = "/login";
+          expireSession();
         }
         return Promise.reject(refreshError);
       }
     }
 
+    if (error.response?.status === 401 && !isLoginRequest && originalRequest?._retry &&
+        originalRequest.headers?.Authorization === `Bearer ${getAccessToken()}`) {
+      expireSession();
+    }
     return Promise.reject(error);
   }
 );
