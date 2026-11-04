@@ -22,6 +22,7 @@ export default function RegisterForm() {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(registerSchema),
@@ -42,7 +43,30 @@ export default function RegisterForm() {
       navigate("/dashboard");
     } catch (error) {
       console.error(error);
-      setServerError("Unable to create your account. Please check your details and try again.");
+      const responseData = error.response?.data;
+      if (error.response?.status === 400 && responseData && typeof responseData === "object") {
+        const fieldErrors = Object.entries(responseData).filter(([field]) =>
+          ["email", "first_name", "last_name", "password"].includes(field)
+        );
+        for (const [field, messages] of fieldErrors) {
+          setError(field, {
+            type: "server",
+            message: Array.isArray(messages) ? messages.join(" ") : String(messages),
+          });
+        }
+        const detail = responseData.detail;
+        setServerError(
+          typeof detail === "string"
+            ? detail
+            : fieldErrors.length
+              ? "Please review the highlighted fields."
+              : "The server rejected the signup details. Please review them and try again."
+        );
+      } else if (!error.response) {
+        setServerError("Could not reach the signup service. Please try again in a moment.");
+      } else {
+        setServerError("Unable to create your account right now. Please try again later.");
+      }
     }
   };
 
