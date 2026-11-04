@@ -8,6 +8,7 @@ import { getAccessToken, getRefreshToken, clearTokens } from "./tokenService";
 import { setUserTimezone } from "../lib/timezone";
 import {
   loginUser,
+  googleLoginUser,
   logoutUser,
   getCurrentUser,
 } from "../api/auth.api";
@@ -94,6 +95,13 @@ export const AuthProvider = ({ children }) => {
           return data;
         },
         login,
+        loginWithGoogle: async credential => {
+          const { user } = await googleLoginUser(credential);
+          setUserTimezone(user.timezone);
+          setSessionError(null);
+          setSessionExpired(false);
+          setUser(user);
+        },
         logout,
         loading,
         sessionError,

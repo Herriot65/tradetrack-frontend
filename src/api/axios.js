@@ -78,7 +78,7 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    const isLoginRequest = ["/auth/login/", "/auth/register/", "/auth/logout/"].some(path => originalRequest?.url?.includes(path));
+    const isLoginRequest = ["/auth/login/", "/auth/google/", "/auth/register/", "/auth/logout/"].some(path => originalRequest?.url?.includes(path));
 
     if (
       error.response?.status === 401 &&

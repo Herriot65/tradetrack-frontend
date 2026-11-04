@@ -230,3 +230,8 @@ Mock functions mirror real API signatures so API files delegate with a single `i
 | `formatDate(iso)` | `Jun 12, 2025` |
 | `formatDateTime(iso)` | `Jun 12, 2025 13:30` |
 | `formatTradePeriod(iso)` | Period label |
+
+Google authentication: set `VITE_GOOGLE_CLIENT_ID` to your Google OAuth web client
+ID, matching backend `GOOGLE_CLIENT_ID`. Register the frontend origin in Google
+Cloud's authorized JavaScript origins. Rebuild after changing Vite environment
+variables. See the backend readme for setup and migration instructions.

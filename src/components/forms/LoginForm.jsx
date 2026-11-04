@@ -1,3 +1,4 @@
+import GoogleSignIn from "../auth/GoogleSignIn";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -53,6 +54,7 @@ export default function LoginForm({ sessionExpired = false }) {
 
       <CardContent>
         {sessionExpired && <p role="status" className="mb-4 rounded-lg border border-border bg-secondary/50 p-3 text-sm text-muted-foreground">Your session has expired. Please sign in again to continue.</p>}
+        <GoogleSignIn />
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <FormErrorBanner message={serverError} />
 
