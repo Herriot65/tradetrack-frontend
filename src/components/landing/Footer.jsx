@@ -16,7 +16,7 @@ export default function Footer() {
                 alt="Nexora"
                 className="h-8 w-8 rounded-lg"
               />
-              <span className="text-sm font-semibold text-white">
+              <span className="text-sm font-semibold text-foreground">
                 Nexora Analytics
               </span>
             </Link>
@@ -27,7 +27,7 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="mb-4 text-sm font-semibold text-white">Product</h4>
+            <h4 className="mb-4 text-sm font-semibold text-foreground">Product</h4>
             <ul className="space-y-3">
               {footerLinks.product.map((link) => (
                 <li key={link.label}>
@@ -43,7 +43,7 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="mb-4 text-sm font-semibold text-white">Company</h4>
+            <h4 className="mb-4 text-sm font-semibold text-foreground">Company</h4>
             <ul className="space-y-3">
               {footerLinks.company.map((link) => (
                 <li key={link.label}>
@@ -59,7 +59,7 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="mb-4 text-sm font-semibold text-white">Legal</h4>
+            <h4 className="mb-4 text-sm font-semibold text-foreground">Legal</h4>
             <ul className="space-y-3">
               {footerLinks.legal.map((link) => (
                 <li key={link.label}>

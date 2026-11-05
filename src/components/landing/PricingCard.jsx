@@ -31,7 +31,7 @@ export default function PricingCard({
       <CardHeader className="border-b border-zinc-800/60 pb-6">
         <p className="text-sm font-medium text-zinc-400">{name}</p>
         <div className="mt-3 flex items-baseline gap-1">
-          <span className="text-4xl font-bold tracking-tight text-white">
+          <span className="text-4xl font-bold tracking-tight text-foreground">
             {price}
           </span>
           {period && (

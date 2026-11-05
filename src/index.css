@@ -104,6 +104,22 @@
   }
   .light {
     color-scheme: light;
+    --bg-ground: #f6f8f8;
+    --bg-card: #ffffff;
+    --border-hairline: #d6dfe3;
+    --border-control: #c5d1d6;
+    --surface-active: #e9efef;
+    --text-primary: #172029;
+    --text-secondary: #52616c;
+    --text-tertiary: #60717c;
+    --gain: #14845f;
+    --gain-rgb: 20 132 95;
+    --loss-rgb: 193 59 80;
+    --open-rgb: 154 94 0;
+    --open: #9a5e00;
+    --neutral: #60717c;
+    --chart-neutral: #9aaab3;
+    --chart-grid: #dce4e7;
     --background: 180 12% 97%;
     --foreground: 210 25% 12%;
     --card: 0 0% 100%;
@@ -113,6 +129,11 @@
     --secondary: 180 10% 93%;
     --muted: 180 10% 94%;
     --muted-foreground: 205 10% 42%;
+    --accent: 180 10% 93%;
+    --accent-foreground: var(--foreground);
+    --destructive: 351 53% 49%;
+    --destructive-foreground: 0 0% 100%;
+    --ring: 165 66% 27%;
     --border: 200 14% 86%;
     --input: 200 14% 80%;
     --neutral-800: 200 14% 86%;
@@ -122,8 +143,10 @@
     --neutral-400: 205 12% 35%;
     --neutral-300: 205 14% 26%;
     --neutral-200: 205 18% 19%;
+    --neutral-50: var(--foreground);
     --profit: #14845f;
     --loss: #c13b50;
+    --shadow-panel: 0 4px 24px rgb(23 32 41 / 0.06);
   }
   * {
     border-color: hsl(var(--border));

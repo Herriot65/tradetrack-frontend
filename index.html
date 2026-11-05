@@ -2,6 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Apply the preference before the first paint.
+      (() => {
+        let theme;
+        try { theme = localStorage.getItem("nexora-theme"); } catch { /* Storage is optional. */ }
+        const resolved = theme === "light" || theme === "dark"
+          ? theme
+          : (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.classList.add(resolved);
+        document.documentElement.style.colorScheme = resolved;
+      })();
+    </script>
     <link rel="icon" type="image/png" href="/nexora.png" />
     <link rel="apple-touch-icon" href="/nexora.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

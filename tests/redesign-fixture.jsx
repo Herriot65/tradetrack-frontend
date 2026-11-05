@@ -151,7 +151,10 @@ function Fixture() {
             isAuthenticated: true,
             logout: () => {},
             login: async () => {},
-            updatePreferences: async () => {},
+            updatePreferences: async (preferences) => {
+              if (window.__rejectPreferences) throw new Error("Preference save failed");
+              (window.__preferenceWrites ||= []).push(preferences);
+            },
           }}
         >
           <JournalContext.Provider
