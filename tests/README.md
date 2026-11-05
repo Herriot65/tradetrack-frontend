@@ -18,6 +18,10 @@ Still requires live-journal confirmation: the exact supplied sample snapshot, au
 
 Trade dates use React DayPicker 9 with Radix popovers; fixed-choice form fields and calendar/time menus use Radix Select. Backend migration 0009 adds nullable reference_timeframe and trade_score columns, and an integer 0-10 database constraint. Rebuild both Docker services to install dependencies and apply the migration automatically.
 
+## Theme preferences
+
+`npm run test:theme` checks the Light, Dark and System selector with the real app shell: saved preferences after reload, live device theme changes, storage synchronization, invalid preferences, blocked browser storage, and layouts from 320px to 1440px. Set `CHROME_PATH` if Chromium is installed elsewhere. Screenshots are saved under `artifacts/theme/`.
+
 ## Custom fields and the trades list
 
 `npm run test:custom-fields` verifies creation below all six form sections, journal-level definition reuse, per-trade values (including 0 and false), reload persistence, and the 320px field-builder layout. Adding a definition must not submit the parent trade form. Text, number, dropdown and yes/no types are supported. Definitions live at `/journals/:id/custom-fields/`; values live in each trade's `custom_fields` object. Migration 0010 adds the model and JSON storage.

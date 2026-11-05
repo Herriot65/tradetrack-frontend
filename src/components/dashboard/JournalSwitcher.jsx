@@ -83,7 +83,7 @@ export default function JournalSwitcher() {
           <Button
             variant="outline"
             size="sm"
-            className="max-w-[220px] gap-1.5"
+            className="min-w-0 max-w-[220px] shrink gap-1.5"
             aria-label="Switch journal"
           >
             <BookOpen className="size-3.5 shrink-0 text-muted-foreground" />

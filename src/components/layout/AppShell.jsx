@@ -32,6 +32,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Button } from "@/components/ui/button";
 import JournalSwitcher from "@/components/dashboard/JournalSwitcher";
 import UserSettings from "./UserSettings";
+import ThemeToggle from "./ThemeToggle";
 
 const TOOLS = [
   { label: "Economic Calendar", icon: CalendarDays },
@@ -246,7 +247,8 @@ export default function AppShell({ children }) {
             <span className="hidden text-border lg:block">/</span>
             <JournalSwitcher />
           </div>
-          <div className="flex shrink-0 items-center gap-4">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+            <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
