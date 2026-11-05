@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +25,7 @@ const selectClass =
   "h-9 w-full rounded-md border border-zinc-800 bg-zinc-900/60 px-3 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 disabled:opacity-50";
 
 export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
+  useLanguage();
   const {
     register,
     handleSubmit,
@@ -74,10 +77,8 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="border-zinc-800 bg-zinc-950 sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>New Journal</DialogTitle>
-          <DialogDescription className="sr-only">
-            Configure your new trading journal.
-          </DialogDescription>
+          <DialogTitle>{t("New Journal")}</DialogTitle>
+          <DialogDescription className="sr-only">{t("Configure your new trading journal.")}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(submit)} className="space-y-4">
@@ -85,10 +86,10 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
 
           {/* Name */}
           <div className="space-y-1.5">
-            <Label htmlFor="journal-name">Journal Name</Label>
+            <Label htmlFor="journal-name">{t("Journal Name")}</Label>
             <Input
               id="journal-name"
-              placeholder="e.g. FTMO Challenge, Personal Account"
+              placeholder={t("e.g. FTMO Challenge, Personal Account")}
               autoFocus
               aria-invalid={!!errors.name}
               {...register("name")}
@@ -98,10 +99,10 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
 
           {/* Journal Type */}
           <div className="space-y-1.5">
-            <Label htmlFor="journal-type">Journal Type</Label>
+            <Label htmlFor="journal-type">{t("Journal Type")}</Label>
             <select id="journal-type" className={selectClass} {...register("journalType")}>
-              <option value="trading">Trading Journal</option>
-              <option value="backtest">Backtest Journal</option>
+              <option value="trading">{t("Trading Journal")}</option>
+              <option value="backtest">{t("Backtest Journal")}</option>
             </select>
             <FieldError message={errors.journalType?.message} />
           </div>
@@ -109,7 +110,7 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
           {/* Starting Capital + Currency (side by side) */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="starting-capital">Starting Capital</Label>
+              <Label htmlFor="starting-capital">{t("Starting Capital")}</Label>
               <Input
                 id="starting-capital"
                 type="number"
@@ -123,7 +124,7 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="currency">Currency</Label>
+              <Label htmlFor="currency">{t("Currency")}</Label>
               <select id="currency" className={selectClass} {...register("currency")}>
                 {CURRENCIES.map((c) => (
                   <option key={c} value={c}>
@@ -137,10 +138,10 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
 
           {/* Break-Even Method */}
           <div className="space-y-1.5">
-            <Label htmlFor="break-even-method">Break-Even Method</Label>
+            <Label htmlFor="break-even-method">{t("Break-Even Method")}</Label>
             <select id="break-even-method" className={selectClass} {...register("breakEvenMethod")}>
-              <option value="ratio">Ratio Based</option>
-              <option value="profit">Profit Based</option>
+              <option value="ratio">{t("Ratio Based")}</option>
+              <option value="profit">{t("Profit Based")}</option>
             </select>
             <FieldError message={errors.breakEvenMethod?.message} />
           </div>
@@ -148,7 +149,7 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
           {/* BE Threshold — label adapts to selected method */}
           <div className="space-y-1.5">
             <Label htmlFor="break-even-value">
-              {breakEvenMethod === "profit" ? "BE Threshold (currency)" : "BE Threshold (R)"}
+              {breakEvenMethod === "profit" ? t("BE Threshold (currency)") : t("BE Threshold (R)")}
             </Label>
             <Input
               id="break-even-value"
@@ -168,11 +169,9 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
+            >{t("Cancel")}</Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Creating…" : "Create Journal"}
+              {isSubmitting ? t("Creating…") : t("Create Journal")}
             </Button>
           </DialogFooter>
         </form>

@@ -1,4 +1,6 @@
-﻿import { useMemo, useState } from "react";
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
+import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -35,6 +37,7 @@ function dayTone(net) {
 }
 
 function DayPopover({ cell, entry, trades, unit, onOpenTrade }) {
+  useLanguage();
   return (
     <PopoverContent side="right" align="start" className="w-[280px] p-0">
       <div className="flex w-full items-center justify-between gap-3 border-b border-hairline px-3 py-2.5">
@@ -43,7 +46,7 @@ function DayPopover({ cell, entry, trades, unit, onOpenTrade }) {
             {formatDateLabel(cell.key, "MMM d, yyyy")}
           </p>
           <p className="mt-0.5 text-[12px] text-ink-muted">
-            {entry.count} {entry.count === 1 ? "trade" : "trades"}
+            {entry.count} {entry.count === 1 ? t("trade") : t("trades")}
           </p>
         </div>
         <span
@@ -65,7 +68,7 @@ function DayPopover({ cell, entry, trades, unit, onOpenTrade }) {
               <p className="flex items-center gap-1.5 text-[11px] text-ink-secondary">
                 <span className="truncate">{trade.asset}</span>
                 <span className="rounded border border-hairline px-1 text-[11px] text-ink-muted">
-                  {trade.side}
+                  {t(trade.side)}
                 </span>
               </p>
               <p className="mt-0.5 text-[12px] tabular-nums text-ink-muted">
@@ -97,6 +100,7 @@ export default function CalendarCard({
   onMonthChange,
   onOpenTrade,
 }) {
+  useLanguage();
   const [selectedDay, setSelectedDay] = useState(null);
   const fallback = {
     year: bounds?.maxYear ?? new Date().getFullYear(),
@@ -136,7 +140,7 @@ export default function CalendarCard({
           <button
             type="button"
             onClick={() => move(-1)}
-            aria-label="Previous month"
+            aria-label={t("Previous month")}
             className={cn(
               "flex size-8 items-center justify-center rounded-md border border-hairline text-ink-muted outline-none transition-colors hover:bg-surface-raised hover:text-ink focus-visible:ring-2 focus-visible:ring-white/20",
               atStart && "invisible",
@@ -150,7 +154,7 @@ export default function CalendarCard({
           <button
             type="button"
             onClick={() => move(1)}
-            aria-label="Next month"
+            aria-label={t("Next month")}
             className={cn(
               "flex size-8 items-center justify-center rounded-md border border-hairline text-ink-muted outline-none transition-colors hover:bg-surface-raised hover:text-ink focus-visible:ring-2 focus-visible:ring-white/20",
               atEnd && "invisible",
@@ -170,10 +174,9 @@ export default function CalendarCard({
             {formatValue(summary.net, unit)}
           </span>
           <span className="mx-1.5 text-ink-faint">{"\u00b7"}</span>
-          {summary.count} {summary.count === 1 ? "trade" : "trades"}
+          {summary.count} {summary.count === 1 ? t("trade") : t("trades")}
           <span className="mx-1.5 text-ink-faint">{"\u00b7"}</span>
-          {summary.greenDays}/{summary.tradingDays} green days
-        </p>
+          {summary.greenDays}/{summary.tradingDays}{" " + t("green days")}</p>
       </div>
 
       <div className="overflow-x-auto px-3 pb-3 pt-4 min-[900px]:px-6 min-[900px]:pb-6">
@@ -181,10 +184,10 @@ export default function CalendarCard({
           <div className="analytics-calendar grid gap-1" style={{ gridTemplateColumns: GRID_TEMPLATE }}>
             {WEEKDAYS.map((day) => (
               <div key={day} className="pb-2 text-center text-[11px] text-ink-muted">
-                {day}
+                {t(day)}
               </div>
             ))}
-            <div className="pb-2 text-center text-[11px] text-ink-muted">Week</div>
+            <div className="pb-2 text-center text-[11px] text-ink-muted">{t("Week")}</div>
           </div>
 
           {weeks.map((week, weekIndex) => (
@@ -238,7 +241,7 @@ export default function CalendarCard({
                         >
                           <span className="min-[900px]:hidden">{formatValue(entry.net, unit).replace(/R$/, "")}</span><span className="hidden min-[900px]:inline">{formatValue(entry.net, unit)}</span>
                         </span>
-                        <span className="trade-count hidden min-[900px]:block text-[11px] text-ink-muted">{entry.count} trades</span>
+                        <span className="trade-count hidden min-[900px]:block text-[11px] text-ink-muted">{entry.count}{" " + t("trades")}</span>
                       </button>
                     </PopoverTrigger>
                     <DayPopover cell={cell} entry={entry} trades={trades} unit={unit} onOpenTrade={onOpenTrade} />
@@ -258,7 +261,7 @@ export default function CalendarCard({
                       {formatValue(week.net, unit)}
                     </span>
                     <span className="trade-count mt-0.5 text-[11px] text-ink-muted">
-                      {week.count} {week.count === 1 ? "trade" : "trades"}
+                      {week.count} {week.count === 1 ? t("trade") : t("trades")}
                     </span>
                   </>
                 ) : (

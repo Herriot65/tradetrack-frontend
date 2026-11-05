@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,6 +26,7 @@ export default function WorkspaceFormDialog({
   defaultName = "",
   title,
 }) {
+  useLanguage();
   const {
     register,
     handleSubmit,
@@ -57,20 +60,18 @@ export default function WorkspaceFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="border-zinc-800 bg-zinc-950 sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription className="sr-only">
-            Enter a name for this workspace.
-          </DialogDescription>
+          <DialogTitle>{t(title)}</DialogTitle>
+          <DialogDescription className="sr-only">{t("Enter a name for this workspace.")}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(submit)} className="space-y-4">
           {errors.root && <FormErrorBanner message={errors.root.message} />}
 
           <div className="space-y-1.5">
-            <Label htmlFor="workspace-name">Name</Label>
+            <Label htmlFor="workspace-name">{t("Name")}</Label>
             <Input
               id="workspace-name"
-              placeholder="e.g. Forex Live Account"
+              placeholder={t("e.g. Forex Live Account")}
               autoFocus
               aria-invalid={!!errors.name}
               {...register("name")}
@@ -80,7 +81,7 @@ export default function WorkspaceFormDialog({
 
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving…" : "Save"}
+              {isSubmitting ? t("Saving…") : t("Save")}
             </Button>
           </DialogFooter>
         </form>

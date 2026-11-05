@@ -1,7 +1,10 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPercent, formatR } from "@/lib/formatters";
 
 function Row({ summary, isSelected, isAll, onClick }) {
+  useLanguage();
   // When "All" is active, every row is softly highlighted
   const highlighted = isAll || isSelected;
   const { year, trades, winRate, profitFactor, totalR } = summary;
@@ -28,13 +31,12 @@ function Row({ summary, isSelected, isAll, onClick }) {
 }
 
 export default function YearPerformanceTable({ data, loading, selectedYears = [], onYearClick }) {
+  useLanguage();
   const isAll = selectedYears.length === 0;
   return (
     <div className="rounded-lg border border-zinc-800/60 bg-zinc-900/40 overflow-hidden">
       <div className="px-4 py-3 border-b border-zinc-800/60">
-        <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-          Annual Performance
-        </p>
+        <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">{t("Annual Performance")}</p>
       </div>
 
       {loading ? (
@@ -42,16 +44,16 @@ export default function YearPerformanceTable({ data, loading, selectedYears = []
           {[0, 1, 2].map((i) => <Skeleton key={i} className="h-7 w-full" />)}
         </div>
       ) : !data?.length ? (
-        <p className="px-4 py-6 text-center text-xs text-zinc-700">No data</p>
+        <p className="px-4 py-6 text-center text-xs text-zinc-700">{t("No data")}</p>
       ) : (
         <table className="w-full">
           <thead>
             <tr className="border-b border-zinc-800/60 text-left">
-              <th className="py-2 pl-4 pr-3 text-xs font-medium text-zinc-600">Year</th>
-              <th className="px-3 py-2 text-right text-xs font-medium text-zinc-600">Trades</th>
+              <th className="py-2 pl-4 pr-3 text-xs font-medium text-zinc-600">{t("Year")}</th>
+              <th className="px-3 py-2 text-right text-xs font-medium text-zinc-600">{t("Trades")}</th>
               <th className="px-3 py-2 text-right text-xs font-medium text-zinc-600">WR</th>
               <th className="px-3 py-2 text-right text-xs font-medium text-zinc-600">PF</th>
-              <th className="py-2 pl-3 pr-4 text-right text-xs font-medium text-zinc-600">Net R</th>
+              <th className="py-2 pl-3 pr-4 text-right text-xs font-medium text-zinc-600">{t("Net R")}</th>
             </tr>
           </thead>
           <tbody>

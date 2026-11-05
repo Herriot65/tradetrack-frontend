@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { BarChart3, MousePointerClick } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,31 +27,32 @@ const MONTHS = [
 ];
 
 function EmptyState() {
+  useLanguage();
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
       <div className="flex size-12 items-center justify-center rounded-xl bg-zinc-900 ring-1 ring-zinc-800">
         <MousePointerClick className="size-5 text-zinc-600" />
       </div>
       <div className="space-y-1">
-        <p className="text-sm font-medium text-zinc-500">No month selected</p>
-        <p className="text-xs text-zinc-700">
-          Click any cell in the heatmap or any month above to drill into its performance.
-        </p>
+        <p className="text-sm font-medium text-zinc-500">{t("No month selected")}</p>
+        <p className="text-xs text-zinc-700">{t("Click any cell in the heatmap or any month above to drill into its performance.")}</p>
       </div>
     </div>
   );
 }
 
 function StatRow({ label, value, valueClass = "text-zinc-200" }) {
+  useLanguage();
   return (
     <div className="flex items-baseline justify-between gap-2 py-1.5 border-b border-zinc-800/50 last:border-0">
-      <span className="text-xs text-zinc-500">{label}</span>
+      <span className="text-xs text-zinc-500">{t(label)}</span>
       <span className={`text-xs font-semibold tabular-nums ${valueClass}`}>{value}</span>
     </div>
   );
 }
 
 function MonthStatsBlock({ summary, monthName, year }) {
+  useLanguage();
   const { totalTrades, wins, losses, breakEven, maxDrawdownR, totalR } = summary;
 
   const avgWinR = wins > 0 ? formatR(Math.round((summary.grossProfit / wins) * 100) / 100) : "—";
@@ -66,17 +69,17 @@ function MonthStatsBlock({ summary, monthName, year }) {
 
       {/* Stats */}
       <div className="rounded-lg border border-zinc-800/60 bg-zinc-900/60 px-4 py-1">
-        <StatRow label="Total Trades" value={totalTrades} />
-        <StatRow label="Wins" value={wins} valueClass="text-emerald-400" />
-        <StatRow label="Losses" value={losses} valueClass="text-red-400" />
+        <StatRow label={t("Total Trades")} value={totalTrades} />
+        <StatRow label={t("Wins")} value={wins} valueClass="text-emerald-400" />
+        <StatRow label={t("Losses")} value={losses} valueClass="text-red-400" />
         {breakEven > 0 && (
-          <StatRow label="Break Even" value={breakEven} valueClass="text-zinc-400" />
+          <StatRow label={t("Break Even")} value={breakEven} valueClass="text-zinc-400" />
         )}
-        <StatRow label="Avg Win (R)" value={avgWinR} valueClass="text-emerald-400" />
-        <StatRow label="Avg Loss (R)" value={avgLossR} valueClass="text-red-400" />
-        <StatRow label="Max Drawdown" value={formatR(-maxDrawdownR)} valueClass="text-red-400" />
+        <StatRow label={t("Avg Win (R)")} value={avgWinR} valueClass="text-emerald-400" />
+        <StatRow label={t("Avg Loss (R)")} value={avgLossR} valueClass="text-red-400" />
+        <StatRow label={t("Max Drawdown")} value={formatR(-maxDrawdownR)} valueClass="text-red-400" />
         <StatRow
-          label="Net R"
+          label={t("Net R")}
           value={formatR(totalR)}
           valueClass={totalR >= 0 ? "text-emerald-400" : "text-red-400"}
         />
@@ -96,6 +99,7 @@ function MonthStatsBlock({ summary, monthName, year }) {
 }
 
 function LoadingSkeleton() {
+  useLanguage();
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
       <div className="flex flex-col gap-4">
@@ -115,6 +119,7 @@ function LoadingSkeleton() {
 }
 
 export default function DrillDownPane({ selectedMonth, selectedYear, monthAnalytics, loading }) {
+  useLanguage();
   const monthName = selectedMonth != null ? MONTHS[selectedMonth] : null;
 
   return (
@@ -123,7 +128,7 @@ export default function DrillDownPane({ selectedMonth, selectedYear, monthAnalyt
         <div className="flex items-center gap-2">
           <BarChart3 className="size-4 text-zinc-600" />
           <CardTitle className="text-sm font-medium">
-            {monthName ? `${monthName} ${selectedYear}` : "Month Details"}
+            {monthName ? `${monthName} ${selectedYear}` : t("Month Details")}
           </CardTitle>
         </div>
         {monthName && (

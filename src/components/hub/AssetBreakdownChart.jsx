@@ -1,9 +1,12 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import InfoTip from "@/components/ui/InfoTip";
 
 function AssetTooltip({ active, payload }) {
+  useLanguage();
   if (!active || !payload?.length) return null;
   const r = payload[0].value;
   return (
@@ -17,6 +20,7 @@ function AssetTooltip({ active, payload }) {
 }
 
 export default function AssetBreakdownChart({ data = [], title = "R by Asset" }) {
+  useLanguage();
   if (!data.length) return null;
 
   // 32px per bar row, min 120px
@@ -26,7 +30,7 @@ export default function AssetBreakdownChart({ data = [], title = "R by Asset" })
     <Card className="border-zinc-800/60 bg-zinc-900/40">
       <CardHeader className="px-5 pt-4 pb-3">
         <div className="flex items-center gap-1.5">
-          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          <CardTitle className="text-sm font-medium">{t(title)}</CardTitle>
           <InfoTip text="Total R grouped by traded instrument. Shows which assets are contributing most to your P&L." />
         </div>
       </CardHeader>

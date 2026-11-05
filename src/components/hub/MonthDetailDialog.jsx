@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useCallback, useRef, useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { toPng } from "html-to-image";
@@ -26,15 +28,17 @@ const MONTH_NAMES = [
 // ─── Stats panel ──────────────────────────────────────────────────────────────
 
 function StatRow({ label, value, valueClass = "text-zinc-200" }) {
+  useLanguage();
   return (
     <div className="flex items-baseline justify-between gap-2 py-1.5 border-b border-zinc-800/40 last:border-0">
-      <span className="text-xs text-zinc-500">{label}</span>
+      <span className="text-xs text-zinc-500">{t(label)}</span>
       <span className={`text-xs font-semibold tabular-nums ${valueClass}`}>{value}</span>
     </div>
   );
 }
 
 function MonthStatsPanel({ summary, monthName, year }) {
+  useLanguage();
   const {
     totalTrades, openPositions, closedPositions,
     wins, losses, breakEven,
@@ -55,24 +59,24 @@ function MonthStatsPanel({ summary, monthName, year }) {
       </div>
 
       <div className="rounded-lg border border-zinc-800/60 bg-zinc-900/60 px-4 py-1">
-        <StatRow label="Total Trades"     value={totalTrades} />
-        <StatRow label="Open Positions"   value={openPositions}
+        <StatRow label={t("Total Trades")}     value={totalTrades} />
+        <StatRow label={t("Open Positions")}   value={openPositions}
           valueClass={openPositions > 0 ? "text-amber-400" : "text-zinc-400"} />
-        <StatRow label="Closed Positions" value={closedPositions} />
-        <StatRow label="Wins"             value={wins}        valueClass="text-emerald-400" />
-        <StatRow label="Losses"           value={losses}      valueClass="text-red-400" />
-        {breakEven > 0 && <StatRow label="Break Even" value={breakEven} valueClass="text-zinc-400" />}
-        <StatRow label="Avg Win (R)"      value={avgWinR}     valueClass="text-emerald-400" />
-        <StatRow label="Avg Loss (R)"     value={avgLossR}    valueClass="text-red-400" />
-        <StatRow label="Win Rate"         value={formatPercent(winRate)} />
-        <StatRow label="Max Drawdown"     value={formatR(-maxDrawdownR)}  valueClass="text-red-400" />
+        <StatRow label={t("Closed Positions")} value={closedPositions} />
+        <StatRow label={t("Wins")}             value={wins}        valueClass="text-emerald-400" />
+        <StatRow label={t("Losses")}           value={losses}      valueClass="text-red-400" />
+        {breakEven > 0 && <StatRow label={t("Break Even")} value={breakEven} valueClass="text-zinc-400" />}
+        <StatRow label={t("Avg Win (R)")}      value={avgWinR}     valueClass="text-emerald-400" />
+        <StatRow label={t("Avg Loss (R)")}     value={avgLossR}    valueClass="text-red-400" />
+        <StatRow label={t("Win Rate")}         value={formatPercent(winRate)} />
+        <StatRow label={t("Max Drawdown")}     value={formatR(-maxDrawdownR)}  valueClass="text-red-400" />
         <StatRow
-          label="Floating Profit"
+          label={t("Floating Profit")}
           value={floatingProfit !== 0 ? formatR(floatingProfit) : "—"}
           valueClass={floatingProfit > 0 ? "text-emerald-400" : "text-zinc-500"}
         />
         <StatRow
-          label="Net R"
+          label={t("Net R")}
           value={formatR(totalR)}
           valueClass={totalR >= 0 ? "text-emerald-400" : "text-red-400"}
         />
@@ -89,6 +93,7 @@ function MonthStatsPanel({ summary, monthName, year }) {
 // ─── Loading skeleton ──────────────────────────────────────────────────────────
 
 function LoadingSkeleton() {
+  useLanguage();
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
       <div className="flex flex-col gap-4">
@@ -110,6 +115,7 @@ function LoadingSkeleton() {
 // ─── Dialog ───────────────────────────────────────────────────────────────────
 
 export default function MonthDetailDialog({ open, onClose, year, month, monthAnalytics, loading }) {
+  useLanguage();
   const monthName   = month != null ? MONTH_NAMES[month] : null;
   const contentRef  = useRef(null);
   const [saving, setSaving] = useState(false);
@@ -148,8 +154,7 @@ export default function MonthDetailDialog({ open, onClose, year, month, monthAna
         <DialogHeader className="flex flex-row items-center justify-between gap-4 px-6 pt-5 pb-4 border-b border-zinc-800/60">
           <div>
             <DialogTitle className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-              {year} · Monthly Detail
-            </DialogTitle>
+              {year}{" " + t("· Monthly Detail")}</DialogTitle>
             <p className="text-2xl font-bold tracking-tight text-zinc-100 leading-none mt-1">
               {monthName}
             </p>
@@ -166,7 +171,7 @@ export default function MonthDetailDialog({ open, onClose, year, month, monthAna
               ? <Loader2 className="size-3.5 animate-spin" />
               : <Download className="size-3.5" />
             }
-            {saving ? "Saving…" : "Save PNG"}
+            {saving ? t("Saving…") : t("Save PNG")}
           </Button>
         </DialogHeader>
 
@@ -203,7 +208,7 @@ export default function MonthDetailDialog({ open, onClose, year, month, monthAna
               />
             </div>
           ) : (
-            <p className="py-12 text-center text-sm text-zinc-600">No trades for this month.</p>
+            <p className="py-12 text-center text-sm text-zinc-600">{t("No trades for this month.")}</p>
           )}
         </div>
       </DialogContent>

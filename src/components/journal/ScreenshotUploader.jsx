@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useRef } from "react";
 import { ImagePlus, X } from "lucide-react";
 
@@ -5,6 +7,7 @@ import { ImagePlus, X } from "lucide-react";
 // onChange: (screenshots) => void
 
 export default function ScreenshotUploader({ screenshots = [], onChange }) {
+  useLanguage();
   const inputRef = useRef(null);
 
   function handleFiles(files) {
@@ -40,9 +43,7 @@ export default function ScreenshotUploader({ screenshots = [], onChange }) {
         className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed border-zinc-700 bg-zinc-900/30 px-4 py-5 transition-colors hover:border-zinc-600 hover:bg-zinc-900/60"
       >
         <ImagePlus className="size-5 text-zinc-600" />
-        <p className="text-xs text-zinc-600">
-          Click or drag an image to attach a screenshot
-        </p>
+        <p className="text-xs text-zinc-600">{t("Click or drag an image to attach a screenshot")}</p>
         <input
           ref={inputRef}
           type="file"
@@ -61,7 +62,7 @@ export default function ScreenshotUploader({ screenshots = [], onChange }) {
               {s.preview ? (
                 <img src={s.preview} alt={s.name} className="h-28 w-full object-cover" />
               ) : (
-                <div className="flex h-28 items-center justify-center text-xs text-zinc-600">Loading…</div>
+                <div className="flex h-28 items-center justify-center text-xs text-zinc-600">{t("Loading…")}</div>
               )}
               <button
                 type="button"

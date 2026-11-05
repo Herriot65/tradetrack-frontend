@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import {
   Bar,
   BarChart,
@@ -17,6 +19,7 @@ import EmptyState from "./EmptyState";
 import ErrorMessage from "./ErrorMessage";
 
 function ChartTooltip({ active, payload }) {
+  useLanguage();
   if (!active || !payload?.length) return null;
 
   const item = payload[0].payload;
@@ -35,6 +38,7 @@ function ChartTooltip({ active, payload }) {
 }
 
 export default function PnlBySetupChart() {
+  useLanguage();
   const { data, loading, error, refetch } = usePnlBySetup();
 
   let content;
@@ -46,8 +50,8 @@ export default function PnlBySetupChart() {
   } else if (!data?.length) {
     content = (
       <EmptyState
-        title="No setup data"
-        description="Tag trades with setups to compare performance."
+        title={t("No setup data")}
+        description={t("Tag trades with setups to compare performance.")}
       />
     );
   } else {
@@ -97,8 +101,8 @@ export default function PnlBySetupChart() {
 
   return (
     <ChartCard
-      title="PnL by Setup"
-      description="Total R per setup, highest to lowest"
+      title={t("PnL by Setup")}
+      description={t("Total R per setup, highest to lowest")}
       contentClassName="min-h-[280px] overflow-y-auto"
     >
       {content}

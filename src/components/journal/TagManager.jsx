@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useState } from "react";
 import { Pencil, Plus, Trash2, Check, X } from "lucide-react";
 import {
@@ -19,6 +21,7 @@ export default function TagManager({
   onRemove,
   onUpdate,
 }) {
+  useLanguage();
   const [editing,   setEditing]   = useState(null); // { name, value }
   const [newTag,    setNewTag]    = useState("");
   const [confirmDel, setConfirmDel] = useState(null); // tag name pending delete
@@ -45,16 +48,14 @@ export default function TagManager({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="border-zinc-800 bg-zinc-950 sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription className="sr-only">
-            Add, rename, or delete tags.
-          </DialogDescription>
+          <DialogTitle>{t(title)}</DialogTitle>
+          <DialogDescription className="sr-only">{t("Add, rename, or delete tags.")}</DialogDescription>
         </DialogHeader>
 
         {/* Tag list */}
         <div className="max-h-64 space-y-1 overflow-y-auto py-1">
           {tags.length === 0 && (
-            <p className="py-4 text-center text-xs text-zinc-600">No tags yet.</p>
+            <p className="py-4 text-center text-xs text-zinc-600">{t("No tags yet.")}</p>
           )}
           {tags.map((tag) => (
             <div key={tag} className="flex items-center gap-2 rounded-md px-1">
@@ -88,7 +89,7 @@ export default function TagManager({
               ) : confirmDel === tag ? (
                 <>
                   <span className="flex-1 truncate text-sm text-red-400">{tag}</span>
-                  <span className="text-xs text-zinc-500">Remove?</span>
+                  <span className="text-xs text-zinc-500">{t("Remove?")}</span>
                   <button
                     type="button"
                     onClick={() => { onRemove(tag); setConfirmDel(null); }}
@@ -130,16 +131,14 @@ export default function TagManager({
         {/* Add new */}
         <div className="flex gap-2 border-t border-zinc-800/60 pt-3">
           <Input
-            placeholder="New tag name…"
+            placeholder={t("New tag name…")}
             value={newTag}
             onChange={(e) => setNewTag(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             className="h-8 flex-1 border-zinc-800 bg-zinc-900/60 text-sm focus-visible:ring-emerald-500/50"
           />
           <Button type="button" size="sm" onClick={handleAdd} disabled={!newTag.trim()}>
-            <Plus className="size-3.5" />
-            Add
-          </Button>
+            <Plus className="size-3.5" />{t("Add")}</Button>
         </div>
       </DialogContent>
     </Dialog>

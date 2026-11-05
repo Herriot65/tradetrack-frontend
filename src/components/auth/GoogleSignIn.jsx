@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth";
@@ -23,6 +25,7 @@ function loadGoogle() {
 }
 
 export default function GoogleSignIn() {
+  const { language } = useLanguage();
   const container = useRef(null);
   const busy = useRef(false);
   const { loginWithGoogle } = useAuth();
@@ -55,19 +58,19 @@ export default function GoogleSignIn() {
         },
       });
       window.google.accounts.id.renderButton(container.current, {
-        type: "standard", theme: "outline", size: "large", text: "continue_with", width: 320,
+        type: "standard", theme: "outline", size: "large", text: "continue_with", width: 320, locale: language === "fr-FR" ? "fr" : "en",
       });
     }).catch(err => { if (active) setError(err.message); });
     return () => { active = false; };
-  }, [clientId, loginWithGoogle, navigate]);
+  }, [clientId, loginWithGoogle, navigate, language]);
 
   if (!clientId) return null;
   return (
     <div className="mb-5 space-y-3 text-center">
-      <div ref={container} className="flex justify-center" aria-label="Continue with Google" hidden={pending} />
-      {pending && <p role="status" className="text-sm">Signing in with Google...</p>}
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-      <p className="text-xs text-muted-foreground">or continue with email</p>
+      <div ref={container} className="flex justify-center" aria-label={t("Continue with Google")} hidden={pending} />
+      {pending && <p role="status" className="text-sm">{t("Signing in with Google...")}</p>}
+      {error && <p role="alert" className="text-sm text-destructive">{t(error)}</p>}
+      <p className="text-xs text-muted-foreground">{t("or continue with email")}</p>
     </div>
   );
 }

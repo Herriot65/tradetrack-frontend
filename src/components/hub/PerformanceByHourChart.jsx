@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +13,7 @@ function formatHour(h) {
 }
 
 function HourTooltip({ active, payload }) {
+  useLanguage();
   if (!active || !payload?.length) return null;
   const { hour, total_r, trade_count, win_rate } = payload[0].payload;
   const r = total_r;
@@ -20,24 +23,25 @@ function HourTooltip({ active, payload }) {
       <p className={`font-semibold ${r >= 0 ? "text-emerald-400" : "text-red-400"}`}>
         {r >= 0 ? "+" : ""}{r}R
       </p>
-      <p className="text-zinc-500">{trade_count} trade{trade_count !== 1 ? "s" : ""} · {win_rate}% win</p>
+      <p className="text-zinc-500">{trade_count}{" " + t("trade")}{trade_count !== 1 ? "s" : ""} · {win_rate}{t("% win")}</p>
     </div>
   );
 }
 
 export default function PerformanceByHourChart({ data = [], loading = false }) {
+  useLanguage();
   return (
     <Card className="border-zinc-800/60 bg-zinc-900/40">
       <CardHeader className="px-5 pt-4 pb-3">
         <div className="flex items-center gap-1.5">
-          <CardTitle className="text-sm font-medium">Performance by Hour</CardTitle>
+          <CardTitle className="text-sm font-medium">{t("Performance by Hour")}</CardTitle>
           <InfoTip text="Total R grouped by the hour your trade was opened. Identifies your highest and lowest-performing trading sessions." />
         </div>
       </CardHeader>
       <CardContent className="px-5 pb-4">
         {loading || !data.length ? (
           <div className="flex h-[160px] items-center justify-center text-xs text-zinc-700">
-            {loading ? "Loading…" : "No data"}
+            {loading ? t("Loading…") : t("No data")}
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={160}>

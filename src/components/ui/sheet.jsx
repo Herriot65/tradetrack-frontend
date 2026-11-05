@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { XIcon } from "lucide-react";
 
@@ -10,6 +12,7 @@ const SheetClose = DialogPrimitive.Close;
 const SheetPortal = DialogPrimitive.Portal;
 
 function SheetOverlay({ className, ...props }) {
+  useLanguage();
   return (
     <DialogPrimitive.Overlay
       data-slot="sheet-overlay"
@@ -25,6 +28,7 @@ function SheetOverlay({ className, ...props }) {
 }
 
 function SheetContent({ className, children, ...props }) {
+  useLanguage();
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -47,6 +51,7 @@ function SheetContent({ className, children, ...props }) {
 }
 
 function SheetHeader({ className, children, onClose, ...props }) {
+  useLanguage();
   return (
     <div
       data-slot="sheet-header"
@@ -60,7 +65,7 @@ function SheetHeader({ className, children, onClose, ...props }) {
       <DialogPrimitive.Close asChild>
         <Button variant="ghost" size="icon-sm" className="ml-2 mt-0.5 shrink-0" onClick={onClose}>
           <XIcon />
-          <span className="sr-only">Close</span>
+          <span className="sr-only">{t("Close")}</span>
         </Button>
       </DialogPrimitive.Close>
     </div>
@@ -68,6 +73,7 @@ function SheetHeader({ className, children, onClose, ...props }) {
 }
 
 function SheetBody({ className, ...props }) {
+  useLanguage();
   return (
     <div
       data-slot="sheet-body"
@@ -78,6 +84,7 @@ function SheetBody({ className, ...props }) {
 }
 
 function SheetFooter({ className, ...props }) {
+  useLanguage();
   return (
     <div
       data-slot="sheet-footer"
@@ -91,6 +98,7 @@ function SheetFooter({ className, ...props }) {
 }
 
 function SheetTitle({ className, ...props }) {
+  useLanguage();
   return (
     <DialogPrimitive.Title
       data-slot="sheet-title"
@@ -101,6 +109,7 @@ function SheetTitle({ className, ...props }) {
 }
 
 function SheetDescription({ className, ...props }) {
+  useLanguage();
   return (
     <DialogPrimitive.Description
       data-slot="sheet-description"

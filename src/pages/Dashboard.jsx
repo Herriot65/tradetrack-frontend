@@ -1,3 +1,5 @@
+import { getLanguage, translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BookOpen, ChevronRight, Plus, Trash2 } from "lucide-react";
@@ -23,6 +25,7 @@ const JOURNAL_TYPE_LABEL = {
 };
 
 function JournalCard({ journal, onDelete, onOpen }) {
+  useLanguage();
   const typeLabel = JOURNAL_TYPE_LABEL[journal.journalType] ?? "Journal";
   return (
     <article className="nx-surface group relative overflow-hidden p-5 transition-colors hover:border-primary/25">
@@ -39,7 +42,7 @@ function JournalCard({ journal, onDelete, onOpen }) {
           <Trash2 className="size-3.5" />
         </button>
       </div>
-      <p className="nx-eyebrow !text-muted-foreground">{typeLabel}</p>
+      <p className="nx-eyebrow !text-muted-foreground">{t(typeLabel)}</p>
       <button
         type="button"
         onClick={onOpen}
@@ -50,17 +53,17 @@ function JournalCard({ journal, onDelete, onOpen }) {
       </button>
       <dl className="mt-6 flex items-end justify-between border-t border-border/60 pt-4">
         <div>
-          <dt className="text-[10px] text-muted-foreground">Starting capital</dt>
+          <dt className="text-[10px] text-muted-foreground">{t("Starting capital")}</dt>
           <dd className="mt-1 text-[15px] font-medium tabular-nums">
             {journal.startingCapital != null
-              ? Number(journal.startingCapital).toLocaleString(undefined, {
+              ? Number(journal.startingCapital).toLocaleString(getLanguage(), {
                   maximumFractionDigits: 2,
                 })
               : "—"}
           </dd>
         </div>
         <div className="text-right">
-          <dt className="text-[10px] text-muted-foreground">Currency</dt>
+          <dt className="text-[10px] text-muted-foreground">{t("Currency")}</dt>
           <dd className="mt-1 text-[12px] text-zinc-300">{journal.currency || "—"}</dd>
         </div>
       </dl>
@@ -69,6 +72,7 @@ function JournalCard({ journal, onDelete, onOpen }) {
 }
 
 function OnboardingHero({ userName, onCreateClick }) {
+  useLanguage();
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       {/* Icon */}
@@ -78,12 +82,9 @@ function OnboardingHero({ userName, onCreateClick }) {
 
       {/* Heading */}
       <h2 className="text-2xl font-semibold tracking-tight text-zinc-100">
-        {userName ? `Welcome, ${userName}!` : "Welcome to Nexora!"}
+        {userName ? t("Welcome, {name}!", { name: userName }) : t("Welcome to Nexora!")}
       </h2>
-      <p className="mt-2 max-w-sm text-sm text-zinc-400">
-        A journal is your personal trading environment — it holds your trades, analytics, and
-        settings all in one place.
-      </p>
+      <p className="mt-2 max-w-sm text-sm text-zinc-400">{t("A journal is your personal trading environment — it holds your trades, analytics, and settings all in one place.")}</p>
 
       {/* Steps */}
       <div className="mt-8 grid w-full max-w-lg gap-3 text-left sm:grid-cols-3">
@@ -108,22 +109,21 @@ function OnboardingHero({ userName, onCreateClick }) {
             <div className="mb-2 flex size-6 items-center justify-center rounded-full bg-emerald-500/15 text-[11px] font-bold text-emerald-400 ring-1 ring-emerald-500/20">
               {step}
             </div>
-            <p className="text-xs font-semibold text-zinc-200">{title}</p>
-            <p className="mt-0.5 text-[11px] leading-relaxed text-zinc-500">{desc}</p>
+            <p className="text-xs font-semibold text-zinc-200">{t(title)}</p>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-zinc-500">{t(desc)}</p>
           </div>
         ))}
       </div>
 
       {/* CTA */}
       <Button className="mt-8" onClick={onCreateClick}>
-        <Plus className="size-4" />
-        Create your first journal
-      </Button>
+        <Plus className="size-4" />{t("Create your first journal")}</Button>
     </div>
   );
 }
 
 export default function Dashboard() {
+  useLanguage();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { journals, loading, createJournal, deleteJournal } = useJournal();
@@ -160,16 +160,14 @@ export default function Dashboard() {
         {(loading || hasJournals) && (
           <div className="nx-page-header">
             <div>
-              <p className="nx-eyebrow mb-3">Your trading workspace</p>
+              <p className="nx-eyebrow mb-3">{t("Your trading workspace")}</p>
               <h1 className="nx-page-title">
-                {user?.first_name ? `Welcome back, ${user.first_name}` : "Your Journals"}
+                {user?.first_name ? `Welcome back, ${user.first_name}` : t("Your Journals")}
               </h1>
-              <p className="nx-subtitle">Select a journal to view your trades and analytics.</p>
+              <p className="nx-subtitle">{t("Select a journal to view your trades and analytics.")}</p>
             </div>
             <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus className="size-4" />
-              New Journal
-            </Button>
+              <Plus className="size-4" />{t("New Journal")}</Button>
           </div>
         )}
 
@@ -190,7 +188,7 @@ export default function Dashboard() {
         {/* Journal grid — shown only when journals exist */}
         {hasJournals && (
           <div>
-            <h2 className="nx-eyebrow mb-4 !text-muted-foreground">Your Journals</h2>
+            <h2 className="nx-eyebrow mb-4 !text-muted-foreground">{t("Your Journals")}</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {journals.map((j) => (
                 <div key={j.id}>
@@ -219,11 +217,8 @@ export default function Dashboard() {
       >
         <DialogContent className="border-zinc-800 bg-zinc-950 sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete &ldquo;{journalToDelete?.name}&rdquo;?</DialogTitle>
-            <DialogDescription>
-              All trades, analytics, and catalog data in this journal will be permanently deleted.
-              This action cannot be undone.
-            </DialogDescription>
+            <DialogTitle>{t("Delete “")}{journalToDelete?.name}&rdquo;?</DialogTitle>
+            <DialogDescription>{t("All trades, analytics, and catalog data in this journal will be permanently deleted. This action cannot be undone.")}</DialogDescription>
           </DialogHeader>
           {deleteError && <p className="text-sm text-destructive">{deleteError}</p>}
           <DialogFooter>
@@ -234,11 +229,9 @@ export default function Dashboard() {
                 setDeleteError(null);
               }}
               disabled={deleting}
-            >
-              Cancel
-            </Button>
+            >{t("Cancel")}</Button>
             <Button variant="destructive" onClick={handleDeleteConfirm} disabled={deleting}>
-              {deleting ? "Deleting…" : "Delete"}
+              {deleting ? t("Deleting…") : t("Delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

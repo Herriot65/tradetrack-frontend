@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Columns3 } from "lucide-react";
 import { formatDate } from "@/lib/formatters";
@@ -74,33 +76,37 @@ const SIDE_STYLE = {
 // ─── Cell helpers ─────────────────────────────────────────────────────────────
 
 function Dash() {
+  useLanguage();
   return <span className="text-zinc-600">—</span>;
 }
 
 function StatusBadge({ status }) {
+  useLanguage();
   const c = STATUS_STYLE[status] ?? STATUS_STYLE.BE;
   const label = status === "BE" ? "B/E" : status;
   return (
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ${c.bg} ${c.text} ${c.ring}`}
     >
-      {label}
+      {t(label)}
     </span>
   );
 }
 
 function SidePill({ side }) {
+  useLanguage();
   return (
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${SIDE_STYLE[side] ?? ""}`}
     >
-      {side}
+      {t(side)}
     </span>
   );
 }
 
 function PnlCell({ pnlR, status, unit }) {
-  if (status === "OPEN") return <span className="text-xs font-medium text-amber-400">Open</span>;
+  useLanguage();
+  if (status === "OPEN") return <span className="text-xs font-medium text-amber-400">{t("Open")}</span>;
   if (pnlR == null) return <Dash />;
   const r = parseFloat(pnlR);
   const color = r > 0 ? "text-emerald-400" : r < 0 ? "text-red-400" : "text-zinc-400";
@@ -111,6 +117,7 @@ function PnlCell({ pnlR, status, unit }) {
 
 // Shows date on first line, HH:MM on second line
 function DateTimeCell({ iso, openLabel }) {
+  useLanguage();
   if (!iso) {
     return openLabel ? <span className="text-xs text-amber-400/70">{openLabel}</span> : <Dash />;
   }
@@ -128,6 +135,7 @@ function DateTimeCell({ iso, openLabel }) {
 // ─── Column visibility picker ─────────────────────────────────────────────────
 
 function ColPicker({ visibleCols, onToggle }) {
+  useLanguage();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -150,15 +158,11 @@ function ColPicker({ visibleCols, onToggle }) {
             : "text-zinc-500 hover:bg-zinc-800/60 hover:text-zinc-300"
         }`}
       >
-        <Columns3 className="size-3.5" />
-        Columns
-      </button>
+        <Columns3 className="size-3.5" />{t("Columns")}</button>
 
       {open && (
         <div className="absolute right-0 top-7 z-50 w-44 rounded-md border border-zinc-800 bg-zinc-900 shadow-2xl">
-          <p className="border-b border-zinc-800/60 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
-            Visible columns
-          </p>
+          <p className="border-b border-zinc-800/60 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{t("Visible columns")}</p>
           <div className="max-h-64 overflow-y-auto py-1">
             {COLUMNS.map((col) => (
               <label
@@ -171,7 +175,7 @@ function ColPicker({ visibleCols, onToggle }) {
                   onChange={() => onToggle(col.id)}
                   className="size-3.5 accent-emerald-500"
                 />
-                <span className="text-zinc-300">{col.label}</span>
+                <span className="text-zinc-300">{t(col.label)}</span>
               </label>
             ))}
           </div>
@@ -184,6 +188,7 @@ function ColPicker({ visibleCols, onToggle }) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 function Th({ label, sortKey: sk, sortField, sortDir, onSort, className = "" }) {
+  useLanguage();
   const sortable = !!sk;
   const active = sortable && sortField === sk;
   return (
@@ -201,7 +206,7 @@ function Th({ label, sortKey: sk, sortField, sortDir, onSort, className = "" }) 
         sortable ? "cursor-pointer select-none transition-colors hover:text-zinc-300" : ""
       } ${className}`}
     >
-      {label}
+      {t(label)}
       {sortable && (
         <span className={`ml-1 ${active ? "text-zinc-300" : "text-zinc-700"}`}>
           {active ? (sortDir === "asc" ? "↑" : "↓") : "↕"}
@@ -220,6 +225,7 @@ export default memo(function TradeTable({
   onSort,
   displayUnit = "R",
 }) {
+  useLanguage();
   useAuth(); // Subscribe to account timezone changes even when table props stay stable.
   const [localSortField, setSortField] = useState("date");
   const [localSortDir, setSortDir] = useState("desc");
@@ -290,7 +296,7 @@ export default memo(function TradeTable({
     <div className="nx-table [overflow:clip]">
       {/* Column picker toolbar */}
       <div className="flex items-center justify-between border-b border-border/60 px-4 py-2.5">
-        <span className="nx-eyebrow !text-muted-foreground">Trade ledger</span>
+        <span className="nx-eyebrow !text-muted-foreground">{t("Trade ledger")}</span>
         <ColPicker visibleCols={v} onToggle={toggleCol} />
       </div>
 
@@ -304,7 +310,7 @@ export default memo(function TradeTable({
                   sortDir={sortDir}
                   onSort={handleSort}
                   colId="asset"
-                  label="Asset"
+                  label={t("Asset")}
                   sortKey="asset"
                 />
               )}
@@ -314,7 +320,7 @@ export default memo(function TradeTable({
                   sortDir={sortDir}
                   onSort={handleSort}
                   colId="entryDate"
-                  label="Entry"
+                  label={t("Entry")}
                   sortKey="date"
                 />
               )}
@@ -324,7 +330,7 @@ export default memo(function TradeTable({
                   sortDir={sortDir}
                   onSort={handleSort}
                   colId="exitDate"
-                  label="Exit"
+                  label={t("Exit")}
                 />
               )}
               {v.side && (
@@ -333,7 +339,7 @@ export default memo(function TradeTable({
                   sortDir={sortDir}
                   onSort={handleSort}
                   colId="side"
-                  label="Side"
+                  label={t("Side")}
                 />
               )}
               {v.oppTf && (
@@ -342,7 +348,7 @@ export default memo(function TradeTable({
                   sortDir={sortDir}
                   onSort={handleSort}
                   colId="oppTf"
-                  label="Opp. TF"
+                  label={t("Opp. TF")}
                 />
               )}
               {v.entryTf && (
@@ -351,7 +357,7 @@ export default memo(function TradeTable({
                   sortDir={sortDir}
                   onSort={handleSort}
                   colId="entryTf"
-                  label="Entry TF"
+                  label={t("Entry TF")}
                 />
               )}
               {v.trend && (
@@ -360,7 +366,7 @@ export default memo(function TradeTable({
                   sortDir={sortDir}
                   onSort={handleSort}
                   colId="trend"
-                  label="Trend"
+                  label={t("Trend")}
                 />
               )}
               {v.riskPercent && (
@@ -389,7 +395,7 @@ export default memo(function TradeTable({
                   sortDir={sortDir}
                   onSort={handleSort}
                   colId="status"
-                  label="Status"
+                  label={t("Status")}
                 />
               )}
               {v.commission && (
@@ -398,7 +404,7 @@ export default memo(function TradeTable({
                   sortDir={sortDir}
                   onSort={handleSort}
                   colId="commission"
-                  label="Commission"
+                  label={t("Commission")}
                 />
               )}
               {v.swap && (

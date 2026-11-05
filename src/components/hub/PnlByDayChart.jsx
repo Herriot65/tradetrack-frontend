@@ -1,3 +1,5 @@
+import { getLanguage, translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import {
   Bar,
   BarChart,
@@ -13,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate } from "@/lib/formatters";
 
 function PnlTooltip({ active, payload }) {
+  useLanguage();
   if (!active || !payload?.length) return null;
   const { date, r } = payload[0].payload;
   const sign = r > 0 ? "+" : "";
@@ -26,26 +29,25 @@ function PnlTooltip({ active, payload }) {
 }
 
 export default function PnlByDayChart({ data = [], height = 180 }) {
+  useLanguage();
   const maxAbs = Math.max(...data.map((d) => Math.abs(d.r)), 1);
   const domain = [-(maxAbs + 0.5), maxAbs + 0.5];
 
   return (
     <Card className="border-zinc-800/60 bg-zinc-900/40">
       <CardHeader className="px-5 pt-4 pb-3">
-        <CardTitle className="text-sm font-medium">P&amp;L by Day</CardTitle>
+        <CardTitle className="text-sm font-medium">{t("P&L by Day")}</CardTitle>
       </CardHeader>
       <CardContent className="px-5 pb-4">
         {!data.length ? (
-          <div className="flex h-[180px] items-center justify-center text-xs text-zinc-700">
-            No data
-          </div>
+          <div className="flex h-[180px] items-center justify-center text-xs text-zinc-700">{t("No data")}</div>
         ) : (
           <ResponsiveContainer width="100%" height={height}>
             <BarChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
               <XAxis
                 dataKey="date"
                 tickFormatter={(v) => {
-                  try { return new Date(v).toLocaleDateString(undefined, { day: "numeric", month: "short" }); }
+                  try { return new Date(v).toLocaleDateString(getLanguage(), { day: "numeric", month: "short" }); }
                   catch { return v; }
                 }}
                 stroke="var(--text-tertiary)"

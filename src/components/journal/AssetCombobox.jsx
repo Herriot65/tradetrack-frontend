@@ -1,7 +1,10 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useEffect, useRef, useState } from "react";
 import { Check, Plus } from "lucide-react";
 
 export default function AssetCombobox({ value, onChange, options = [], onCreateAsset }) {
+  useLanguage();
   const [query, setQuery] = useState(value ?? "");
   const [open, setOpen] = useState(false);
   const inputRef = useRef(null);
@@ -110,9 +113,7 @@ export default function AssetCombobox({ value, onChange, options = [], onCreateA
               }}
               className="flex w-full items-center gap-2 border-t border-zinc-800/60 px-3 py-2 text-sm text-emerald-400 hover:bg-zinc-800"
             >
-              <Plus className="size-3.5 shrink-0" />
-              Add &ldquo;{qUpper}&rdquo; to catalog
-            </button>
+              <Plus className="size-3.5 shrink-0" />{t("Add “")}{qUpper}{t("” to catalog")}</button>
           )}
         </div>
       )}

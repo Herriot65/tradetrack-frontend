@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useRef, useState } from "react";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import ImageLightbox from "./ImageLightbox";
@@ -7,6 +9,7 @@ const MAX_BYTES = 10 * 1024 * 1024;
 
 // items: Array of { id, image_url?, preview?, uploading?, deleting? }
 export default function TradeScreenshots({ items = [], onUpload, onDelete }) {
+  useLanguage();
   const inputRef = useRef(null);
   const [dragOver,    setDragOver]    = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState(null);
@@ -36,7 +39,7 @@ export default function TradeScreenshots({ items = [], onUpload, onDelete }) {
             >
               <img
                 src={item.image_url ?? item.preview}
-                alt="Trade screenshot"
+                alt={t("Trade screenshot")}
                 className="h-28 w-full cursor-zoom-in object-cover"
                 onClick={() => !item.uploading && setLightboxSrc(item.image_url ?? item.preview)}
               />
@@ -50,7 +53,7 @@ export default function TradeScreenshots({ items = [], onUpload, onDelete }) {
                   onClick={() => onDelete(item.id)}
                   disabled={item.deleting}
                   className="absolute right-1 top-1 hidden rounded bg-zinc-900/80 p-0.5 text-zinc-300 hover:text-white group-hover:flex disabled:opacity-50"
-                  aria-label="Remove screenshot"
+                  aria-label={t("Remove screenshot")}
                 >
                   {item.deleting
                     ? <Loader2 className="size-3 animate-spin" />
@@ -78,7 +81,7 @@ export default function TradeScreenshots({ items = [], onUpload, onDelete }) {
           className="flex w-full items-center justify-center gap-2 text-xs text-zinc-600 transition-colors hover:text-zinc-400"
         >
           <ImagePlus className="size-3.5" />
-          {items.length > 0 ? "Add more screenshots" : "Upload screenshots"}
+          {items.length > 0 ? t("Add more screenshots") : t("Upload screenshots")}
         </button>
         <input
           ref={inputRef}
@@ -88,9 +91,7 @@ export default function TradeScreenshots({ items = [], onUpload, onDelete }) {
           className="hidden"
           onChange={(e) => { processFiles(e.target.files); e.target.value = ""; }}
         />
-        <p className="mt-1 text-center text-[10px] text-zinc-700">
-          PNG, JPEG, WebP · max 10 MB · drag-and-drop or click
-        </p>
+        <p className="mt-1 text-center text-[10px] text-zinc-700">{t("PNG, JPEG, WebP · max 10 MB · drag-and-drop or click")}</p>
       </div>
 
       {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}

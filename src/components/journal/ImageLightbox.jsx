@@ -1,7 +1,10 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useEffect } from "react";
 import { X } from "lucide-react";
 
 export default function ImageLightbox({ src, onClose }) {
+  useLanguage();
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", onKey);
@@ -17,14 +20,14 @@ export default function ImageLightbox({ src, onClose }) {
     >
       <img
         src={src}
-        alt="Screenshot"
+        alt={t("Screenshot")}
         className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       />
       <button
         onClick={onClose}
         className="absolute right-4 top-4 rounded-full bg-zinc-900/80 p-2 text-zinc-300 transition-colors hover:text-white"
-        aria-label="Close"
+        aria-label={t("Close")}
       >
         <X className="size-5" />
       </button>

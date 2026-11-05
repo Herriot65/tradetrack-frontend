@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useCallback, useMemo, useState } from "react";
 import { BookOpen, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +25,7 @@ const SORT_FIELDS = { date: "entry_datetime", asset: "asset__symbol", r: "pnl_r"
 const PAGE_SIZE = 20;
 
 function TableSkeleton() {
+  useLanguage();
   return (
     <div className="overflow-hidden rounded-lg border border-zinc-800/60">
       <div className="border-b border-zinc-800/60 bg-zinc-900/60 px-3 py-2.5">
@@ -44,6 +47,7 @@ function TableSkeleton() {
 }
 
 function EmptyTrades({ hasFilters }) {
+  useLanguage();
   return (
     <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-zinc-800 py-20 text-center">
       <div className="flex size-12 items-center justify-center rounded-xl bg-zinc-900 ring-1 ring-zinc-800">
@@ -51,12 +55,12 @@ function EmptyTrades({ hasFilters }) {
       </div>
       <div className="space-y-1">
         <p className="text-sm font-medium text-zinc-300">
-          {hasFilters ? "No trades match your filters" : "No trades yet"}
+          {hasFilters ? t("No trades match your filters") : t("No trades yet")}
         </p>
         <p className="max-w-xs text-xs text-zinc-600">
           {hasFilters
-            ? "Try clearing the search or status filter."
-            : "Trades will appear here once synced."}
+            ? t("Try clearing the search or status filter.")
+            : t("Trades will appear here once synced.")}
         </p>
       </div>
     </div>
@@ -64,6 +68,7 @@ function EmptyTrades({ hasFilters }) {
 }
 
 export default function TradesTab({ breakEvenMethod, journalId }) {
+  useLanguage();
   const { activeJournal, updateJournal } = useJournal();
   const [displayUnit, setDisplayUnit] = useState(activeJournal?.display_unit || "R");
   const [unitError, setUnitError] = useState("");
@@ -149,7 +154,7 @@ export default function TradesTab({ breakEvenMethod, journalId }) {
     <div className="space-y-4">
       <div className="nx-toolbar">
         <TradeSearchInput onSearch={onSearch} />
-        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Trade status">
+        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t("Trade status")}>
           {STATUS_FILTERS.map((filter) => (
             <button
               key={filter.value}
@@ -158,26 +163,24 @@ export default function TradesTab({ breakEvenMethod, journalId }) {
               onClick={() => setQuery((current) => ({ ...current, status: filter.value, page: 1 }))}
               className={`rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors ${query.status === filter.value ? "bg-primary/10 text-primary ring-1 ring-primary/20" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
             >
-              {filter.label}
+              {t(filter.label)}
             </button>
           ))}
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-3">
           <FieldModeToggle
-            label="Table display units"
+            label={t("Table display units")}
             options={UNIT_OPTIONS.map((option) => ({ ...option, disabled: savingUnit }))}
             value={displayUnit}
             onChange={changeDisplayUnit}
           />
           <span className="text-xs text-zinc-500" aria-live="polite">
             {loading && data
-              ? "Updating..."
+              ? t("Updating...")
               : `${totalCount} ${totalCount === 1 ? "trade" : "trades"}`}
           </span>
           <Button type="button" size="sm" onClick={openNewTrade}>
-            <Plus className="size-3.5" />
-            New Trade
-          </Button>
+            <Plus className="size-3.5" />{t("New Trade")}</Button>
         </div>
       </div>
       {error && (
@@ -189,9 +192,7 @@ export default function TradesTab({ breakEvenMethod, journalId }) {
             {error}
             {data ? " Showing the previous results." : ""}
           </span>
-          <Button size="sm" variant="outline" onClick={refetch}>
-            Retry
-          </Button>
+          <Button size="sm" variant="outline" onClick={refetch}>{t("Retry")}</Button>
         </div>
       )}
       {unitError && (
@@ -218,8 +219,7 @@ export default function TradesTab({ breakEvenMethod, journalId }) {
       </div>
       {totalPages > 1 && (
         <div className="flex items-center justify-between gap-2 pt-1">
-          <span className="text-xs text-zinc-500">
-            Page {query.page} of {totalPages}
+          <span className="text-xs text-zinc-500">{t("Page") + " "}{query.page}{" " + t("of") + " "}{totalPages}
           </span>
           <div className="flex items-center gap-2">
             <Button
@@ -229,9 +229,7 @@ export default function TradesTab({ breakEvenMethod, journalId }) {
               onClick={() =>
                 setQuery((current) => ({ ...current, page: Math.max(1, current.page - 1) }))
               }
-            >
-              Previous
-            </Button>
+            >{t("Previous")}</Button>
             <Button
               size="sm"
               variant="outline"
@@ -242,9 +240,7 @@ export default function TradesTab({ breakEvenMethod, journalId }) {
                   page: Math.min(totalPages, current.page + 1),
                 }))
               }
-            >
-              Next
-            </Button>
+            >{t("Next")}</Button>
           </div>
         </div>
       )}

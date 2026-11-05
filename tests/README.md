@@ -27,3 +27,9 @@ Trade dates use React DayPicker 9 with Radix popovers; fixed-choice form fields 
 `npm run test:custom-fields` verifies creation below all six form sections, journal-level definition reuse, per-trade values (including 0 and false), reload persistence, and the 320px field-builder layout. Adding a definition must not submit the parent trade form. Text, number, dropdown and yes/no types are supported. Definitions live at `/journals/:id/custom-fields/`; values live in each trade's `custom_fields` object. Migration 0010 adds the model and JSON storage.
 
 `npm run test:trades-list` checks server-scoped status/search filters and pagination against 65 trades, including matches outside the original page; global sorting; and one debounced request for a six-character asset search. The input retains focus and the existing table stays mounted while results update. Django API tests independently verify filtering before pagination, the journal BE rule/manual overrides, type validation, journal ownership and definition uniqueness.
+
+## Language selection
+
+The header and sign-in pages offer Français (FR) and English (US). English is the default. The choice is stored in `nexora_language` in browser storage and synchronized across tabs. Interface translations live in `src/i18n/fr.js`; user-entered journal names, notes, tags, and custom field options retain their original text. Dates and numbers follow the selected locale; trade timestamps retain their existing timezone behavior.
+
+`npm test` includes translation, interpolation, locale formatting, invalid-language, and unavailable-storage checks. `npm run test:language` builds the app and verifies switching, navigation/reload persistence, form preservation, French validation, settings, cross-tab synchronization, and layouts from 320px through 1280px. Set `PLAYWRIGHT_MODULE` to an installed Playwright entry point and `CHROMIUM_PATH` to a browser executable when needed. API calls in browser tests are stubbed.

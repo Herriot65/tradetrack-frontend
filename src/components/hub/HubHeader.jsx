@@ -1,6 +1,9 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { Filter, Share2 } from "lucide-react";
 
 export default function HubHeader({ selectedYears, onYearsChange, availableYears = [] }) {
+  useLanguage();
   const isAll = selectedYears.length === 0;
 
   const toggleYear = (year) => {
@@ -15,10 +18,8 @@ export default function HubHeader({ selectedYears, onYearsChange, availableYears
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       {/* Title block */}
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Performance Hub</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Drill down from career overview to individual trades — all in one place.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("Performance Hub")}</h1>
+        <p className="mt-1 text-sm text-zinc-500">{t("Drill down from career overview to individual trades — all in one place.")}</p>
       </div>
 
       {/* Controls */}
@@ -33,9 +34,7 @@ export default function HubHeader({ selectedYears, onYearsChange, availableYears
                 ? "bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30"
                 : "text-zinc-500 hover:bg-zinc-800/80 hover:text-zinc-300"
             }`}
-          >
-            All
-          </button>
+          >{t("All")}</button>
 
           <span className="mx-0.5 h-4 w-px bg-zinc-800" />
 
@@ -60,8 +59,7 @@ export default function HubHeader({ selectedYears, onYearsChange, availableYears
         {/* Multi-select hint */}
         {!isAll && selectedYears.length > 0 && (
           <p className="text-[10px] text-zinc-600">
-            {selectedYears.length} year{selectedYears.length > 1 ? "s" : ""} selected — click to toggle
-          </p>
+            {selectedYears.length}{" " + t("year")}{selectedYears.length > 1 ? "s" : ""}{" " + t("selected — click to toggle")}</p>
         )}
 
         {/* Action placeholders */}
@@ -70,16 +68,12 @@ export default function HubHeader({ selectedYears, onYearsChange, availableYears
             disabled
             className="flex h-7 items-center gap-1.5 rounded-md border border-dashed border-zinc-800 bg-zinc-900/40 px-3 text-xs text-zinc-700 cursor-not-allowed"
           >
-            <Filter className="size-3" />
-            Filter
-          </button>
+            <Filter className="size-3" />{t("Filter")}</button>
           <button
             disabled
             className="flex h-7 items-center gap-1.5 rounded-md border border-dashed border-zinc-800 bg-zinc-900/40 px-3 text-xs text-zinc-700 cursor-not-allowed"
           >
-            <Share2 className="size-3" />
-            Export
-          </button>
+            <Share2 className="size-3" />{t("Export")}</button>
         </div>
       </div>
     </div>

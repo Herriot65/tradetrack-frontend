@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +9,7 @@ import InfoTip from "@/components/ui/InfoTip";
 const SHORT_DAY = { Monday: "Mon", Tuesday: "Tue", Wednesday: "Wed", Thursday: "Thu", Friday: "Fri", Saturday: "Sat", Sunday: "Sun" };
 
 function DayTooltip({ active, payload }) {
+  useLanguage();
   if (!active || !payload?.length) return null;
   const { day, trade_count, win_rate, total_r } = payload[0].payload;
   return (
@@ -15,24 +18,25 @@ function DayTooltip({ active, payload }) {
       <p className={`font-semibold ${total_r >= 0 ? "text-emerald-400" : "text-red-400"}`}>
         {total_r >= 0 ? "+" : ""}{total_r}R
       </p>
-      <p className="text-zinc-500">{trade_count} trade{trade_count !== 1 ? "s" : ""} · {win_rate}% win</p>
+      <p className="text-zinc-500">{trade_count}{" " + t("trade")}{trade_count !== 1 ? "s" : ""} · {win_rate}{t("% win")}</p>
     </div>
   );
 }
 
 export default function PerformanceByDayChart({ data = [], loading = false }) {
+  useLanguage();
   return (
     <Card className="border-zinc-800/60 bg-zinc-900/40">
       <CardHeader className="px-5 pt-4 pb-3">
         <div className="flex items-center gap-1.5">
-          <CardTitle className="text-sm font-medium">Performance by Day</CardTitle>
+          <CardTitle className="text-sm font-medium">{t("Performance by Day")}</CardTitle>
           <InfoTip text="Total R grouped by day of the week. Reveals which days of the week you trade best (or worst)." />
         </div>
       </CardHeader>
       <CardContent className="px-5 pb-4">
         {loading || !data.length ? (
           <div className="flex h-[160px] items-center justify-center text-xs text-zinc-700">
-            {loading ? "Loading…" : "No data"}
+            {loading ? t("Loading…") : t("No data")}
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={160}>

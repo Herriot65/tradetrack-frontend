@@ -1,3 +1,5 @@
+import { getLanguage, translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useEffect, useRef, useState } from "react";
 import "./trade-panel.css";
 import TradeQualityInput from "./TradeQualityInput";
@@ -149,22 +151,24 @@ function buildSections(screenshots = []) {
 
 // Label row with optional action button on the right
 function F({ label, error, children, span2 = false, action, id }) {
+  useLanguage();
   return (
     <div className={span2 ? "min-w-0 col-span-full space-y-1.5" : "min-w-0 space-y-1.5"}>
       <div className="flex min-h-6 items-center justify-between gap-2">
         <label htmlFor={id} className="block text-xs font-medium text-zinc-400">
-          {label}
+          {t(label)}
         </label>
         {action}
       </div>
       {children}
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-xs text-red-400">{t(error)}</p>}
     </div>
   );
 }
 
 // Number input prefixed with a dollar sign
 function DollarInput({ className = "", ...props }) {
+  useLanguage();
   return (
     <div className="relative">
       <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
@@ -182,15 +186,14 @@ function DollarInput({ className = "", ...props }) {
 
 // Small "Manage" gear button used in section headers
 function ManageBtn({ onClick }) {
+  useLanguage();
   return (
     <button
       type="button"
       onClick={onClick}
       className="flex items-center gap-1 text-[10px] text-zinc-600 hover:text-zinc-400"
     >
-      <Settings2 className="size-3" />
-      Manage
-    </button>
+      <Settings2 className="size-3" />{t("Manage")}</button>
   );
 }
 
@@ -207,6 +210,7 @@ export default function TradePanel({
   journalId,
   defaultUnit = "R",
 }) {
+  useLanguage();
   const isEdit = mode === "edit";
   const auth = useAuth();
   const timezone = auth?.user?.timezone || getUserTimezone();
@@ -460,12 +464,12 @@ export default function TradePanel({
                 {isEdit
                   ? ((trade?.asset && typeof trade.asset === "object"
                       ? trade.asset.symbol
-                      : trade?.asset) ?? "Edit Trade")
-                  : "New Trade"}
+                      : trade?.asset) ?? t("Edit Trade"))
+                  : t("New Trade")}
               </SheetTitle>
             </div>
             <SheetDescription className="sr-only">
-              {isEdit ? "Edit trade details" : "Log a new trade"}
+              {isEdit ? t("Edit trade details") : t("Log a new trade")}
             </SheetDescription>
           </SheetHeader>
 
@@ -482,18 +486,14 @@ export default function TradePanel({
                   role="alert"
                   className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-zinc-800 p-3 text-xs text-zinc-400"
                 >
-                  <span>Custom fields could not be loaded.</span>
-                  <Button type="button" variant="outline" size="sm" onClick={customFields.refetch}>
-                    Retry
-                  </Button>
+                  <span>{t("Custom fields could not be loaded.")}</span>
+                  <Button type="button" variant="outline" size="sm" onClick={customFields.refetch}>{t("Retry")}</Button>
                 </div>
               )}
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
                 <div>
-                  <p className="text-xs font-medium text-zinc-300">Custom fields</p>
-                  <p className="mt-0.5 text-[11px] text-zinc-600">
-                    Add a field to any section of this trade form.
-                  </p>
+                  <p className="text-xs font-medium text-zinc-300">{t("Custom fields")}</p>
+                  <p className="mt-0.5 text-[11px] text-zinc-600">{t("Add a field to any section of this trade form.")}</p>
                 </div>
                 <AddCustomFieldButton
                   onCreate={customFields.create}
@@ -501,20 +501,16 @@ export default function TradePanel({
                 />
               </div>
               {capital > 0 && (
-                <p className="mb-4 text-[11px] text-zinc-500">
-                  Conversions use {isEdit ? "this trade’s saved" : "the journal’s current"} capital
-                  basis: ${capital.toLocaleString(undefined, { maximumFractionDigits: 2 })}.
+                <p className="mb-4 text-[11px] text-zinc-500">{t("Conversions use") + " "}{isEdit ? "this trade’s saved" : "the journal’s current"}{" " + t("capital basis: $")}{capital.toLocaleString(getLanguage(), { maximumFractionDigits: 2 })}.
                 </p>
               )}
               <div className="space-y-7">
                 {/* ── Execution ── */}
                 <section>
-                  <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">
-                    Execution
-                  </h3>
+                  <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">{t("Execution")}</h3>
                   <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-x-4 gap-y-4">
                     <F
-                      label="Asset *"
+                      label={t("Asset *")}
                       error={errors.asset?.message}
                       span2
                       action={<ManageBtn onClick={() => setManageAssetsOpen(true)} />}
@@ -533,7 +529,7 @@ export default function TradePanel({
                       />
                     </F>
 
-                    <F label="Side *" error={errors.side?.message}>
+                    <F label={t("Side *")} error={errors.side?.message}>
                       <div className="flex gap-2">
                         {["BUY", "SELL"].map((s) => {
                           const active = watchedSide === s;
@@ -560,7 +556,7 @@ export default function TradePanel({
                     </F>
 
                     <F
-                      label="Entry date/time *"
+                      label={t("Entry date/time *")}
                       id="trade-entry_datetime"
                       error={errors.entry_datetime?.message}
                     >
@@ -570,7 +566,7 @@ export default function TradePanel({
                         render={({ field }) => (
                           <DateTimePicker
                             id="trade-entry_datetime"
-                            label="Entry date/time"
+                            label={t("Entry date/time")}
                             value={field.value}
                             onChange={field.onChange}
                             onBlur={field.onBlur}
@@ -582,7 +578,7 @@ export default function TradePanel({
                     </F>
 
                     <F
-                      label="Exit date/time"
+                      label={t("Exit date/time")}
                       id="trade-exit_datetime"
                       error={errors.exit_datetime?.message}
                     >
@@ -592,7 +588,7 @@ export default function TradePanel({
                         render={({ field }) => (
                           <DateTimePicker
                             id="trade-exit_datetime"
-                            label="Exit date/time"
+                            label={t("Exit date/time")}
                             value={field.value}
                             onChange={field.onChange}
                             onBlur={field.onBlur}
@@ -604,12 +600,12 @@ export default function TradePanel({
                     </F>
 
                     <F
-                      label="Risk"
+                      label={t("Risk")}
                       id="trade-risk"
                       error={errors.risk_percent?.message}
                       action={
                         <FieldModeToggle
-                          label="Risk unit"
+                          label={t("Risk unit")}
                           options={[
                             { value: "PCT", label: "%" },
                             {
@@ -650,17 +646,15 @@ export default function TradePanel({
 
                 {/* ── Performance ── */}
                 <section>
-                  <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">
-                    Performance
-                  </h3>
+                  <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">{t("Performance")}</h3>
                   <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-x-4 gap-y-4">
                     <F
-                      label="PnL"
+                      label={t("PnL")}
                       error={errors.pnl_r?.message}
                       span2
                       action={
                         <FieldModeToggle
-                          label="PnL unit"
+                          label={t("PnL unit")}
                           options={UNIT_OPTIONS.map((option) => ({
                             ...option,
                             disabled:
@@ -705,7 +699,7 @@ export default function TradePanel({
                       />
                     </F>
 
-                    <F label="Status" span2>
+                    <F label={t("Status")} span2>
                       <div className="flex flex-wrap gap-1.5">
                         {[
                           { value: null, label: "Auto" },
@@ -732,19 +726,17 @@ export default function TradePanel({
                                   : "border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-400"
                               }`}
                             >
-                              {label}
+                              {t(label)}
                             </button>
                           );
                         })}
                       </div>
                       {watchedStatus === null && (
-                        <p className="mt-1 text-[10px] text-zinc-600">
-                          Derived automatically from PnL value
-                        </p>
+                        <p className="mt-1 text-[10px] text-zinc-600">{t("Derived automatically from PnL value")}</p>
                       )}
                     </F>
 
-                    <F label="Commission" error={errors.commission?.message}>
+                    <F label={t("Commission")} error={errors.commission?.message}>
                       <DollarInput placeholder="0.00" {...register("commission")} />
                     </F>
 
@@ -766,36 +758,34 @@ export default function TradePanel({
 
                 {/* ── Setup ── */}
                 <section>
-                  <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">
-                    Setup
-                  </h3>
+                  <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">{t("Setup")}</h3>
                   <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-x-4 gap-y-4">
-                    <F label="Reference TF" id="trade-reference_timeframe">
+                    <F label={t("Reference TF")} id="trade-reference_timeframe">
                       <Controller
                         name="reference_timeframe"
                         control={control}
                         render={({ field }) => (
-                          <SelectField
+                          <SelectField translateOptions
                             id="trade-reference_timeframe"
-                            label="Reference TF"
+                            label={t("Reference TF")}
                             value={field.value}
                             onValueChange={field.onChange}
                             onBlur={field.onBlur}
                             ref={field.ref}
                             options={TF_OPTIONS}
-                            placeholder="Select timeframe"
+                            placeholder={t("Select timeframe")}
                           />
                         )}
                       />
                     </F>
 
                     <F
-                      label="Trade score"
+                      label={t("Trade score")}
                       id="trade-trade_score"
                       error={errors.trade_score?.message}
                       action={
                         <FieldModeToggle
-                          label="Quality rating style"
+                          label={t("Quality rating style")}
                           options={[
                             {
                               value: "score",
@@ -830,84 +820,84 @@ export default function TradePanel({
                       />
                     </F>
 
-                    <F label="Opportunity TF" id="trade-opportunity_timeframe">
+                    <F label={t("Opportunity TF")} id="trade-opportunity_timeframe">
                       <Controller
                         name="opportunity_timeframe"
                         control={control}
                         render={({ field }) => (
-                          <SelectField
+                          <SelectField translateOptions
                             id="trade-opportunity_timeframe"
-                            label="Opportunity TF"
+                            label={t("Opportunity TF")}
                             value={field.value}
                             onValueChange={field.onChange}
                             onBlur={field.onBlur}
                             ref={field.ref}
                             options={TF_OPTIONS}
-                            placeholder="Select timeframe"
+                            placeholder={t("Select timeframe")}
                           />
                         )}
                       />
                     </F>
 
-                    <F label="Entry TF" id="trade-entry_timeframe">
+                    <F label={t("Entry TF")} id="trade-entry_timeframe">
                       <Controller
                         name="entry_timeframe"
                         control={control}
                         render={({ field }) => (
-                          <SelectField
+                          <SelectField translateOptions
                             id="trade-entry_timeframe"
-                            label="Entry TF"
+                            label={t("Entry TF")}
                             value={field.value}
                             onValueChange={field.onChange}
                             onBlur={field.onBlur}
                             ref={field.ref}
                             options={TF_OPTIONS}
-                            placeholder="Select timeframe"
+                            placeholder={t("Select timeframe")}
                           />
                         )}
                       />
                     </F>
 
-                    <F label="Trend" id="trade-trend_direction">
+                    <F label={t("Trend")} id="trade-trend_direction">
                       <Controller
                         name="trend_direction"
                         control={control}
                         render={({ field }) => (
-                          <SelectField
+                          <SelectField translateOptions
                             id="trade-trend_direction"
-                            label="Trend"
+                            label={t("Trend")}
                             value={field.value}
                             onValueChange={field.onChange}
                             onBlur={field.onBlur}
                             ref={field.ref}
                             options={TREND_OPTIONS}
-                            placeholder="Select trend"
+                            placeholder={t("Select trend")}
                           />
                         )}
                       />
                     </F>
 
-                    <F label="Session" id="trade-session">
+                    <F label={t("Session")} id="trade-session">
                       <Controller
                         name="session"
                         control={control}
                         render={({ field }) => (
-                          <SelectField
+                          <SelectField translateOptions
                             id="trade-session"
-                            label="Session"
+                            label={t("Session")}
                             value={field.value}
                             onValueChange={field.onChange}
                             onBlur={field.onBlur}
                             ref={field.ref}
                             options={SESSION_OPTIONS}
-                            placeholder="Select session"
+                            placeholder={t("Select session")}
                           />
                         )}
                       />
                     </F>
 
                     <F
-                      label="Setup"
+                      label={t("Setup")}
                       span2
                       action={<ManageBtn onClick={() => setManageSetupsOpen(true)} />}
                     >
@@ -920,7 +910,7 @@ export default function TradePanel({
                             onChange={field.onChange}
                             options={catalog.setups}
                             onCreateOption={catalog.addSetup}
-                            placeholder="Select or type a setup…"
+                            placeholder={t("Select or type a setup…")}
                             createLabel={(v) => `Add "${v}" to setups`}
                           />
                         )}
@@ -941,12 +931,10 @@ export default function TradePanel({
 
                 {/* ── Psychology ── */}
                 <section>
-                  <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">
-                    Psychology
-                  </h3>
+                  <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">{t("Psychology")}</h3>
                   <div className="space-y-3">
                     <F
-                      label="Emotion *"
+                      label={t("Emotion *")}
                       error={errors.emotions?.message}
                       span2
                       action={<ManageBtn onClick={() => setManageEmotionsOpen(true)} />}
@@ -956,12 +944,12 @@ export default function TradePanel({
                         onChange={(v) => setValue("emotions", v, { shouldValidate: true })}
                         options={catalog.emotionTags}
                         onCreateTag={catalog.addEmotionTag}
-                        placeholder="Select emotions…"
+                        placeholder={t("Select emotions…")}
                       />
                     </F>
 
                     <F
-                      label="Mistake"
+                      label={t("Mistake")}
                       span2
                       action={<ManageBtn onClick={() => setManageMistakesOpen(true)} />}
                     >
@@ -970,7 +958,7 @@ export default function TradePanel({
                         onChange={(v) => setValue("mistakes", v)}
                         options={catalog.mistakeTags}
                         onCreateTag={catalog.addMistakeTag}
-                        placeholder="Select mistakes…"
+                        placeholder={t("Select mistakes…")}
                         emptyText="No errors"
                       />
                     </F>
@@ -989,12 +977,10 @@ export default function TradePanel({
 
                 {/* ── Notes ── */}
                 <section>
-                  <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">
-                    Notes
-                  </h3>
+                  <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">{t("Notes")}</h3>
                   <textarea
                     rows={3}
-                    placeholder="General trade notes…"
+                    placeholder={t("General trade notes…")}
                     className="w-full resize-none rounded-md border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-zinc-400/40"
                     {...register("notes")}
                   />
@@ -1012,9 +998,7 @@ export default function TradePanel({
 
                 {/* ── Trade Notes ── */}
                 <section>
-                  <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">
-                    Trade Notes
-                  </h3>
+                  <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">{t("Trade Notes")}</h3>
                   <TradeNotesEditor
                     sections={notesSections}
                     onChange={setNotesSections}
@@ -1044,21 +1028,17 @@ export default function TradePanel({
                 className="text-red-400 hover:bg-red-500/10 hover:text-red-300"
                 onClick={() => setDeleteOpen(true)}
               >
-                <Trash2 className="size-3.5" />
-                Delete
-              </Button>
+                <Trash2 className="size-3.5" />{t("Delete")}</Button>
             )}
             <div className="ml-auto flex gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={onClose}>
-                Cancel
-              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={onClose}>{t("Cancel")}</Button>
               <Button
                 type="submit"
                 form="trade-form"
                 size="sm"
                 disabled={isSubmitting || catalog.loading}
               >
-                {isSubmitting ? "Saving…" : "Save Trade"}
+                {isSubmitting ? t("Saving…") : t("Save Trade")}
               </Button>
             </div>
           </SheetFooter>
@@ -1069,17 +1049,13 @@ export default function TradePanel({
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent className="border-zinc-800 bg-zinc-950 sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete trade?</DialogTitle>
-            <DialogDescription>
-              This trade will be permanently removed. This action cannot be undone.
-            </DialogDescription>
+            <DialogTitle>{t("Delete trade?")}</DialogTitle>
+            <DialogDescription>{t("This trade will be permanently removed. This action cannot be undone.")}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>{t("Cancel")}</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? "Deleting…" : "Delete"}
+              {deleting ? t("Deleting…") : t("Delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1089,7 +1065,7 @@ export default function TradePanel({
       <TagManager
         open={manageAssetsOpen}
         onClose={() => setManageAssetsOpen(false)}
-        title="Manage Assets"
+        title={t("Manage Assets")}
         tags={catalog.assets}
         onAdd={catalog.addAsset}
         onRemove={catalog.removeAsset}
@@ -1098,7 +1074,7 @@ export default function TradePanel({
       <TagManager
         open={manageEmotionsOpen}
         onClose={() => setManageEmotionsOpen(false)}
-        title="Manage Emotion Tags"
+        title={t("Manage Emotion Tags")}
         tags={catalog.emotionTags}
         onAdd={catalog.addEmotionTag}
         onRemove={catalog.removeEmotionTag}
@@ -1107,7 +1083,7 @@ export default function TradePanel({
       <TagManager
         open={manageMistakesOpen}
         onClose={() => setManageMistakesOpen(false)}
-        title="Manage Mistake Tags"
+        title={t("Manage Mistake Tags")}
         tags={catalog.mistakeTags}
         onAdd={catalog.addMistakeTag}
         onRemove={catalog.removeMistakeTag}
@@ -1116,7 +1092,7 @@ export default function TradePanel({
       <TagManager
         open={manageSetupsOpen}
         onClose={() => setManageSetupsOpen(false)}
-        title="Manage Setups"
+        title={t("Manage Setups")}
         tags={catalog.setups}
         onAdd={catalog.addSetup}
         onRemove={catalog.removeSetup}

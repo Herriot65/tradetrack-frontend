@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useState } from "react";
 import { ChevronDown, ChevronUp, FileText } from "lucide-react";
 
@@ -20,6 +22,7 @@ const SIDE = {
 // ─── Sub-pieces ───────────────────────────────────────────────────────────────
 
 function Badge({ children, className = "" }) {
+  useLanguage();
   return (
     <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ${className}`}>
       {children}
@@ -28,10 +31,11 @@ function Badge({ children, className = "" }) {
 }
 
 function DetailRow({ label, value }) {
+  useLanguage();
   if (!value) return null;
   return (
     <div className="flex items-baseline gap-1.5">
-      <span className="text-[10px] uppercase tracking-wider text-zinc-600 w-20 shrink-0">{label}</span>
+      <span className="text-[10px] uppercase tracking-wider text-zinc-600 w-20 shrink-0">{t(label)}</span>
       <span className="text-xs text-zinc-300">{value}</span>
     </div>
   );
@@ -40,12 +44,13 @@ function DetailRow({ label, value }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function TradeJournalEntry({ trade }) {
+  useLanguage();
   const [expanded, setExpanded] = useState(false);
   const s = STATUS[trade.status] ?? STATUS.BE;
   const isOpen = trade.status === "OPEN";
 
   const rDisplay = isOpen
-    ? <span className="text-amber-400 font-semibold text-sm">In progress</span>
+    ? <span className="text-amber-400 font-semibold text-sm">{t("In progress")}</span>
     : (
       <span className={`text-base font-bold tabular-nums ${parseFloat(trade.pnl_r) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
         {parseFloat(trade.pnl_r) > 0 ? "+" : ""}{trade.pnl_r}R
@@ -95,23 +100,23 @@ export default function TradeJournalEntry({ trade }) {
         <div className="px-4 pb-4 pt-1 border-t border-zinc-800/40 space-y-3">
           {/* Key fields grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-1.5 mt-2">
-            <DetailRow label="Entry"      value={trade.entry_datetime ? formatDateTime(trade.entry_datetime) : null} />
-            <DetailRow label="Exit"       value={trade.exit_datetime  ? formatDateTime(trade.exit_datetime)  : "—"}  />
-            <DetailRow label="Risk"       value={trade.risk_percent ? `${trade.risk_percent}%` : null} />
-            <DetailRow label="Trend"      value={trade.trend_direction} />
-            <DetailRow label="Ref. TF" value={trade.reference_timeframe} />
-            <DetailRow label="Trade score" value={trade.trade_score != null ? `${trade.trade_score} / 10` : null} />
-            <DetailRow label="Opp. TF"   value={trade.opportunity_timeframe} />
-            <DetailRow label="Entry TF"  value={trade.entry_timeframe} />
-            <DetailRow label="Session"   value={trade.session} />
-            <DetailRow label="Emotion"   value={trade.emotion} />
-            <DetailRow label="Status"    value={trade.status} />
+            <DetailRow label={t("Entry")}      value={trade.entry_datetime ? formatDateTime(trade.entry_datetime) : null} />
+            <DetailRow label={t("Exit")}       value={trade.exit_datetime  ? formatDateTime(trade.exit_datetime)  : "—"}  />
+            <DetailRow label={t("Risk")}       value={trade.risk_percent ? `${trade.risk_percent}%` : null} />
+            <DetailRow label={t("Trend")}      value={trade.trend_direction} />
+            <DetailRow label={t("Ref. TF")} value={trade.reference_timeframe} />
+            <DetailRow label={t("Trade score")} value={trade.trade_score != null ? `${trade.trade_score} / 10` : null} />
+            <DetailRow label={t("Opp. TF")}   value={trade.opportunity_timeframe} />
+            <DetailRow label={t("Entry TF")}  value={trade.entry_timeframe} />
+            <DetailRow label={t("Session")}   value={trade.session} />
+            <DetailRow label={t("Emotion")}   value={trade.emotion} />
+            <DetailRow label={t("Status")}    value={trade.status} />
           </div>
 
           {/* Notes */}
           {trade.notes && (
             <div className="rounded-md border border-zinc-800/60 bg-zinc-900/40 px-3 py-2.5">
-              <p className="text-[10px] uppercase tracking-wider text-zinc-600 mb-1">Notes</p>
+              <p className="text-[10px] uppercase tracking-wider text-zinc-600 mb-1">{t("Notes")}</p>
               <p className="text-xs text-zinc-300 leading-relaxed">{trade.notes}</p>
             </div>
           )}

@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useState } from "react";
 import {
   CartesianGrid,
@@ -25,6 +27,7 @@ const PERIODS = [
 ];
 
 function ChartTooltip({ active, payload, label }) {
+  useLanguage();
   if (!active || !payload?.length) return null;
 
   return (
@@ -38,6 +41,7 @@ function ChartTooltip({ active, payload, label }) {
 }
 
 export default function EquityCurveChart() {
+  useLanguage();
   const [period, setPeriod] = useState("weekly");
   const { data, loading, error, refetch } = useEquityCurve(period);
 
@@ -65,8 +69,8 @@ export default function EquityCurveChart() {
   } else if (!data?.length) {
     content = (
       <EmptyState
-        title="No equity data yet"
-        description="Close some trades to see your cumulative R curve."
+        title={t("No equity data yet")}
+        description={t("Close some trades to see your cumulative R curve.")}
       />
     );
   } else {
@@ -110,8 +114,8 @@ export default function EquityCurveChart() {
 
   return (
     <ChartCard
-      title="Equity Curve"
-      description="Cumulative R over time"
+      title={t("Equity Curve")}
+      description={t("Cumulative R over time")}
       action={periodToggle}
     >
       {content}

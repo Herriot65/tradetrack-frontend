@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -25,15 +27,17 @@ import {
 import { cn } from "@/lib/utils";
 
 function DetailRow({ label, children }) {
+  useLanguage();
   return (
     <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-xs text-muted-foreground">{t(label)}</span>
       <span className="text-sm font-medium sm:text-right">{children}</span>
     </div>
   );
 }
 
 export default function TradeDetailDialog({ trade, open, onOpenChange }) {
+  useLanguage();
   if (!trade) return null;
 
   return (
@@ -61,19 +65,19 @@ export default function TradeDetailDialog({ trade, open, onOpenChange }) {
         </DialogHeader>
 
         <div className="space-y-3">
-          <DetailRow label="Setup">{trade.setup}</DetailRow>
-          <DetailRow label="Trend">
+          <DetailRow label={t("Setup")}>{trade.setup}</DetailRow>
+          <DetailRow label={t("Trend")}>
             {TREND_LABELS[trade.trend_direction] ?? trade.trend_direction}
           </DetailRow>
-          <DetailRow label="Opportunity TF">
+          <DetailRow label={t("Opportunity TF")}>
             {TIMEFRAME_LABELS[trade.opportunity_timeframe] ??
               trade.opportunity_timeframe}
           </DetailRow>
-          <DetailRow label="Entry TF">
+          <DetailRow label={t("Entry TF")}>
             {TIMEFRAME_LABELS[trade.entry_timeframe] ?? trade.entry_timeframe}
           </DetailRow>
-          <DetailRow label="Session">{trade.session}</DetailRow>
-          <DetailRow label="Risk %">{formatNumber(trade.risk_percent)}%</DetailRow>
+          <DetailRow label={t("Session")}>{trade.session}</DetailRow>
+          <DetailRow label={t("Risk %")}>{formatNumber(trade.risk_percent)}%</DetailRow>
           <DetailRow label="PnL (R)">
             <span className={cn(getPnlClass(trade.pnl_r))}>
               {formatR(trade.pnl_r)}
@@ -83,11 +87,11 @@ export default function TradeDetailDialog({ trade, open, onOpenChange }) {
           {(trade.emotion || trade.notes) && <Separator />}
 
           {trade.emotion && (
-            <DetailRow label="Emotion">{trade.emotion}</DetailRow>
+            <DetailRow label={t("Emotion")}>{trade.emotion}</DetailRow>
           )}
           {trade.notes && (
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground">Notes</span>
+              <span className="text-xs text-muted-foreground">{t("Notes")}</span>
               <p className="text-sm leading-relaxed text-foreground/90">
                 {trade.notes}
               </p>
@@ -96,10 +100,10 @@ export default function TradeDetailDialog({ trade, open, onOpenChange }) {
 
           <Separator />
 
-          <DetailRow label="Created">
+          <DetailRow label={t("Created")}>
             {formatDateTime(trade.created_at)}
           </DetailRow>
-          <DetailRow label="Updated">
+          <DetailRow label={t("Updated")}>
             {formatDateTime(trade.updated_at)}
           </DetailRow>
         </div>

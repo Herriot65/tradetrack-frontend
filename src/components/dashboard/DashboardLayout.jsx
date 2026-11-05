@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, LogOut, BarChart3 } from "lucide-react";
 
@@ -8,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 
 export default function DashboardLayout({ children }) {
+  useLanguage();
   const { user, logout } = useAuth();
   const { activeWorkspace } = useWorkspace();
   const location = useLocation();
@@ -32,9 +35,7 @@ export default function DashboardLayout({ children }) {
                 className={location.pathname === "/dashboard" ? "bg-zinc-800/60 text-zinc-100" : ""}
               >
                 <Link to="/dashboard">
-                  <LayoutDashboard className="size-4" />
-                  Dashboard
-                </Link>
+                  <LayoutDashboard className="size-4" />{t("Dashboard")}</Link>
               </Button>
 
               {activeWorkspace && (
@@ -49,9 +50,7 @@ export default function DashboardLayout({ children }) {
                   }
                 >
                   <Link to={`/workspace/${activeWorkspace.id}/hub`}>
-                    <BarChart3 className="size-4" />
-                    Performance Hub
-                  </Link>
+                    <BarChart3 className="size-4" />{t("Performance Hub")}</Link>
                 </Button>
               )}
             </nav>
@@ -67,7 +66,7 @@ export default function DashboardLayout({ children }) {
             )}
             <Button variant="outline" size="sm" onClick={logout}>
               <LogOut className="size-4" />
-              <span className="hidden sm:inline">Logout</span>
+              <span className="hidden sm:inline">{t("Logout")}</span>
             </Button>
           </div>
         </div>

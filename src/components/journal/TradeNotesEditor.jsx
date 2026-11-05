@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useRef, useState } from "react";
 import { ImagePlus, Plus, X } from "lucide-react";
 import ImageLightbox from "./ImageLightbox";
@@ -22,6 +24,7 @@ function NoteSection({
   onRemoveImage,
   onImageClick,
 }) {
+  useLanguage();
   const fileInputRef  = useRef(null);
 
   function readFiles(files) {
@@ -52,7 +55,7 @@ function NoteSection({
         {isEditingTitle ? (
           <input
             autoFocus
-            defaultValue={section.title}
+            defaultValue={DEFAULT_SECTIONS.some(item => item.id === section.id && item.title === section.title) ? t(section.title) : section.title}
             className="flex-1 bg-transparent text-[11px] font-semibold uppercase tracking-wider text-zinc-200 outline-none"
             onBlur={(e) => onFinishRename(e.target.value)}
             onKeyDown={(e) => {
@@ -63,11 +66,11 @@ function NoteSection({
         ) : (
           <button
             type="button"
-            title="Click to rename"
+            title={t("Click to rename")}
             onClick={onStartRename}
             className="flex-1 truncate text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500 transition-colors hover:text-zinc-300"
           >
-            {section.title}
+            {DEFAULT_SECTIONS.some(item => item.id === section.id && item.title === section.title) ? t(section.title) : section.title}
           </button>
         )}
         {canRemove && !isEditingTitle && (
@@ -123,9 +126,7 @@ function NoteSection({
           onClick={() => fileInputRef.current?.click()}
           className="flex items-center gap-1.5 text-xs text-zinc-600 transition-colors hover:text-zinc-400"
         >
-          <ImagePlus className="size-3.5" />
-          Upload image
-        </button>
+          <ImagePlus className="size-3.5" />{t("Upload image")}</button>
         <input
           ref={fileInputRef}
           type="file"
@@ -142,6 +143,7 @@ function NoteSection({
 // ─── Editor ───────────────────────────────────────────────────────────────────
 
 export default function TradeNotesEditor({ sections, onChange, onDeleteImage }) {
+  useLanguage();
   const [editingId,   setEditingId]   = useState(null);
   const [lightboxSrc, setLightboxSrc] = useState(null);
 
@@ -204,9 +206,7 @@ export default function TradeNotesEditor({ sections, onChange, onDeleteImage }) 
           onClick={addSection}
           className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-zinc-800 py-2 text-xs text-zinc-600 transition-colors hover:border-zinc-700 hover:text-zinc-400"
         >
-          <Plus className="size-3.5" />
-          Add section
-        </button>
+          <Plus className="size-3.5" />{t("Add section")}</button>
       </div>
 
       {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}

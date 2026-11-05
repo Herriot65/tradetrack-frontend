@@ -1,6 +1,9 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 export default function FeatureCard({ icon: Icon, title, description, className }) {
+  useLanguage();
   return (
     <article
       className={cn(
@@ -17,8 +20,8 @@ export default function FeatureCard({ icon: Icon, title, description, className 
           className="size-4 text-zinc-700 transition-colors group-hover:text-primary"
         />
       </div>
-      <h3 className="text-[18px] font-medium tracking-[-0.025em]">{title}</h3>
-      <p className="mt-3 max-w-lg text-[13px] leading-7 text-muted-foreground">{description}</p>
+      <h3 className="text-[18px] font-medium tracking-[-0.025em]">{t(title)}</h3>
+      <p className="mt-3 max-w-lg text-[13px] leading-7 text-muted-foreground">{t(description)}</p>
     </article>
   );
 }

@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { Skeleton } from "@/components/ui/skeleton";
 import InfoTip from "@/components/ui/InfoTip";
 
@@ -33,6 +35,7 @@ const COLORS = {
 };
 
 export default function KpiCard({ label, icon: Icon, value, loading, color = "zinc", info }) {
+  useLanguage();
   const c = COLORS[color] ?? COLORS.zinc;
 
   return (
@@ -53,7 +56,7 @@ export default function KpiCard({ label, icon: Icon, value, loading, color = "zi
             </div>
           )}
           <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 leading-tight">
-            {label}
+            {t(label)}
           </span>
         </div>
         <InfoTip text={info} />

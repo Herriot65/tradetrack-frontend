@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { formatRatio, formatValue } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +15,7 @@ const DEFINITIONS = {
   "Max drawdown": "Largest decline from an equity peak, including the initial zero baseline.",
 };
 function KpiCard({ label, value, detail, tone = "text-ink" }) {
+  useLanguage();
   return (
     <div className="analytics-card relative min-w-0 overflow-hidden rounded-xl border border-hairline bg-surface-card px-4 py-5 min-[900px]:px-5 min-[900px]:py-6">
       <span
@@ -24,7 +27,7 @@ function KpiCard({ label, value, detail, tone = "text-ink" }) {
         title={DEFINITIONS[label]}
         className="text-[12px] leading-4 text-ink-secondary"
       >
-        {label}
+        {t(label)}
       </p>
       <p
         className={cn(
@@ -34,36 +37,38 @@ function KpiCard({ label, value, detail, tone = "text-ink" }) {
       >
         {value}
       </p>
-      <p className="mt-2 text-[12px] leading-5 text-ink-muted">{detail}</p>
+      <p className="mt-2 text-[12px] leading-5 text-ink-muted">{t(detail)}</p>
     </div>
   );
 }
 
 function StripCell({ label, value, detail, tone = "text-ink" }) {
+  useLanguage();
   return (
     <div className="min-w-0 bg-surface-card px-4 py-3.5 min-[900px]:px-5">
       <p
         tabIndex={0}
         title={
           label.includes("streak")
-            ? "Break-even trades neither extend nor break a streak."
+            ? t("Break-even trades neither extend nor break a streak.")
             : label === "Avg win"
-              ? "Gross profit divided by winning trades."
-              : "Gross loss divided by losing trades."
+              ? t("Gross profit divided by winning trades.")
+              : t("Gross loss divided by losing trades.")
         }
         className="text-[12px] leading-4 text-ink-secondary"
       >
-        {label}
+        {t(label)}
       </p>
       <p className={cn("mt-1.5 text-[15px] font-medium leading-5 tabular-nums", tone)}>
         {value}{" "}
-        {detail && <span className="ml-1 text-[12px] font-normal text-ink-muted">{detail}</span>}
+        {detail && <span className="ml-1 text-[12px] font-normal text-ink-muted">{t(detail)}</span>}
       </p>
     </div>
   );
 }
 
 export default function KpiRow({ summary, unit }) {
+  useLanguage();
   const hero = [
     {
       label: "Net result",

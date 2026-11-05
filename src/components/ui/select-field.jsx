@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { Select as SelectPrimitive } from "radix-ui";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,9 +15,12 @@ export default function SelectField({
   clearLabel = "Not set",
   label,
   className,
+  translateOptions = false,
   ...triggerProps
 }) {
+  useLanguage();
   const selected = value == null ? "" : String(value);
+  const optionLabel = (label) => translateOptions ? t(label) : label;
   return (
     <SelectPrimitive.Root
       value={selected || EMPTY}
@@ -31,11 +36,11 @@ export default function SelectField({
       >
         <SelectPrimitive.Value>
           {selected ? (
-            (options.find(
+            optionLabel(options.find(
               (option) => String(typeof option === "object" ? option.value : option) === selected,
             )?.label ?? selected)
           ) : (
-            <span className="text-zinc-500">{placeholder}</span>
+            <span className="text-zinc-500">{t(placeholder)}</span>
           )}
         </SelectPrimitive.Value>
         <SelectPrimitive.Icon>
@@ -53,7 +58,7 @@ export default function SelectField({
             <ChevronUp className="size-4" />
           </SelectPrimitive.ScrollUpButton>
           <SelectPrimitive.Viewport>
-            {(allowClear ? [{ value: EMPTY, label: clearLabel }, ...options] : options).map(
+            {(allowClear ? [{ value: EMPTY, label: t(clearLabel) }, ...options] : options).map(
               (option) => {
                 const item = typeof option === "object" ? option : { value: option, label: option };
                 return (
@@ -66,7 +71,7 @@ export default function SelectField({
                     <SelectPrimitive.ItemIndicator className="absolute left-2">
                       <Check className="size-3.5" />
                     </SelectPrimitive.ItemIndicator>
-                    <SelectPrimitive.ItemText>{item.label}</SelectPrimitive.ItemText>
+                    <SelectPrimitive.ItemText>{optionLabel(item.label)}</SelectPrimitive.ItemText>
                   </SelectPrimitive.Item>
                 );
               },

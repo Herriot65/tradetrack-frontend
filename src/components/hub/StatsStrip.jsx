@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { TrendingUp, TrendingDown, Flame, AlertTriangle, Activity } from "lucide-react";
 
 import { formatR } from "@/lib/formatters";
@@ -11,12 +13,13 @@ const COLOR = {
 };
 
 function StatCell({ icon: Icon, label, value, color = "zinc", loading, info }) {
+  useLanguage();
   return (
     <div className="flex flex-col gap-1.5 px-4 py-3">
       <div className="flex items-center gap-1.5">
         {Icon && <Icon className="size-3 shrink-0 text-zinc-600" />}
         <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">
-          {label}
+          {t(label)}
         </span>
         <InfoTip text={info} />
       </div>
@@ -32,6 +35,7 @@ function StatCell({ icon: Icon, label, value, color = "zinc", loading, info }) {
 }
 
 export default function StatsStrip({ summary, loading }) {
+  useLanguage();
   const s = summary;
 
   const expectancy           = s?.expectancy           ?? null;

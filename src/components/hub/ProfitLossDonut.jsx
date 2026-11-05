@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { Cell, Label, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 import InfoTip from "@/components/ui/InfoTip";
@@ -6,6 +8,7 @@ const PROFIT_COLOR = "var(--gain)";
 const LOSS_COLOR   = "var(--loss)";
 
 function DonutTooltip({ active, payload }) {
+  useLanguage();
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs shadow-xl">
@@ -16,6 +19,7 @@ function DonutTooltip({ active, payload }) {
 }
 
 export default function ProfitLossDonut({ grossProfit = 0, grossLoss = 0, totalR = 0 }) {
+  useLanguage();
   const hasData = grossProfit > 0 || grossLoss > 0;
 
   const data = [
@@ -29,7 +33,7 @@ export default function ProfitLossDonut({ grossProfit = 0, grossLoss = 0, totalR
   return (
     <div className="flex flex-col items-center gap-1">
       <div className="flex items-center gap-1.5">
-        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Profit / Loss</p>
+        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">{t("Profit / Loss")}</p>
         <InfoTip text="Gross profit R vs gross loss R split. The centre shows your net R. Helps visualise if wins outweigh losses in magnitude." />
       </div>
       <ResponsiveContainer width="100%" height={140}>
@@ -59,9 +63,7 @@ export default function ProfitLossDonut({ grossProfit = 0, grossLoss = 0, totalR
                     <text x={cx} y={cy - 5} textAnchor="middle" fill={totalColor} fontSize={15} fontWeight={600}>
                       {sign}{totalR}R
                     </text>
-                    <text x={cx} y={cy + 12} textAnchor="middle" fill="var(--text-tertiary)" fontSize={9}>
-                      NET R
-                    </text>
+                    <text x={cx} y={cy + 12} textAnchor="middle" fill="var(--text-tertiary)" fontSize={9}>{t("NET R")}</text>
                   </g>
                 );
               }}

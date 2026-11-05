@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { CalendarDays } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,12 +11,13 @@ const MONTHS = [
 ];
 
 export default function MonthlySection({ selectedMonth, onMonthSelect }) {
+  useLanguage();
   return (
     <Card className="border-zinc-800/60 bg-zinc-900/40">
       <CardHeader className="flex flex-row items-center justify-between px-6 pb-4 pt-5">
         <div className="flex items-center gap-2">
           <CalendarDays className="size-4 text-zinc-600" />
-          <CardTitle className="text-sm font-medium">Monthly Performance</CardTitle>
+          <CardTitle className="text-sm font-medium">{t("Monthly Performance")}</CardTitle>
         </div>
         <span className="text-xs text-zinc-700">Heatmap coloring — Phase 2</span>
       </CardHeader>

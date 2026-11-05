@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useRef, useState } from "react";
 import { CheckCircle, Upload, X } from "lucide-react";
 
@@ -21,6 +23,7 @@ function validateFile(file, journal) {
 }
 
 export function MT5ImportDialog({ open, onClose, journal, onSuccess }) {
+  useLanguage();
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState(null);
@@ -87,19 +90,13 @@ export function MT5ImportDialog({ open, onClose, journal, onSuccess }) {
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent className="border-zinc-800 bg-zinc-950 sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Import MT5 Report</DialogTitle>
-          <DialogDescription>
-            Upload an MT5 HTML account statement to import trades into this
-            journal.
-          </DialogDescription>
+          <DialogTitle>{t("Import MT5 Report")}</DialogTitle>
+          <DialogDescription>{t("Upload an MT5 HTML account statement to import trades into this journal.")}</DialogDescription>
         </DialogHeader>
 
         {/* Starting-capital guard */}
         {capitalGuard && (
-          <div className="rounded-lg bg-amber-500/10 px-4 py-3 text-sm text-amber-400 ring-1 ring-amber-500/20">
-            This journal has no starting capital set. Update the journal
-            settings before importing.
-          </div>
+          <div className="rounded-lg bg-amber-500/10 px-4 py-3 text-sm text-amber-400 ring-1 ring-amber-500/20">{t("This journal has no starting capital set. Update the journal settings before importing.")}</div>
         )}
 
         {/* Success summary */}
@@ -110,22 +107,22 @@ export function MT5ImportDialog({ open, onClose, journal, onSuccess }) {
               <span className="text-sm font-medium">
                 {result.trades_created === 0
                   ? `No new trades — all ${result.trades_skipped} trades were already in your journal.`
-                  : "Import complete"}
+                  : t("Import complete")}
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 rounded-lg bg-zinc-900 p-3 text-sm">
-              <span className="text-zinc-500">Trades created</span>
+              <span className="text-zinc-500">{t("Trades created")}</span>
               <span className="font-medium text-zinc-200">
                 {result.trades_created}
               </span>
-              <span className="text-zinc-500">Duplicates skipped</span>
+              <span className="text-zinc-500">{t("Duplicates skipped")}</span>
               <span className="font-medium text-zinc-200">
                 {result.trades_skipped}
               </span>
               {result.trades_failed > 0 && (
                 <>
-                  <span className="text-zinc-500">Failed rows</span>
+                  <span className="text-zinc-500">{t("Failed rows")}</span>
                   <span className="font-medium text-amber-400">
                     {result.trades_failed}
                   </span>
@@ -135,13 +132,10 @@ export function MT5ImportDialog({ open, onClose, journal, onSuccess }) {
 
             {result.trades_failed > 0 && result.failures?.length > 0 && (
               <div className="rounded-lg bg-amber-500/10 px-3 py-2 ring-1 ring-amber-500/20">
-                <p className="mb-1.5 text-xs font-medium text-amber-400">
-                  Partial failures
-                </p>
+                <p className="mb-1.5 text-xs font-medium text-amber-400">{t("Partial failures")}</p>
                 <ul className="space-y-0.5">
                   {result.failures.map((f, i) => (
-                    <li key={i} className="text-xs text-zinc-400">
-                      Row {f.external_id}: {f.error}
+                    <li key={i} className="text-xs text-zinc-400">{t("Row") + " "}{f.external_id}: {f.error}
                     </li>
                   ))}
                 </ul>
@@ -178,15 +172,14 @@ export function MT5ImportDialog({ open, onClose, journal, onSuccess }) {
                     type="button"
                     onClick={clearFile}
                     className="text-zinc-500 hover:text-zinc-300"
-                    aria-label="Remove file"
+                    aria-label={t("Remove file")}
                   >
                     <X className="size-3.5" />
                   </button>
                 </div>
               ) : (
-                <p className="text-sm text-zinc-500">
-                  Click to select an{" "}
-                  <span className="text-zinc-300">.html</span> or{" "}
+                <p className="text-sm text-zinc-500">{t("Click to select an")}{" "}
+                  <span className="text-zinc-300">.html</span>{" " + t("or")}{" "}
                   <span className="text-zinc-300">.htm</span> file
                 </p>
               )}
@@ -198,23 +191,19 @@ export function MT5ImportDialog({ open, onClose, journal, onSuccess }) {
 
         <DialogFooter>
           {result ? (
-            <Button variant="outline" onClick={handleClose}>
-              Close
-            </Button>
+            <Button variant="outline" onClick={handleClose}>{t("Close")}</Button>
           ) : (
             <>
               <Button
                 variant="outline"
                 onClick={handleClose}
                 disabled={uploading}
-              >
-                Cancel
-              </Button>
+              >{t("Cancel")}</Button>
               <Button
                 onClick={handleImport}
                 disabled={!file || uploading || capitalGuard}
               >
-                {uploading ? "Importing…" : "Import"}
+                {uploading ? t("Importing…") : t("Import")}
               </Button>
             </>
           )}

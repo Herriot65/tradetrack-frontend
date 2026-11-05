@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const MONTH_LABELS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
@@ -17,6 +19,7 @@ function cellStyle(r) {
 }
 
 function Cell({ year, month, r, isSelected, onClick }) {
+  useLanguage();
   const hasData = r !== null && r !== undefined;
   const isActive = isSelected;
 
@@ -31,7 +34,7 @@ function Cell({ year, month, r, isSelected, onClick }) {
       {/* Tooltip */}
       <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-20 hidden group-hover:block">
         <div className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs shadow-xl whitespace-nowrap">
-          <span className="text-zinc-400">{MONTH_NAMES[month]} {year}</span>
+          <span className="text-zinc-400">{t(MONTH_NAMES[month])} {year}</span>
           {hasData && (
             <span className={`ml-1.5 font-semibold ${r > 0 ? "text-emerald-400" : r < 0 ? "text-red-400" : "text-zinc-400"}`}>
               {r > 0 ? "+" : ""}{r}R
@@ -46,6 +49,7 @@ function Cell({ year, month, r, isSelected, onClick }) {
 }
 
 export default function HeatmapGrid({ heatmap, loading, selectedYears = [], openMonth, onCellClick }) {
+  useLanguage();
   if (loading) {
     return (
       <div className="rounded-lg border border-zinc-800/60 bg-zinc-900/40 p-4">
@@ -65,9 +69,9 @@ export default function HeatmapGrid({ heatmap, loading, selectedYears = [], open
     return (
       <div className="rounded-lg border border-zinc-800/60 bg-zinc-900/40 overflow-hidden">
         <div className="px-4 py-3 border-b border-zinc-800/60">
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">Monthly Heatmap (R)</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">{t("Monthly Heatmap (R)")}</p>
         </div>
-        <p className="px-4 py-8 text-center text-xs text-zinc-700">No data for selected period.</p>
+        <p className="px-4 py-8 text-center text-xs text-zinc-700">{t("No data for selected period.")}</p>
       </div>
     );
   }
@@ -75,9 +79,7 @@ export default function HeatmapGrid({ heatmap, loading, selectedYears = [], open
   return (
     <div className="rounded-lg border border-zinc-800/60 bg-zinc-900/40 overflow-hidden">
       <div className="px-4 py-3 border-b border-zinc-800/60">
-        <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-          Monthly Heatmap (R)
-        </p>
+        <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">{t("Monthly Heatmap (R)")}</p>
       </div>
       <div className="p-3">
         {/* Month header */}
@@ -117,11 +119,11 @@ export default function HeatmapGrid({ heatmap, loading, selectedYears = [], open
 
         {/* Legend */}
         <div className="mt-3 flex items-center justify-end gap-1.5">
-          <span className="text-[9px] text-zinc-600">Loss</span>
+          <span className="text-[9px] text-zinc-600">{t("Loss")}</span>
           {["bg-red-500/80","bg-red-800/60","bg-zinc-700/50","bg-emerald-800/60","bg-emerald-500/80"].map((cls, i) => (
             <div key={i} className={`h-2.5 w-2.5 rounded-sm ${cls}`} />
           ))}
-          <span className="text-[9px] text-zinc-600">Profit</span>
+          <span className="text-[9px] text-zinc-600">{t("Profit")}</span>
         </div>
       </div>
     </div>

@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useState, useContext } from "react";
 import { JournalContext } from "@/journals/JournalContext";
 import { tradeAmount, riskDisplayAmount, formatValue } from "@/lib/analytics";
@@ -26,16 +28,18 @@ const SIDE_COLORS = {
 };
 
 function Field({ label, value, className = "" }) {
+  useLanguage();
   if (value == null || value === "") return null;
   return (
     <div className={`space-y-0.5 ${className}`}>
-      <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-600">{label}</p>
+      <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-600">{t(label)}</p>
       <p className="text-sm text-zinc-200">{value}</p>
     </div>
   );
 }
 
 function Badge({ children, colorClass }) {
+  useLanguage();
   return (
     <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold uppercase tracking-wide ring-1 ${colorClass}`}>
       {children}
@@ -49,6 +53,7 @@ function formatDatetime(iso) {
 }
 
 export default function TradeDetailPanel({ trade, open, onClose }) {
+  useLanguage();
   const context = useContext(JournalContext);
   const unit = context?.activeJournal?.display_unit || "R";
   const [lightboxSrc, setLightboxSrc] = useState(null);
@@ -83,54 +88,46 @@ export default function TradeDetailPanel({ trade, open, onClose }) {
 
             {/* Execution */}
             <section>
-              <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
-                Execution
-              </h3>
+              <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{t("Execution")}</h3>
               <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                <Field label="Entry" value={formatDatetime(trade.entry_datetime)} />
-                <Field label="Exit" value={trade.exit_datetime ? formatDatetime(trade.exit_datetime) : "Still open"} />
-                <Field label="Side" value={trade.side} />
-                <Field label="Risk" value={formatValue(riskDisplayAmount(trade,unit),unit,{signed:false})} />
+                <Field label={t("Entry")} value={formatDatetime(trade.entry_datetime)} />
+                <Field label={t("Exit")} value={trade.exit_datetime ? formatDatetime(trade.exit_datetime) : "Still open"} />
+                <Field label={t("Side")} value={trade.side} />
+                <Field label={t("Risk")} value={formatValue(riskDisplayAmount(trade,unit),unit,{signed:false})} />
               </div>
             </section>
 
             {/* Performance */}
             <section>
-              <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
-                Performance
-              </h3>
+              <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{t("Performance")}</h3>
               <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                <Field label="PnL" value={formatValue(tradeAmount(trade,unit),unit)} />
-                <Field label="Commission" value={trade.commission != null ? String(trade.commission) : null} />
+                <Field label={t("PnL")} value={formatValue(tradeAmount(trade,unit),unit)} />
+                <Field label={t("Commission")} value={trade.commission != null ? String(trade.commission) : null} />
                 <Field label="Swap" value={trade.swap != null ? String(trade.swap) : null} />
               </div>
             </section>
 
             {/* Setup */}
             <section>
-              <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
-                Setup
-              </h3>
+              <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{t("Setup")}</h3>
               <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                <Field label="Reference TF" value={trade.reference_timeframe} />
-                <Field label="Trade score" value={trade.trade_score != null ? `${trade.trade_score} / 10` : null} />
-                <Field label="Opportunity TF" value={trade.opportunity_timeframe} />
-                <Field label="Entry TF" value={trade.entry_timeframe} />
-                <Field label="Trend" value={trade.trend_direction} />
-                <Field label="Setup" value={typeof trade.setup === "object" ? trade.setup?.label : trade.setup} />
-                <Field label="Session" value={trade.session} />
+                <Field label={t("Reference TF")} value={trade.reference_timeframe} />
+                <Field label={t("Trade score")} value={trade.trade_score != null ? `${trade.trade_score} / 10` : null} />
+                <Field label={t("Opportunity TF")} value={trade.opportunity_timeframe} />
+                <Field label={t("Entry TF")} value={trade.entry_timeframe} />
+                <Field label={t("Trend")} value={trade.trend_direction} />
+                <Field label={t("Setup")} value={typeof trade.setup === "object" ? trade.setup?.label : trade.setup} />
+                <Field label={t("Session")} value={trade.session} />
               </div>
             </section>
 
             {/* Psychology — placeholder for Phase 2 editing */}
             {(trade.emotion || trade.mistake) && (
               <section>
-                <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
-                  Psychology
-                </h3>
+                <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{t("Psychology")}</h3>
                 <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                  <Field label="Emotion" value={trade.emotion} />
-                  <Field label="Mistake" value={trade.mistake} />
+                  <Field label={t("Emotion")} value={trade.emotion} />
+                  <Field label={t("Mistake")} value={trade.mistake} />
                 </div>
               </section>
             )}
@@ -138,9 +135,7 @@ export default function TradeDetailPanel({ trade, open, onClose }) {
             {/* Notes */}
             {trade.notes && (
               <section>
-                <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
-                  Notes
-                </h3>
+                <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{t("Notes")}</h3>
                 <p className="rounded-md border border-zinc-800/60 bg-zinc-900/40 px-3 py-2.5 text-sm leading-relaxed text-zinc-300">
                   {trade.notes}
                 </p>
@@ -150,15 +145,13 @@ export default function TradeDetailPanel({ trade, open, onClose }) {
             {/* Screenshots */}
             {trade.screenshots?.length > 0 && (
               <section>
-                <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
-                  Screenshots
-                </h3>
+                <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{t("Screenshots")}</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {trade.screenshots.map((s) => (
                     <img
                       key={s.id}
                       src={s.image_url}
-                      alt="Trade screenshot"
+                      alt={t("Trade screenshot")}
                       className="h-32 w-full cursor-zoom-in rounded-md border border-zinc-800 object-cover transition-opacity hover:opacity-80"
                       onClick={() => setLightboxSrc(s.image_url)}
                     />

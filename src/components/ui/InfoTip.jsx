@@ -1,8 +1,11 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useState } from "react";
 import { Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
 
 export default function InfoTip({ text }) {
+  useLanguage();
   const [open, setOpen] = useState(false);
   if (!text) return null;
 
@@ -25,7 +28,7 @@ export default function InfoTip({ text }) {
         </span>
       </TooltipTrigger>
       <TooltipContent onPointerDownOutside={() => setOpen(false)}>
-        {text}
+        {t(text)}
       </TooltipContent>
     </Tooltip>
   );

@@ -1,7 +1,10 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { Input } from "@/components/ui/input";
 import { tradeAmount, riskAmount } from "@/lib/analytics";
 
 export default function TradePnlInput({value,onChange,onBlur,risk,capital,unit="R",knownProfit=null}) {
+  useLanguage();
   const trade = {pnl_r:value,risk_percent:risk};
   const canConvert = riskAmount(trade,capital)!==null;
   const fixedProfit = !canConvert && knownProfit!==null;
@@ -15,6 +18,6 @@ export default function TradePnlInput({value,onChange,onBlur,risk,capital,unit="
   }
   return <div className="space-y-2">
     <Input aria-label={`PnL (${effectiveUnit})`} type="number" step="any" readOnly={fixedProfit} value={display===""?"":Number(Number(display).toFixed(6))} onChange={event=>change(event.target.value)} onBlur={onBlur} placeholder="e.g. 2.00" className="h-10 border-zinc-800 bg-zinc-900/60"/>
-    {!canConvert&&<p className="text-[11px] text-zinc-500">Set Risk % and journal starting capital to enter $ or %.</p>}
+    {!canConvert&&<p className="text-[11px] text-zinc-500">{t("Set Risk % and journal starting capital to enter $ or %.")}</p>}
   </div>;
 }
