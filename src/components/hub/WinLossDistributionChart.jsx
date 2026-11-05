@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import {
   Bar,
   BarChart,
@@ -17,16 +19,18 @@ const COLORS = {
 };
 
 function WLTooltip({ active, payload }) {
+  useLanguage();
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs shadow-xl">
       <p className="font-medium">{payload[0].payload.name}</p>
-      <p className="text-zinc-400">{payload[0].value} trades</p>
+      <p className="text-zinc-400">{payload[0].value}{" " + t("trades")}</p>
     </div>
   );
 }
 
 export default function WinLossDistributionChart({ data, height = 180 }) {
+  useLanguage();
   const { wins = 0, losses = 0, breakEven = 0 } = data ?? {};
   const total = wins + losses + breakEven;
 
@@ -41,16 +45,14 @@ export default function WinLossDistributionChart({ data, height = 180 }) {
   return (
     <Card className="border-zinc-800/60 bg-zinc-900/40">
       <CardHeader className="flex flex-row items-center justify-between px-5 pt-4 pb-3">
-        <CardTitle className="text-sm font-medium">Win / Loss</CardTitle>
+        <CardTitle className="text-sm font-medium">{t("Win / Loss")}</CardTitle>
         {total > 0 && (
-          <span className="text-xs font-semibold text-emerald-400">{winRate}% WR</span>
+          <span className="text-xs font-semibold text-emerald-400">{winRate}{t("% WR")}</span>
         )}
       </CardHeader>
       <CardContent className="px-5 pb-4">
         {total === 0 ? (
-          <div className="flex h-[180px] items-center justify-center text-xs text-zinc-700">
-            No closed trades
-          </div>
+          <div className="flex h-[180px] items-center justify-center text-xs text-zinc-700">{t("No closed trades")}</div>
         ) : (
           <ResponsiveContainer width="100%" height={height}>
             <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>

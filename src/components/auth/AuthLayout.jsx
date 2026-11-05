@@ -1,6 +1,10 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, BookOpen, BarChart3, ScanLine } from "lucide-react";
+import LanguageSelector from "@/components/layout/LanguageSelector";
 export default function AuthLayout({ children }) {
+  useLanguage();
   return (
     <div className="nx-auth">
       <aside className="nx-auth-story">
@@ -11,17 +15,11 @@ export default function AuthLayout({ children }) {
           </span>
         </Link>
         <div className="relative my-16 max-w-md">
-          <p className="nx-eyebrow mb-6">The journal behind your edge</p>
-          <h2 className="text-[clamp(36px,4vw,58px)] font-medium leading-[1.07] tracking-[-0.055em]">
-            Better decisions
-            <br />
-            start with a<br />
-            <span className="text-primary">clearer picture.</span>
+          <p className="nx-eyebrow mb-6">{t("The journal behind your edge")}</p>
+          <h2 className="text-[clamp(36px,4vw,58px)] font-medium leading-[1.07] tracking-[-0.055em]">{t("Better decisions")}<br />{t("start with a")}<br />
+            <span className="text-primary">{t("clearer picture.")}</span>
           </h2>
-          <p className="mt-6 max-w-sm text-sm leading-7 text-muted-foreground">
-            Bring your trades, your process, and your performance together. Understand what works.
-            Build on it.
-          </p>
+          <p className="mt-6 max-w-sm text-sm leading-7 text-muted-foreground">{t("Bring your trades, your process, and your performance together. Understand what works. Build on it.")}</p>
           <div className="mt-10 space-y-4">
             {[
               { icon: BookOpen, text: "A journal for every trading approach" },
@@ -32,20 +30,19 @@ export default function AuthLayout({ children }) {
                 <span className="flex size-8 items-center justify-center rounded-lg border border-border bg-card">
                   <Icon className="size-3.5 text-primary" />
                 </span>
-                {text}
+                {t(text)}
               </div>
             ))}
           </div>
         </div>
         <div className="flex items-center justify-between text-[11px] text-muted-foreground">
           <span>Nexora Analytics</span>
-          <Link to="/" className="flex items-center gap-1 hover:text-primary">
-            Explore the platform
-            <ArrowUpRight className="size-3" />
+          <Link to="/" className="flex items-center gap-1 hover:text-primary">{t("Explore the platform")}<ArrowUpRight className="size-3" />
           </Link>
         </div>
       </aside>
-      <main className="nx-auth-content">
+      <main className="nx-auth-content relative">
+        <div className="absolute right-4 top-4"><LanguageSelector /></div>
         <div className="w-full max-w-[400px]">
           <Link to="/" className="mb-10 flex items-center justify-center gap-2 md:hidden">
             <img src="/nexora.png" alt="" className="size-9 rounded-lg" />

@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import GoogleSignIn from "../auth/GoogleSignIn";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -16,6 +18,7 @@ import { FormErrorBanner } from "./FormErrorBanner";
 import { FieldError } from "./FieldError";
 
 export default function LoginForm({ sessionExpired = false }) {
+  useLanguage();
   const navigate = useNavigate();
   const { login } = useAuth();
   const [serverError, setServerError] = useState("");
@@ -48,18 +51,18 @@ export default function LoginForm({ sessionExpired = false }) {
         <div className="flex justify-center mb-2">
           <img src="/nexora.png" alt="Nexora" className="h-12 w-12 rounded-xl" />
         </div>
-        <CardTitle className="text-2xl font-bold tracking-tight">Welcome back</CardTitle>
-        <CardDescription>Sign in to your Nexora account</CardDescription>
+        <CardTitle className="text-2xl font-bold tracking-tight">{t("Welcome back")}</CardTitle>
+        <CardDescription>{t("Sign in to your Nexora account")}</CardDescription>
       </CardHeader>
 
       <CardContent>
-        {sessionExpired && <p role="status" className="mb-4 rounded-lg border border-border bg-secondary/50 p-3 text-sm text-muted-foreground">Your session has expired. Please sign in again to continue.</p>}
+        {sessionExpired && <p role="status" className="mb-4 rounded-lg border border-border bg-secondary/50 p-3 text-sm text-muted-foreground">{t("Your session has expired. Please sign in again to continue.")}</p>}
         <GoogleSignIn />
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <FormErrorBanner message={serverError} />
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("Email")}</Label>
             <Input
               id="email"
               type="email"
@@ -73,13 +76,11 @@ export default function LoginForm({ sessionExpired = false }) {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("Password")}</Label>
               <Link
                 to="/forgot-password"
                 className="text-xs text-muted-foreground transition-colors hover:text-primary"
-              >
-                Forgot password?
-              </Link>
+              >{t("Forgot password?")}</Link>
             </div>
             <PasswordInput
               id="password"
@@ -92,17 +93,14 @@ export default function LoginForm({ sessionExpired = false }) {
           </div>
 
           <Button className="w-full" size="lg" disabled={isSubmitting}>
-            {isSubmitting ? "Logging in..." : "Sign in"}
+            {isSubmitting ? t("Logging in...") : t("Sign in")}
           </Button>
 
-          <p className="text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
+          <p className="text-center text-sm text-muted-foreground">{t("Don't have an account?")}{" "}
             <Link
               to="/register"
               className="font-medium text-primary transition-colors hover:text-primary/80 hover:underline"
-            >
-              Create account
-            </Link>
+            >{t("Create account")}</Link>
           </p>
 
           <div className="pt-1">
@@ -122,9 +120,7 @@ export default function LoginForm({ sessionExpired = false }) {
                 strokeLinejoin="round"
               >
                 <path d="m15 18-6-6 6-6" />
-              </svg>
-              Back to home
-            </Link>
+              </svg>{t("Back to home")}</Link>
           </div>
         </form>
       </CardContent>

@@ -1,4 +1,6 @@
-﻿import { useState } from "react";
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
+import { useState } from "react";
 
 import { buildDonutSegments, formatPercent, formatRatio, formatValue } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
@@ -9,6 +11,7 @@ const RING_RADIUS = 50;
 const RING_STROKE = 11;
 
 function Donut({ values, colors, centerValue, centerLabel, labels, hovered, onHover }) {
+  useLanguage();
   const circumference = 2 * Math.PI * RING_RADIUS;
   const segments = buildDonutSegments(values);
 
@@ -66,6 +69,7 @@ function Donut({ values, colors, centerValue, centerLabel, labels, hovered, onHo
 }
 
 function LegendRow({ color, label, value, detail, hovered, onHover, index }) {
+  useLanguage();
   return (
     <div
       className={cn(
@@ -81,16 +85,17 @@ function LegendRow({ color, label, value, detail, hovered, onHover, index }) {
       onMouseLeave={() => onHover(null)}
     >
       <span className="size-2 rounded-[2px]" style={{ backgroundColor: color }} />
-      <span className="min-w-0 break-words text-ink-secondary">{label}</span>
+      <span className="min-w-0 break-words text-ink-secondary">{t(label)}</span>
       <span className="whitespace-nowrap font-medium text-right tabular-nums text-ink">
         {value}
       </span>
-      <span className="whitespace-nowrap text-right tabular-nums text-ink-muted">{detail}</span>
+      <span className="whitespace-nowrap text-right tabular-nums text-ink-muted">{t(detail)}</span>
     </div>
   );
 }
 
 function DonutCard({ title, children, footnote }) {
+  useLanguage();
   return (
     <AnalyticsCard className="analytics-outcome">
       <CardHeading title={title} />
@@ -107,6 +112,7 @@ function DonutCard({ title, children, footnote }) {
 }
 
 export default function DonutSection({ analytics }) {
+  useLanguage();
   const { summary, unit } = analytics;
   const [outcomeHover, setOutcomeHover] = useState(null);
   const [profitHover, setProfitHover] = useState(null);
@@ -121,7 +127,7 @@ export default function DonutSection({ analytics }) {
   return (
     <div className="analytics-outcomes-grid grid grid-cols-1 items-stretch gap-5">
       <DonutCard
-        title="Win / loss"
+        title={t("Win / loss")}
         footnote={
           summary.decidedCount > 0
             ? `${formatPercent(summary.decidedWinRate)} excluding break-even`
@@ -140,7 +146,7 @@ export default function DonutSection({ analytics }) {
         <div className="w-full min-w-0 space-y-1">
           <LegendRow
             color="var(--profit)"
-            label="Wins"
+            label={t("Wins")}
             value={summary.wins}
             detail={formatPercent((summary.wins / total) * 100)}
             hovered={outcomeHover}
@@ -149,7 +155,7 @@ export default function DonutSection({ analytics }) {
           />
           <LegendRow
             color="var(--loss)"
-            label="Losses"
+            label={t("Losses")}
             value={summary.losses}
             detail={formatPercent((summary.losses / total) * 100)}
             hovered={outcomeHover}
@@ -158,7 +164,7 @@ export default function DonutSection({ analytics }) {
           />
           <LegendRow
             color="var(--chart-neutral)"
-            label="Break-even"
+            label={t("Break-even")}
             value={summary.breakEven}
             detail={formatPercent((summary.breakEven / total) * 100)}
             hovered={outcomeHover}
@@ -168,7 +174,7 @@ export default function DonutSection({ analytics }) {
         </div>
       </DonutCard>
 
-      <DonutCard title="Profit / loss">
+      <DonutCard title={t("Profit / loss")}>
         <Donut
           values={[summary.grossProfit, Math.abs(summary.grossLoss)]}
           colors={["var(--profit)", "var(--loss)"]}
@@ -182,7 +188,7 @@ export default function DonutSection({ analytics }) {
           <div className="space-y-1">
             <LegendRow
               color="var(--profit)"
-              label="Gross profit"
+              label={t("Gross profit")}
               value={formatValue(summary.grossProfit, unit)}
               detail={formatPercent(
                 (summary.grossProfit / (summary.grossProfit + Math.abs(summary.grossLoss) || 1)) *
@@ -194,7 +200,7 @@ export default function DonutSection({ analytics }) {
             />
             <LegendRow
               color="var(--loss)"
-              label="Gross loss"
+              label={t("Gross loss")}
               value={formatValue(summary.grossLoss, unit)}
               detail={formatPercent(
                 (Math.abs(summary.grossLoss) /
@@ -207,7 +213,7 @@ export default function DonutSection({ analytics }) {
             />
           </div>
           <div className="mt-3 flex items-center justify-between gap-2 border-t border-hairline px-1.5 pt-3 text-[12px] leading-4">
-            <span className="text-ink-secondary">Net</span>
+            <span className="text-ink-secondary">{t("Net")}</span>
             <span
               className={cn(
                 "tabular-nums",

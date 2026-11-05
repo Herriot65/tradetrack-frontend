@@ -1,3 +1,5 @@
+import { getLanguage, translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
@@ -65,6 +67,7 @@ const BREAK_EVEN_LABEL = {
 // ─── Settings dialog ──────────────────────────────────────────────────────────
 
 function SettingsDialog({ open, onClose, journal }) {
+  useLanguage();
   const { updateJournal } = useJournal();
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
@@ -120,39 +123,39 @@ function SettingsDialog({ open, onClose, journal }) {
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="border-zinc-800 bg-zinc-950 sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Journal Settings</DialogTitle>
-          <DialogDescription className="sr-only">Edit journal configuration.</DialogDescription>
+          <DialogTitle>{t("Journal Settings")}</DialogTitle>
+          <DialogDescription className="sr-only">{t("Edit journal configuration.")}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-1">
           {/* Name */}
           <div className="space-y-1.5">
-            <label className={labelClass}>Name</label>
+            <label className={labelClass}>{t("Name")}</label>
             <input
               className={fieldClass}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Journal name"
+              placeholder={t("Journal name")}
             />
           </div>
 
           {/* Type */}
           <div className="space-y-1.5">
-            <label className={labelClass}>Type</label>
+            <label className={labelClass}>{t("Type")}</label>
             <select
               className={selectClass}
               value={journalType}
               onChange={(e) => setJournalType(e.target.value)}
             >
-              <option value="trading">Trading Journal</option>
-              <option value="backtest">Backtest Journal</option>
+              <option value="trading">{t("Trading Journal")}</option>
+              <option value="backtest">{t("Backtest Journal")}</option>
             </select>
           </div>
 
           {/* Currency + Starting Capital side by side */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className={labelClass}>Currency</label>
+              <label className={labelClass}>{t("Currency")}</label>
               <input
                 className={fieldClass}
                 value={currency}
@@ -162,7 +165,7 @@ function SettingsDialog({ open, onClose, journal }) {
               />
             </div>
             <div className="space-y-1.5">
-              <label className={labelClass}>Starting Capital</label>
+              <label className={labelClass}>{t("Starting Capital")}</label>
               <input
                 className={fieldClass}
                 type="number"
@@ -177,19 +180,18 @@ function SettingsDialog({ open, onClose, journal }) {
           {/* Break-Even Method + Threshold */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className={labelClass}>Break-Even Method</label>
+              <label className={labelClass}>{t("Break-Even Method")}</label>
               <select
                 className={selectClass}
                 value={breakEvenMethod}
                 onChange={(e) => setBreakEvenMethod(e.target.value)}
               >
-                <option value="ratio">Ratio Based</option>
-                <option value="profit">Profit Based</option>
+                <option value="ratio">{t("Ratio Based")}</option>
+                <option value="profit">{t("Profit Based")}</option>
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className={labelClass}>
-                BE Threshold {breakEvenMethod === "profit" ? `(${currency || "currency"})` : "(R)"}
+              <label className={labelClass}>{t("BE Threshold") + " "}{breakEvenMethod === "profit" ? `(${currency || "currency"})` : "(R)"}
               </label>
               <input
                 className={fieldClass}
@@ -206,11 +208,9 @@ function SettingsDialog({ open, onClose, journal }) {
         {saveError && <p className="text-sm text-destructive">{saveError}</p>}
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>
-            Cancel
-          </Button>
+          <Button variant="outline" onClick={onClose} disabled={saving}>{t("Cancel")}</Button>
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Saving…" : "Save"}
+            {saving ? t("Saving…") : t("Save")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -221,22 +221,21 @@ function SettingsDialog({ open, onClose, journal }) {
 // ─── Broker Connections dialog ────────────────────────────────────────────────
 
 function BrokerConnectionsDialog({ open, onClose }) {
+  useLanguage();
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="border-zinc-800 bg-zinc-950 sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Broker Connections</DialogTitle>
-          <DialogDescription className="sr-only">Connect your broker accounts.</DialogDescription>
+          <DialogTitle>{t("Broker Connections")}</DialogTitle>
+          <DialogDescription className="sr-only">{t("Connect your broker accounts.")}</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col items-center gap-3 py-6 text-center">
           <div className="flex size-12 items-center justify-center rounded-xl bg-zinc-900 ring-1 ring-zinc-800">
             <PlugZap className="size-5 text-zinc-600" />
           </div>
           <div className="space-y-1">
-            <p className="text-sm font-medium text-zinc-300">Broker synchronization</p>
-            <p className="max-w-xs text-xs text-zinc-600">
-              Automatic broker sync is coming soon. Trades will be imported directly from MT4/MT5.
-            </p>
+            <p className="text-sm font-medium text-zinc-300">{t("Broker synchronization")}</p>
+            <p className="max-w-xs text-xs text-zinc-600">{t("Automatic broker sync is coming soon. Trades will be imported directly from MT4/MT5.")}</p>
           </div>
         </div>
       </DialogContent>
@@ -247,6 +246,7 @@ function BrokerConnectionsDialog({ open, onClose }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Journal() {
+  useLanguage();
   const { journalId } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -338,24 +338,22 @@ export default function Journal() {
         <div className="nx-page-header">
           <div className="min-w-0">
             <div className="flex items-center gap-2.5">
-              <h1 className="nx-page-title truncate">{activeJournal?.name ?? "Journal"}</h1>
+              <h1 className="nx-page-title truncate">{activeJournal?.name ?? t("Journal")}</h1>
               {typeLabel && (
                 <span className="shrink-0 rounded-md border border-border bg-card px-2 py-1 text-[10px] font-medium text-muted-foreground">
-                  {typeLabel}
+                  {t(typeLabel)}
                 </span>
               )}
             </div>
             {activeJournal?.currency && activeJournal?.startingCapital != null && (
               <p className="nx-subtitle">
                 {activeJournal.currency} ·{" "}
-                {Number(activeJournal.startingCapital).toLocaleString(undefined, {
+                {Number(activeJournal.startingCapital).toLocaleString(getLanguage(), {
                   style: "currency",
                   currency: activeJournal.currency,
                   maximumFractionDigits: 2,
-                })}{" "}
-                starting capital
-                {activeJournal.breakEvenMethod && (
-                  <> · {BREAK_EVEN_LABEL[activeJournal.breakEvenMethod]} break-even</>
+                })}{" "}{t("starting capital")}{activeJournal.breakEvenMethod && (
+                  <> · {t(BREAK_EVEN_LABEL[activeJournal.breakEvenMethod])}{" " + t("break-even")}</>
                 )}
               </p>
             )}
@@ -368,24 +366,18 @@ export default function Journal() {
                 variant="outline"
                 size="icon"
                 className="shrink-0"
-                aria-label="Journal settings"
+                aria-label={t("Journal settings")}
               >
                 <Settings2 className="size-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
-                <Settings2 className="size-3.5" />
-                Settings
-              </DropdownMenuItem>
+                <Settings2 className="size-3.5" />{t("Settings")}</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setBrokerOpen(true)}>
-                <Cable className="size-3.5" />
-                Broker Connections
-              </DropdownMenuItem>
+                <Cable className="size-3.5" />{t("Broker Connections")}</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setImportOpen(true)}>
-                <FileUp className="size-3.5" />
-                Import MT5 Report
-              </DropdownMenuItem>
+                <FileUp className="size-3.5" />{t("Import MT5 Report")}</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"
@@ -394,15 +386,13 @@ export default function Journal() {
                   setDeleteOpen(true);
                 }}
               >
-                <Trash2 className="size-3.5" />
-                Delete Journal
-              </DropdownMenuItem>
+                <Trash2 className="size-3.5" />{t("Delete Journal")}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
         {/* ── Tab navigation ── */}
-        <nav className="nx-tabs max-w-full overflow-x-auto" aria-label="Journal sections">
+        <nav className="nx-tabs max-w-full overflow-x-auto" aria-label={t("Journal sections")}>
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -412,7 +402,7 @@ export default function Journal() {
               className="nx-tab shrink-0"
             >
               <tab.icon aria-hidden="true" className="size-3.5" />
-              {tab.label}
+              {t(tab.label)}
             </button>
           ))}
         </nav>
@@ -464,19 +454,14 @@ export default function Journal() {
       <Dialog open={deleteOpen} onOpenChange={(v) => !v && setDeleteOpen(false)}>
         <DialogContent className="border-zinc-800 bg-zinc-950 sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete &ldquo;{activeJournal?.name}&rdquo;?</DialogTitle>
-            <DialogDescription>
-              All trades, analytics, and catalog data will be permanently deleted. This action
-              cannot be undone.
-            </DialogDescription>
+            <DialogTitle>{t("Delete “")}{activeJournal?.name}&rdquo;?</DialogTitle>
+            <DialogDescription>{t("All trades, analytics, and catalog data will be permanently deleted. This action cannot be undone.")}</DialogDescription>
           </DialogHeader>
           {deleteError && <p className="text-sm text-destructive">{deleteError}</p>}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>{t("Cancel")}</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? "Deleting…" : "Delete"}
+              {deleting ? t("Deleting…") : t("Delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

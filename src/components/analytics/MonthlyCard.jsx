@@ -1,4 +1,6 @@
-﻿import { formatPercent, formatValue, heatmapTone } from "@/lib/analytics";
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
+import { formatPercent, formatValue, heatmapTone } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 import AnalyticsCard, { CardHeading, EmptyChart } from "./AnalyticsCard";
@@ -7,6 +9,7 @@ const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Se
 const GRID_TEMPLATE = "48px repeat(12, minmax(0,1fr))";
 
 export default function MonthlyCard({ analytics, bounds, onOpenMonth }) {
+  useLanguage();
   const { months } = analytics;
   const years = bounds ? Array.from({ length: bounds.maxYear - bounds.minYear + 1 }, (_, i) => bounds.minYear + i) : [...new Set(months.map((month) => month.year))].sort((a, b) => a - b);
   const maxAbs = Math.max(0, ...months.map((month) => Math.abs(month.totalR)));
@@ -14,10 +17,10 @@ export default function MonthlyCard({ analytics, bounds, onOpenMonth }) {
 
   return (
     <AnalyticsCard>
-      <CardHeading title="Monthly net R" />
+      <CardHeading title={t("Monthly net R")} />
 
       {months.length === 0 ? (
-        <EmptyChart className="h-[180px]">No closed trades in this range.</EmptyChart>
+        <EmptyChart className="h-[180px]">{t("No closed trades in this range.")}</EmptyChart>
       ) : (
         <div className="overflow-x-auto px-5 pb-5 pt-5 min-[900px]:px-6 min-[900px]:pb-6">
           <div className="min-w-[720px] space-y-1">
@@ -25,7 +28,7 @@ export default function MonthlyCard({ analytics, bounds, onOpenMonth }) {
               <span />
               {MONTH_NAMES.map((month) => (
                 <span key={month} className="text-center text-[11px] text-ink-muted">
-                  {month}
+                  {t(month)}
                 </span>
               ))}
             </div>

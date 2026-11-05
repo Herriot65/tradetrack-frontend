@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { BookOpen, Plus, Search } from "lucide-react";
@@ -23,6 +25,7 @@ const STATUS_FILTERS = [
 // ─── Loading skeleton ─────────────────────────────────────────────────────────
 
 function TableSkeleton() {
+  useLanguage();
   return (
     <div className="overflow-hidden rounded-lg border border-zinc-800/60">
       <div className="border-b border-zinc-800/60 bg-zinc-900/60 px-3 py-2.5">
@@ -46,6 +49,7 @@ function TableSkeleton() {
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
 function EmptyState({ hasFilters }) {
+  useLanguage();
   return (
     <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-zinc-800 py-20 text-center">
       <div className="flex size-12 items-center justify-center rounded-xl bg-zinc-900 ring-1 ring-zinc-800">
@@ -53,12 +57,12 @@ function EmptyState({ hasFilters }) {
       </div>
       <div className="space-y-1">
         <p className="text-sm font-medium text-zinc-300">
-          {hasFilters ? "No trades match your filters" : "No trades yet"}
+          {hasFilters ? t("No trades match your filters") : t("No trades yet")}
         </p>
         <p className="max-w-xs text-xs text-zinc-600">
           {hasFilters
-            ? "Try clearing the search or status filter."
-            : "Trades will appear here once synced from MT5."}
+            ? t("Try clearing the search or status filter.")
+            : t("Trades will appear here once synced from MT5.")}
         </p>
       </div>
     </div>
@@ -68,6 +72,7 @@ function EmptyState({ hasFilters }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Workspace() {
+  useLanguage();
   const { workspaceId } = useParams();
   const navigate = useNavigate();
   const { workspaces, activeWorkspace, selectWorkspace, loading: wsLoading } = useWorkspace();
@@ -106,16 +111,12 @@ export default function Workspace() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">
-              {activeWorkspace?.name ?? "Journal"}
+              {activeWorkspace?.name ?? t("Journal")}
             </h1>
-            <p className="mt-0.5 text-sm text-zinc-500">
-              MT5 execution history — review and annotate your trades
-            </p>
+            <p className="mt-0.5 text-sm text-zinc-500">{t("MT5 execution history — review and annotate your trades")}</p>
           </div>
           <Button size="sm" className="shrink-0" disabled>
-            <Plus className="size-4" />
-            New Trade
-          </Button>
+            <Plus className="size-4" />{t("New Trade")}</Button>
         </div>
 
         {/* ── Filters ── */}
@@ -124,7 +125,7 @@ export default function Workspace() {
           <div className="relative max-w-xs flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-zinc-500" />
             <Input
-              placeholder="Search asset or setup…"
+              placeholder={t("Search asset or setup…")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-8 border-zinc-800 bg-zinc-900/60 pl-8 text-sm placeholder:text-zinc-600 focus-visible:ring-emerald-500/30"
@@ -134,10 +135,10 @@ export default function Workspace() {
           {/* Account filter (placeholder — multi-account support coming) */}
           <select
             disabled
-            title="Account filter — coming soon"
+            title={t("Account filter — coming soon")}
             className="h-8 cursor-not-allowed rounded-md border border-zinc-800/60 bg-zinc-900/60 px-2.5 text-xs text-zinc-600"
           >
-            <option>All Accounts</option>
+            <option>{t("All Accounts")}</option>
           </select>
 
           {/* Status pills */}
@@ -159,7 +160,7 @@ export default function Workspace() {
 
           {!tradesLoading && (
             <span className="ml-auto shrink-0 text-xs text-zinc-600">
-              {filtered.length} {filtered.length === 1 ? "trade" : "trades"}
+              {filtered.length} {filtered.length === 1 ? t("trade") : t("trades")}
             </span>
           )}
         </div>

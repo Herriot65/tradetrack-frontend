@@ -1,8 +1,11 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { AlertCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 export function FormErrorBanner({ message, className }) {
+  useLanguage();
   if (!message) return null;
 
   return (
@@ -14,7 +17,7 @@ export function FormErrorBanner({ message, className }) {
       )}
     >
       <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-      <p>{message}</p>
+      <p>{t(message)}</p>
     </div>
   );
 }

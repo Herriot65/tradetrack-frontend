@@ -1,9 +1,12 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { AlertCircle, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export default function ErrorMessage({ message, onRetry, className }) {
+  useLanguage();
   return (
     <div
       className={cn(
@@ -15,9 +18,7 @@ export default function ErrorMessage({ message, onRetry, className }) {
       <p className="max-w-sm text-sm text-muted-foreground">{message}</p>
       {onRetry && (
         <Button variant="outline" size="sm" onClick={onRetry}>
-          <RefreshCw className="size-3.5" />
-          Try again
-        </Button>
+          <RefreshCw className="size-3.5" />{t("Try again")}</Button>
       )}
     </div>
   );

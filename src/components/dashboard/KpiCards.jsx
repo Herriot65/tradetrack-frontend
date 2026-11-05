@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import {
   Activity,
   BarChart3,
@@ -73,6 +75,7 @@ const KPI_CONFIG = [
 ];
 
 function KpiSkeleton() {
+  useLanguage();
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
       {KPI_CONFIG.map((kpi) => (
@@ -93,6 +96,7 @@ function KpiSkeleton() {
 }
 
 export default function KpiCards() {
+  useLanguage();
   const { data, loading, error, refetch } = useDashboardSummary();
 
   if (loading) return <KpiSkeleton />;
@@ -112,7 +116,7 @@ export default function KpiCards() {
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs font-medium text-muted-foreground">
-                {label}
+                {t(label)}
               </CardTitle>
               <Icon className="size-4 text-muted-foreground/60" />
             </CardHeader>

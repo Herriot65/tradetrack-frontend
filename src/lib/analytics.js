@@ -1,3 +1,5 @@
+import { getLanguage, translate } from "../i18n/language.js";
+import { fr, enUS } from "date-fns/locale";
 import { zonedDate, getUserTimezone } from "./timezone.js";
 import {
   endOfDay,
@@ -123,7 +125,7 @@ export function monthKey(year, month) {
 }
 
 export function monthLabel(year, month, short = false) {
-  return `${short ? MONTH_SHORT[month] : MONTH_NAMES[month]} ${year}`;
+  return `${translate(short ? MONTH_SHORT[month] : MONTH_NAMES[month])} ${year}`;
 }
 
 export function filterTrades(trades = [], { range = "ALL", customRange, assets = [], now = zonedDate() } = {}) {
@@ -207,6 +209,10 @@ function valueSign(number, signed) {
   return signed && number > 0 ? "+" : "";
 }
 
+function fixedNumber(value, digits) {
+  return value.toLocaleString(getLanguage(), { minimumFractionDigits: digits, maximumFractionDigits: digits, useGrouping: false });
+}
+
 export function formatValue(value, unit = "R", { signed = true, compact = false } = {}) {
   if (value === null || value === undefined || !Number.isFinite(Number(value))) {
     return "\u2014";
@@ -218,14 +224,14 @@ export function formatValue(value, unit = "R", { signed = true, compact = false 
   if (unit === "USD") {
     const body = compact && abs >= 1000
       ? `${(abs / 1000).toFixed(abs >= 10000 ? 0 : 1)}k`
-      : abs.toLocaleString(undefined, {
+      : abs.toLocaleString(getLanguage(), {
           minimumFractionDigits: Number.isInteger(abs) ? 0 : 2,
           maximumFractionDigits: 2,
         });
     return `${sign}$${body}`;
   }
-  if (unit === "PCT") return `${sign}${abs.toFixed(1)}%`;
-  return `${sign}${abs.toFixed(2)}R`;
+  if (unit === "PCT") return `${sign}${fixedNumber(abs, 1)}%`;
+  return `${sign}${fixedNumber(abs, 2)}R`;
 }
 
 export function formatAxisTick(value, unit = "R") {
@@ -238,14 +244,14 @@ export function formatAxisTick(value, unit = "R") {
 
   if (unit === "USD") {
     if (abs >= 1000) return `${sign}$${(abs / 1000).toFixed(abs >= 10000 ? 0 : 1)}k`;
-    return `${sign}$${abs.toLocaleString(undefined, {
+    return `${sign}$${abs.toLocaleString(getLanguage(), {
       minimumFractionDigits: Number.isInteger(abs) ? 0 : 1,
       maximumFractionDigits: 1,
     })}`;
   }
 
   const digits = Number.isInteger(round(abs, 6)) ? 0 : 1;
-  return `${sign}${abs.toFixed(digits)}${unit === "PCT" ? "%" : "R"}`;
+  return `${sign}${fixedNumber(abs, digits)}${unit === "PCT" ? "%" : "R"}`;
 }
 
 export function formatRatio(value, digits = 2) {
@@ -254,8 +260,8 @@ export function formatRatio(value, digits = 2) {
   }
   const number = Number(value);
   return number < 0
-    ? `${MINUS}${Math.abs(number).toFixed(digits)}`
-    : number.toFixed(digits);
+    ? `${MINUS}${fixedNumber(Math.abs(number), digits)}`
+    : fixedNumber(number, digits);
 }
 
 export function formatPercent(value, digits = 1) {
@@ -263,13 +269,13 @@ export function formatPercent(value, digits = 1) {
     return "\u2014";
   }
   const number = Number(value);
-  return `${number < 0 ? MINUS : ""}${Math.abs(number).toFixed(digits)}%`;
+  return `${number < 0 ? MINUS : ""}${fixedNumber(Math.abs(number), digits)}%`;
 }
 
 export function formatDateLabel(value, pattern = "MMM d, yyyy") {
   const date = value instanceof Date ? value : parseTradeDate(value);
   if (!date) return "\u2014";
-  return format(date, pattern);
+  return format(date, getLanguage() === "fr-FR" && pattern === "MMM d, yyyy" ? "d MMM yyyy" : pattern, { locale: getLanguage() === "fr-FR" ? fr : enUS });
 }
 
 function emptyBucket(extra = {}) {

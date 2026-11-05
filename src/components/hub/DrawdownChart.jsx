@@ -1,3 +1,5 @@
+import { getLanguage, translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useMemo } from "react";
 import {
   Area,
@@ -15,6 +17,7 @@ import InfoTip from "@/components/ui/InfoTip";
 import { formatDate } from "@/lib/formatters";
 
 function DdTooltip({ active, payload, label }) {
+  useLanguage();
   if (!active || !payload?.length) return null;
   const r = payload[0].value;
   return (
@@ -46,12 +49,13 @@ function computeXAxis(data) {
   return {
     ticks:     [...monthMap.values()],
     formatter: (v) => {
-      try { return new Date(v).toLocaleDateString(undefined, { month: "short" }); } catch { return v; }
+      try { return new Date(v).toLocaleDateString(getLanguage(), { month: "short" }); } catch { return v; }
     },
   };
 }
 
 export default function DrawdownChart({ data = [], title = "Drawdown (R)", height = 160 }) {
+  useLanguage();
   const { ticks, formatter } = useMemo(() => computeXAxis(data), [data]);
 
   const yMin = useMemo(() => {
@@ -67,15 +71,13 @@ export default function DrawdownChart({ data = [], title = "Drawdown (R)", heigh
     <Card className="border-zinc-800/60 bg-zinc-900/40">
       <CardHeader className="px-5 pt-4 pb-3">
         <div className="flex items-center gap-1.5">
-          <CardTitle className="text-sm font-medium text-zinc-400">{title}</CardTitle>
+          <CardTitle className="text-sm font-medium text-zinc-400">{t(title)}</CardTitle>
           <InfoTip text="Distance from the previous equity peak at each trade. Shows how deep the losing periods go from their highs." />
         </div>
       </CardHeader>
       <CardContent className="px-5 pb-4">
         {allFlat ? (
-          <div className="flex items-center justify-center text-xs text-zinc-700" style={{ height }}>
-            No drawdown
-          </div>
+          <div className="flex items-center justify-center text-xs text-zinc-700" style={{ height }}>{t("No drawdown")}</div>
         ) : (
           <ResponsiveContainer width="100%" height={height}>
             <AreaChart data={data} margin={{ top: 4, right: 12, left: 0, bottom: 0 }}>

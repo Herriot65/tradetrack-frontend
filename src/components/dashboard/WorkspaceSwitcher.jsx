@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check, ChevronDown, Layers, Pencil, Plus, Trash2 } from "lucide-react";
@@ -25,6 +27,7 @@ import { useWorkspace } from "@/workspaces/useWorkspace";
 import WorkspaceFormDialog from "./WorkspaceFormDialog";
 
 export default function WorkspaceSwitcher() {
+  useLanguage();
   const navigate = useNavigate();
   const {
     workspaces,
@@ -60,14 +63,12 @@ export default function WorkspaceSwitcher() {
     return (
       <>
         <Button variant="outline" size="sm" onClick={() => setCreateOpen(true)}>
-          <Plus className="size-3.5" />
-          Create Workspace
-        </Button>
+          <Plus className="size-3.5" />{t("Create Workspace")}</Button>
 
         <WorkspaceFormDialog
           open={createOpen}
           onOpenChange={setCreateOpen}
-          title="Create Workspace"
+          title={t("Create Workspace")}
           onSubmit={async (name) => {
             const created = await createWorkspace({ name });
             navigate(`/workspace/${created.id}`);
@@ -85,7 +86,7 @@ export default function WorkspaceSwitcher() {
             variant="outline"
             size="sm"
             className="max-w-[220px] gap-1.5"
-            aria-label="Switch workspace"
+            aria-label={t("Switch workspace")}
           >
             <Layers className="size-3.5 shrink-0 text-muted-foreground" />
             <span className="truncate">{activeWorkspace.name}</span>
@@ -94,7 +95,7 @@ export default function WorkspaceSwitcher() {
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="start" className="w-56">
-          <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
+          <DropdownMenuLabel>{t("Workspaces")}</DropdownMenuLabel>
           <DropdownMenuSeparator />
 
           {workspaces.map((ws) => (
@@ -119,9 +120,7 @@ export default function WorkspaceSwitcher() {
           <DropdownMenuSeparator />
 
           <DropdownMenuItem onClick={() => setRenameOpen(true)}>
-            <Pencil className="size-3.5" />
-            Rename workspace
-          </DropdownMenuItem>
+            <Pencil className="size-3.5" />{t("Rename workspace")}</DropdownMenuItem>
 
           {workspaces.length > 1 && (
             <DropdownMenuItem
@@ -131,24 +130,20 @@ export default function WorkspaceSwitcher() {
                 setDeleteOpen(true);
               }}
             >
-              <Trash2 className="size-3.5" />
-              Delete workspace
-            </DropdownMenuItem>
+              <Trash2 className="size-3.5" />{t("Delete workspace")}</DropdownMenuItem>
           )}
 
           <DropdownMenuSeparator />
 
           <DropdownMenuItem onClick={() => setCreateOpen(true)}>
-            <Plus className="size-3.5" />
-            New workspace
-          </DropdownMenuItem>
+            <Plus className="size-3.5" />{t("New workspace")}</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
       <WorkspaceFormDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        title="New Workspace"
+        title={t("New Workspace")}
         onSubmit={async (name) => {
           const created = await createWorkspace({ name });
           navigate(`/workspace/${created.id}`);
@@ -158,7 +153,7 @@ export default function WorkspaceSwitcher() {
       <WorkspaceFormDialog
         open={renameOpen}
         onOpenChange={setRenameOpen}
-        title="Rename Workspace"
+        title={t("Rename Workspace")}
         defaultName={activeWorkspace.name}
         onSubmit={(name) => renameWorkspace(activeWorkspace.id, name)}
       />
@@ -166,11 +161,8 @@ export default function WorkspaceSwitcher() {
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent className="border-zinc-800 bg-zinc-950 sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete &ldquo;{activeWorkspace.name}&rdquo;?</DialogTitle>
-            <DialogDescription>
-              All trades and analytics in this workspace will be permanently deleted.
-              This action cannot be undone.
-            </DialogDescription>
+            <DialogTitle>{t("Delete “")}{activeWorkspace.name}&rdquo;?</DialogTitle>
+            <DialogDescription>{t("All trades and analytics in this workspace will be permanently deleted. This action cannot be undone.")}</DialogDescription>
           </DialogHeader>
 
           {deleteError && (
@@ -182,11 +174,9 @@ export default function WorkspaceSwitcher() {
               variant="outline"
               onClick={() => setDeleteOpen(false)}
               disabled={deleting}
-            >
-              Cancel
-            </Button>
+            >{t("Cancel")}</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? "Deleting…" : "Delete"}
+              {deleting ? t("Deleting…") : t("Delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

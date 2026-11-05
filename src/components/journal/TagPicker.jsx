@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useEffect, useRef, useState } from "react";
 import { Plus, X } from "lucide-react";
 
@@ -9,6 +11,7 @@ export default function TagPicker({
   placeholder = "Select or create…",
   emptyText,
 }) {
+  useLanguage();
   const [query,  setQuery]  = useState("");
   const [open,   setOpen]   = useState(false);
   const inputRef     = useRef(null);
@@ -118,8 +121,7 @@ export default function TagPicker({
               onMouseDown={(e) => { e.preventDefault(); handleCreate(); }}
               className="flex w-full items-center gap-2 border-t border-zinc-800/60 px-3 py-2 text-sm text-emerald-400 hover:bg-zinc-800"
             >
-              <Plus className="size-3.5 shrink-0" />
-              Create &ldquo;{trimmed}&rdquo;
+              <Plus className="size-3.5 shrink-0" />{t("Create “")}{trimmed}&rdquo;
             </button>
           )}
         </div>

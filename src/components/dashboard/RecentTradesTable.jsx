@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 
@@ -44,6 +46,7 @@ import TradeDetailDialog from "./TradeDetailDialog";
 const PAGE_SIZE = 20;
 
 function TableSkeleton() {
+  useLanguage();
   return (
     <div className="space-y-2">
       {Array.from({ length: 5 }).map((_, i) => (
@@ -54,6 +57,7 @@ function TableSkeleton() {
 }
 
 export default function RecentTradesTable() {
+  useLanguage();
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -88,11 +92,11 @@ export default function RecentTradesTable() {
   } else if (trades.length === 0) {
     tableContent = (
       <EmptyState
-        title={search ? "No matching trades" : "No trades yet"}
+        title={search ? t("No matching trades") : t("No trades yet")}
         description={
           search
-            ? "Try a different asset or setup name."
-            : "Log your first trade to see it here."
+            ? t("Try a different asset or setup name.")
+            : t("Log your first trade to see it here.")
         }
       />
     );
@@ -101,15 +105,15 @@ export default function RecentTradesTable() {
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead>Trade Period</TableHead>
-            <TableHead>Asset</TableHead>
-            <TableHead className="hidden lg:table-cell">Trend</TableHead>
-            <TableHead className="hidden xl:table-cell">Opp. TF</TableHead>
-            <TableHead className="hidden xl:table-cell">Entry TF</TableHead>
-            <TableHead className="hidden md:table-cell">Setup</TableHead>
-            <TableHead>Side</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="hidden sm:table-cell">Risk %</TableHead>
+            <TableHead>{t("Trade Period")}</TableHead>
+            <TableHead>{t("Asset")}</TableHead>
+            <TableHead className="hidden lg:table-cell">{t("Trend")}</TableHead>
+            <TableHead className="hidden xl:table-cell">{t("Opp. TF")}</TableHead>
+            <TableHead className="hidden xl:table-cell">{t("Entry TF")}</TableHead>
+            <TableHead className="hidden md:table-cell">{t("Setup")}</TableHead>
+            <TableHead>{t("Side")}</TableHead>
+            <TableHead>{t("Status")}</TableHead>
+            <TableHead className="hidden sm:table-cell">{t("Risk %")}</TableHead>
             <TableHead className="text-right">PnL (R)</TableHead>
           </TableRow>
         </TableHeader>
@@ -177,19 +181,17 @@ export default function RecentTradesTable() {
       <Card className="border-zinc-800/60 bg-zinc-950/50 ring-zinc-800/40">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle className="text-base font-semibold">
-              Recent Trades
-            </CardTitle>
+            <CardTitle className="text-base font-semibold">{t("Recent Trades")}</CardTitle>
             <CardDescription>
               {totalCount > 0
                 ? `${totalCount} trade${totalCount === 1 ? "" : "s"} total`
-                : "Your trade journal"}
+                : t("Your trade journal")}
             </CardDescription>
           </div>
           <div className="relative w-full sm:max-w-xs">
             <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search asset or setup..."
+              placeholder={t("Search asset or setup...")}
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="pl-8"
@@ -201,8 +203,7 @@ export default function RecentTradesTable() {
 
           {!loading && !error && totalCount > PAGE_SIZE && (
             <div className="flex items-center justify-between border-t border-border/40 pt-4">
-              <p className="text-xs text-muted-foreground">
-                Page {page} of {totalPages}
+              <p className="text-xs text-muted-foreground">{t("Page") + " "}{page}{" " + t("of") + " "}{totalPages}
               </p>
               <div className="flex gap-2">
                 <Button
@@ -211,17 +212,13 @@ export default function RecentTradesTable() {
                   disabled={page <= 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                 >
-                  <ChevronLeft className="size-4" />
-                  Previous
-                </Button>
+                  <ChevronLeft className="size-4" />{t("Previous")}</Button>
                 <Button
                   variant="outline"
                   size="sm"
                   disabled={page >= totalPages}
                   onClick={() => setPage((p) => p + 1)}
-                >
-                  Next
-                  <ChevronRight className="size-4" />
+                >{t("Next")}<ChevronRight className="size-4" />
                 </Button>
               </div>
             </div>

@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import {
   Bar,
   BarChart,
@@ -22,17 +24,19 @@ const COLORS = {
 };
 
 function ChartTooltip({ active, payload }) {
+  useLanguage();
   if (!active || !payload?.length) return null;
 
   return (
     <div className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs shadow-xl">
       <p className="font-medium">{payload[0].payload.name}</p>
-      <p className="text-muted-foreground">{payload[0].value} trades</p>
+      <p className="text-muted-foreground">{payload[0].value}{" " + t("trades")}</p>
     </div>
   );
 }
 
 export default function WinLossChart() {
+  useLanguage();
   const { data, loading, error, refetch } = useWinLossDistribution();
 
   let content;
@@ -53,7 +57,7 @@ export default function WinLossChart() {
     if (total === 0) {
       content = (
         <EmptyState
-          title="No closed trades"
+          title={t("No closed trades")}
           description="Win/loss distribution appears once you have completed trades."
         />
       );
@@ -90,8 +94,8 @@ export default function WinLossChart() {
 
   return (
     <ChartCard
-      title="Win / Loss Distribution"
-      description="Breakdown of closed trades"
+      title={t("Win / Loss Distribution")}
+      description={t("Breakdown of closed trades")}
     >
       {content}
     </ChartCard>

@@ -1,3 +1,5 @@
+import { getLanguage, translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useMemo, useState } from "react";
 import {
   Area,
@@ -19,6 +21,7 @@ import { formatDate } from "@/lib/formatters";
 // ─── Tooltip ──────────────────────────────────────────────────────────────────
 
 function EqTooltip({ active, payload, label, masked }) {
+  useLanguage();
   if (!active || !payload?.length) return null;
   const r = payload[0].value;
   return (
@@ -78,7 +81,7 @@ function computeXAxis(data) {
     ticks: [...monthMap.values()],
     formatter: (v) => {
       try {
-        return new Date(v).toLocaleDateString(undefined, { month: "short" });
+        return new Date(v).toLocaleDateString(getLanguage(), { month: "short" });
       } catch { return v; }
     },
   };
@@ -87,6 +90,7 @@ function computeXAxis(data) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function HubEquityCurve({ data = [], title = "Equity Curve", height = 180 }) {
+  useLanguage();
   const [masked, setMasked] = useState(false);
 
   const { yMin, yMax }          = useMemo(() => computeDomain(data), [data]);
@@ -105,14 +109,14 @@ export default function HubEquityCurve({ data = [], title = "Equity Curve", heig
     <Card className="border-zinc-800/60 bg-zinc-900/40">
       <CardHeader className="flex flex-row items-center justify-between px-5 pt-4 pb-3">
         <div className="flex items-center gap-1.5">
-          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          <CardTitle className="text-sm font-medium">{t(title)}</CardTitle>
           <InfoTip text="Cumulative R over time. Each point is the running total of R after that trade. Green = above breakeven, red = below." />
         </div>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setMasked((v) => !v)}
-          title={masked ? "Show scale" : "Hide scale"}
+          title={masked ? t("Show scale") : t("Hide scale")}
           className="size-6 shrink-0 text-zinc-600 hover:text-zinc-300"
         >
           {masked ? <Eye className="size-3.5" /> : <EyeOff className="size-3.5" />}
@@ -124,9 +128,7 @@ export default function HubEquityCurve({ data = [], title = "Equity Curve", heig
           <div
             className="flex items-center justify-center text-xs text-zinc-700"
             style={{ height }}
-          >
-            No trades
-          </div>
+          >{t("No trades")}</div>
         ) : (
           <ResponsiveContainer width="100%" height={height}>
             <AreaChart data={data} margin={{ top: 4, right: 12, left: 0, bottom: 0 }}>

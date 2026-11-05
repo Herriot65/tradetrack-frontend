@@ -1,9 +1,12 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useChartWidth } from "@/hooks/useChartWidth";
 import { useState } from "react";
 import { formatAxisTick, formatDateLabel, formatValue, niceTicks } from "@/lib/analytics";
 import AnalyticsCard, { CardHeading } from "./AnalyticsCard";
 
 export default function EquitySection({ analytics }) {
+  useLanguage();
   const [chartRef, width] = useChartWidth();
   const right = width - 16;
   const { equityCurve: points, unit } = analytics;
@@ -21,7 +24,7 @@ export default function EquitySection({ analytics }) {
   };
   const readout = point ? `Trade #${point.seq} \u00b7 ${formatValue(point.tradeValue ?? 0, unit)} \u00b7 Equity ${formatValue(point.equity, unit)} \u00b7 DD ${formatValue(point.drawdown, unit)}` : "Hover to inspect a trade";
   return <AnalyticsCard>
-    <CardHeading title="Equity and drawdown" detail="Your cumulative return and the declines from each peak." />
+    <CardHeading title={t("Equity and drawdown")} detail={t("Your cumulative return and the declines from each peak.")} />
     <p className="min-h-10 px-5 pt-3 min-[900px]:px-6 text-[12px] text-ink-muted" aria-live="polite">{readout}</p>
     <svg ref={chartRef} viewBox={`0 0 ${width} 462`} className="block mb-3 h-[462px] w-full outline-none focus-visible:ring-1 focus-visible:ring-ink-muted" role="img" aria-label={`Equity and drawdown across ${points.length - 1} trades. Use arrow keys to inspect.`} tabIndex={0}
       onPointerMove={select} onPointerDown={select} onPointerLeave={() => setIndex(null)} onFocus={() => setIndex(0)} onBlur={() => setIndex(null)}
@@ -29,7 +32,7 @@ export default function EquitySection({ analytics }) {
       {ticks.map(v => <g key={v}><line x1="48" x2={right} y1={y(v)} y2={y(v)} stroke={v === 0 ? "var(--hairline-strong)" : "var(--hairline)"} strokeDasharray={v === 0 ? undefined : "2 4"}/><text x="40" y={y(v)+4} textAnchor="end" fontSize="11" fill="var(--ink-muted)">{formatAxisTick(v, unit)}</text></g>)}
       <path d={`${path(y, "equity")} L${right},${y(0)} L48,${y(0)} Z`} fill="var(--profit)" fillOpacity="0.1"/>
       <path d={path(y, "equity")} fill="none" stroke="var(--profit)" strokeWidth="1.5"/>
-      <text x="48" y="358" fontSize="11" fill="var(--ink-muted)">Drawdown</text>
+      <text x="48" y="358" fontSize="11" fill="var(--ink-muted)">{t("Drawdown")}</text>
       {ddTicks.map(v => <g key={v}><line x1="48" x2={right} y1={dy(v)} y2={dy(v)} stroke="var(--hairline)" strokeDasharray={v === 0 ? undefined : "2 4"}/><text x="40" y={dy(v)+4} textAnchor="end" fontSize="11" fill="var(--ink-muted)">{formatAxisTick(v,unit)}</text></g>)}
       <path d={`${path(dy, "drawdown")} L${right},370 L48,370 Z`} fill="var(--loss)" fillOpacity="0.15"/>
       <path d={path(dy,"drawdown")} fill="none" stroke="var(--loss)" strokeWidth="1.2"/>

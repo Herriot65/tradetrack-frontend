@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -32,6 +34,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Button } from "@/components/ui/button";
 import JournalSwitcher from "@/components/dashboard/JournalSwitcher";
 import UserSettings from "./UserSettings";
+import LanguageSelector from "./LanguageSelector";
 
 const TOOLS = [
   { label: "Economic Calendar", icon: CalendarDays },
@@ -51,14 +54,16 @@ function readCollapsed() {
   }
 }
 function Hint({ label, children }) {
+  useLanguage();
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent side="right">{label}</TooltipContent>
+      <TooltipContent side="right">{t(label)}</TooltipContent>
     </Tooltip>
   );
 }
 export default function AppShell({ children }) {
+  useLanguage();
   const { user, logout } = useAuth();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(readCollapsed);
@@ -120,13 +125,11 @@ export default function AppShell({ children }) {
       <a
         href="#main-content"
         className="fixed left-4 top-2 z-[100] -translate-y-24 rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground focus:translate-y-0"
-      >
-        Skip to content
-      </a>
+      >{t("Skip to content")}</a>
       {mobileOpen && (
         <button
           type="button"
-          aria-label="Close navigation"
+          aria-label={t("Close navigation")}
           onClick={() => setMobileOpen(false)}
           className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
         />
@@ -134,13 +137,13 @@ export default function AppShell({ children }) {
       <aside
         id="app-navigation"
         className="nx-sidebar"
-        aria-label="Application navigation"
+        aria-label={t("Application navigation")}
         inert={mobile && !mobileOpen ? true : undefined}
       >
         <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-border/60 px-5">
           <Link
             to="/dashboard"
-            aria-label="Nexora dashboard"
+            aria-label={t("Nexora dashboard")}
             onClick={() => setMobileOpen(false)}
             className="flex min-w-0 items-center gap-2.5"
           >
@@ -150,9 +153,7 @@ export default function AppShell({ children }) {
                 <span className="text-[17px] font-semibold tracking-[-0.05em]">
                   nexora<span className="text-primary">.</span>
                 </span>
-                <p className="text-[8px] uppercase tracking-[0.22em] text-zinc-500">
-                  Trading intelligence
-                </p>
+                <p className="text-[8px] uppercase tracking-[0.22em] text-zinc-500">{t("Trading intelligence")}</p>
               </div>
             )}
           </Link>
@@ -160,15 +161,15 @@ export default function AppShell({ children }) {
             variant="ghost"
             size="icon-xs"
             className="md:hidden"
-            aria-label="Close navigation"
+            aria-label={t("Close navigation")}
             onClick={() => setMobileOpen(false)}
           >
             <X />
           </Button>
         </div>
         <nav className="flex-1 overflow-y-auto px-3 pb-5 pt-5">
-          <p className="nx-sidebar-caption !mt-0">Workspace</p>
-          <Hint label="Dashboard">
+          <p className="nx-sidebar-caption !mt-0">{t("Workspace")}</p>
+          <Hint label={t("Dashboard")}>
             <Link
               to="/dashboard"
               className="nx-nav-item"
@@ -177,23 +178,21 @@ export default function AppShell({ children }) {
               onClick={() => setMobileOpen(false)}
             >
               <LayoutDashboard className="size-4 shrink-0" />
-              <span className="nx-nav-label">Dashboard</span>
+              <span className="nx-nav-label">{t("Dashboard")}</span>
             </Link>
           </Hint>
           <div className="flex items-center justify-between">
-            <p className="nx-sidebar-caption">Tools</p>
+            <p className="nx-sidebar-caption">{t("Tools")}</p>
             {!compact && (
-              <span className="mt-5 rounded border border-border px-1.5 py-0.5 text-[8px] uppercase tracking-wider text-zinc-500">
-                Soon
-              </span>
+              <span className="mt-5 rounded border border-border px-1.5 py-0.5 text-[8px] uppercase tracking-wider text-zinc-500">{t("Soon")}</span>
             )}
           </div>
           <div className="space-y-0.5">
             {TOOLS.map(({ label, icon: Icon }) => (
-              <Hint key={label} label={`${label} · Coming soon`}>
+              <Hint key={label} label={`${t(label)} · ${t("Coming soon")}`}>
                 <div aria-disabled="true" className="nx-nav-item cursor-not-allowed opacity-50">
                   <Icon className="size-4 shrink-0" />
-                  <span className="nx-nav-label">{label}</span>
+                  <span className="nx-nav-label">{t(label)}</span>
                 </div>
               </Hint>
             ))}
@@ -202,16 +201,14 @@ export default function AppShell({ children }) {
         <div className="space-y-3 border-t border-border/60 p-3">
           {!compact && (
             <div className="rounded-lg border border-border/50 bg-card p-3">
-              <p className="text-[11px] font-medium text-zinc-300">A clearer view of your edge.</p>
-              <p className="mt-1 text-[10px] leading-4 text-zinc-500">
-                Every trade tells a story. Make yours count.
-              </p>
+              <p className="text-[11px] font-medium text-zinc-300">{t("A clearer view of your edge.")}</p>
+              <p className="mt-1 text-[10px] leading-4 text-zinc-500">{t("Every trade tells a story. Make yours count.")}</p>
             </div>
           )}
           <button
             type="button"
             onClick={toggleCollapsed}
-            aria-label={compact ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={compact ? t("Expand sidebar") : t("Collapse sidebar")}
             aria-expanded={!compact}
             className="nx-nav-item hidden w-full md:flex"
           >
@@ -220,7 +217,7 @@ export default function AppShell({ children }) {
             ) : (
               <>
                 <ChevronsLeft className="size-4" />
-                <span className="nx-nav-label">Collapse sidebar</span>
+                <span className="nx-nav-label">{t("Collapse sidebar")}</span>
               </>
             )}
           </button>
@@ -228,7 +225,7 @@ export default function AppShell({ children }) {
       </aside>
       <div className="nx-shell-body" inert={mobile && mobileOpen ? true : undefined}>
         <header className="nx-header">
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
             <Button
               id="mobile-navigation-trigger"
               type="button"
@@ -236,22 +233,23 @@ export default function AppShell({ children }) {
               size="icon-sm"
               className="md:hidden"
               onClick={() => setMobileOpen(true)}
-              aria-label="Open navigation"
+              aria-label={t("Open navigation")}
               aria-controls="app-navigation"
               aria-expanded={mobileOpen}
             >
               <Menu />
             </Button>
-            <span className="hidden text-[12px] text-zinc-500 lg:block">Workspace</span>
+            <span className="hidden text-[12px] text-zinc-500 lg:block">{t("Workspace")}</span>
             <span className="hidden text-border lg:block">/</span>
             <JournalSwitcher />
           </div>
-          <div className="flex shrink-0 items-center gap-4">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+            <LanguageSelector />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  aria-label="Account menu"
+                  aria-label={t("Account menu")}
                   className="flex items-center gap-2.5 rounded-lg p-1.5 outline-none transition-colors hover:bg-secondary"
                 >
                   <span className="flex size-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-[11px] font-medium uppercase text-primary">
@@ -270,18 +268,12 @@ export default function AppShell({ children }) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem disabled>
-                  <User className="size-4" />
-                  Profile
-                </DropdownMenuItem>
+                  <User className="size-4" />{t("Profile")}</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
-                  <Settings className="size-4" />
-                  Settings
-                </DropdownMenuItem>
+                  <Settings className="size-4" />{t("Settings")}</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>
-                  <LogOut className="size-4" />
-                  Sign out
-                </DropdownMenuItem>
+                  <LogOut className="size-4" />{t("Sign out")}</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

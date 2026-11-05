@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import "./analytics.css";
 import { useRef, useState } from "react";
 import { BarChart3, Sparkles } from "lucide-react";
@@ -21,10 +23,11 @@ import SequenceCards from "./SequenceCards";
 import TimingCard from "./TimingCard";
 
 function LoadingSkeleton({ sampleEnabled }) {
+  useLanguage();
   return (
     <div
       className="analytics-page space-y-5 min-[900px]:space-y-6"
-      aria-label="Loading performance"
+      aria-label={t("Loading performance")}
       aria-busy="true"
     >
       <div className="space-y-2">
@@ -54,13 +57,14 @@ function LoadingSkeleton({ sampleEnabled }) {
 }
 
 function NoticeCard({ title, description, action }) {
+  useLanguage();
   return (
     <div className="rounded-xl border border-hairline bg-surface-card px-6 py-16 text-center">
       <div className="mx-auto flex size-10 items-center justify-center rounded-lg border border-hairline bg-surface-raised">
         <BarChart3 className="size-4 text-ink-muted" />
       </div>
-      <p className="mt-4 text-[13px] font-medium text-ink">{title}</p>
-      <p className="mx-auto mt-1 max-w-sm text-[11px] leading-5 text-ink-muted">{description}</p>
+      <p className="mt-4 text-[13px] font-medium text-ink">{t(title)}</p>
+      <p className="mx-auto mt-1 max-w-sm text-[11px] leading-5 text-ink-muted">{t(description)}</p>
       {action && <div className="mt-4 flex justify-center">{action}</div>}
     </div>
   );
@@ -74,6 +78,7 @@ export default function AnalyticsTab({
   syntheticError,
   onToggleSynthetic,
 }) {
+  useLanguage();
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [range, setRange] = useState("YTD");
   const [unit, setUnit] = useState("R");
@@ -163,12 +168,10 @@ export default function AnalyticsTab({
   if (error) {
     return (
       <NoticeCard
-        title="Failed to load analytics"
+        title={t("Failed to load analytics")}
         description={error}
         action={
-          <Button size="sm" variant="outline" onClick={refetch}>
-            Retry
-          </Button>
+          <Button size="sm" variant="outline" onClick={refetch}>{t("Retry")}</Button>
         }
       />
     );
@@ -203,13 +206,13 @@ export default function AnalyticsTab({
       <div className="analytics-page space-y-5 min-[900px]:space-y-6">
         {header}
         <NoticeCard
-          title="No data yet"
-          description="Add closed trades to this journal, or explore the board with a realistic sample dataset."
+          title={t("No data yet")}
+          description={t("Add closed trades to this journal, or explore the board with a realistic sample dataset.")}
           action={
             <div className="flex flex-col items-center gap-2">
               <Button size="sm" onClick={() => onToggleSynthetic(true)} disabled={syntheticBusy}>
                 <Sparkles className="size-3.5" />
-                {syntheticBusy ? "Generating..." : "Use sample data"}
+                {syntheticBusy ? t("Generating...") : t("Use sample data")}
               </Button>
               {syntheticError && <p className="max-w-xs text-[11px] text-loss">{syntheticError}</p>}
             </div>
@@ -223,10 +226,8 @@ export default function AnalyticsTab({
     <div className="analytics-page space-y-5 min-[900px]:space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3 pb-1">
         <div>
-          <h2 className="text-[22px] font-medium leading-8 tracking-tight text-ink">Performance</h2>
-          <p className="mt-1 text-[13px] leading-5 text-ink-secondary">
-            Returns, risk and the patterns behind your trades.
-          </p>
+          <h2 className="text-[22px] font-medium leading-8 tracking-tight text-ink">{t("Performance")}</h2>
+          <p className="mt-1 text-[13px] leading-5 text-ink-secondary">{t("Returns, risk and the patterns behind your trades.")}</p>
         </div>
       </div>
       {header}
@@ -240,8 +241,8 @@ export default function AnalyticsTab({
 
       {!hasRangeData ? (
         <NoticeCard
-          title="No trades in this range"
-          description="Try a longer date range or clear the active filters."
+          title={t("No trades in this range")}
+          description={t("Try a longer date range or clear the active filters.")}
           action={
             <div className="flex items-center gap-2">
               <Button
@@ -251,13 +252,9 @@ export default function AnalyticsTab({
                   handleRangeChange("ALL");
                   clearFilters();
                 }}
-              >
-                Reset filters
-              </Button>
+              >{t("Reset filters")}</Button>
               {selectedFilterCount > 0 && (
-                <Button size="sm" variant="ghost" onClick={clearFilters}>
-                  Clear filters
-                </Button>
+                <Button size="sm" variant="ghost" onClick={clearFilters}>{t("Clear filters")}</Button>
               )}
             </div>
           }

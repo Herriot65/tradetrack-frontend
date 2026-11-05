@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import GoogleSignIn from "../auth/GoogleSignIn";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -15,6 +17,7 @@ import { FormErrorBanner } from "./FormErrorBanner";
 import { FieldError } from "./FieldError";
 
 export default function RegisterForm() {
+  useLanguage();
   const navigate = useNavigate();
   const [serverError, setServerError] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -77,8 +80,8 @@ export default function RegisterForm() {
         <div className="flex justify-center mb-2">
           <img src="/nexora.png" alt="Nexora" className="h-16 w-16 rounded-xl" />
         </div>
-        <CardTitle className="text-2xl font-bold tracking-tight">Create account</CardTitle>
-        <CardDescription>Start tracking your trading performance today</CardDescription>
+        <CardTitle className="text-2xl font-bold tracking-tight">{t("Create account")}</CardTitle>
+        <CardDescription>{t("Start tracking your trading performance today")}</CardDescription>
       </CardHeader>
 
       <CardContent>
@@ -87,7 +90,7 @@ export default function RegisterForm() {
           <FormErrorBanner message={serverError} />
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("Email")}</Label>
             <Input
               id="email"
               type="email"
@@ -101,7 +104,7 @@ export default function RegisterForm() {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="first_name">First name</Label>
+              <Label htmlFor="first_name">{t("First name")}</Label>
               <Input
                 id="first_name"
                 type="text"
@@ -114,7 +117,7 @@ export default function RegisterForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="last_name">Last name</Label>
+              <Label htmlFor="last_name">{t("Last name")}</Label>
               <Input
                 id="last_name"
                 type="text"
@@ -128,7 +131,7 @@ export default function RegisterForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t("Password")}</Label>
             <PasswordInput
               id="password"
               placeholder="••••••••"
@@ -140,7 +143,7 @@ export default function RegisterForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirm_password">Confirm password</Label>
+            <Label htmlFor="confirm_password">{t("Confirm password")}</Label>
             <PasswordInput
               id="confirm_password"
               placeholder="••••••••"
@@ -158,17 +161,14 @@ export default function RegisterForm() {
           </div>
 
           <Button className="w-full" size="lg" disabled={isSubmitting}>
-            {isSubmitting ? "Creating account..." : "Create account"}
+            {isSubmitting ? t("Creating account...") : t("Create account")}
           </Button>
 
-          <p className="text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
+          <p className="text-center text-sm text-muted-foreground">{t("Already have an account?")}{" "}
             <Link
               to="/login"
               className="font-medium text-primary transition-colors hover:text-primary/80 hover:underline"
-            >
-              Sign in
-            </Link>
+            >{t("Sign in")}</Link>
           </p>
 
           <div className="pt-1">
@@ -188,9 +188,7 @@ export default function RegisterForm() {
                 strokeLinejoin="round"
               >
                 <path d="m15 18-6-6 6-6" />
-              </svg>
-              Back to home
-            </Link>
+              </svg>{t("Back to home")}</Link>
           </div>
         </form>
       </CardContent>

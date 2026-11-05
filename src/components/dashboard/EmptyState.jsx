@@ -1,8 +1,11 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { Inbox } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 export default function EmptyState({ title, description, className }) {
+  useLanguage();
   return (
     <div
       className={cn(
@@ -11,9 +14,9 @@ export default function EmptyState({ title, description, className }) {
       )}
     >
       <Inbox className="size-8 text-muted-foreground/50" />
-      <p className="text-sm font-medium text-foreground">{title}</p>
+      <p className="text-sm font-medium text-foreground">{t(title)}</p>
       {description && (
-        <p className="max-w-xs text-xs text-muted-foreground">{description}</p>
+        <p className="max-w-xs text-xs text-muted-foreground">{t(description)}</p>
       )}
     </div>
   );

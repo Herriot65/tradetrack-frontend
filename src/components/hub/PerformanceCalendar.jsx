@@ -1,3 +1,5 @@
+import { getLanguage, translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const DOW_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -31,6 +33,7 @@ function getDayStyle(d) {
 }
 
 export default function PerformanceCalendar({ year, month, calendarData = {} }) {
+  useLanguage();
   if (year == null || month == null) return null;
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -44,7 +47,7 @@ export default function PerformanceCalendar({ year, month, calendarData = {} }) 
   ];
   while (cells.length % 7 !== 0) cells.push(null);
 
-  const monthLabel = new Date(year, month).toLocaleDateString(undefined, {
+  const monthLabel = new Date(year, month).toLocaleDateString(getLanguage(), {
     month: "long",
     year:  "numeric",
   });
@@ -52,8 +55,7 @@ export default function PerformanceCalendar({ year, month, calendarData = {} }) 
   return (
     <Card className="border-zinc-800/60 bg-zinc-900/40">
       <CardHeader className="px-5 pt-4 pb-3">
-        <CardTitle className="text-sm font-medium">
-          Trading Calendar — {monthLabel}
+        <CardTitle className="text-sm font-medium">{t("Trading Calendar —") + " "}{monthLabel}
         </CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-4">
@@ -104,7 +106,7 @@ export default function PerformanceCalendar({ year, month, calendarData = {} }) 
           ].map(({ color, label }) => (
             <span key={label} className="flex items-center gap-1.5 text-[9px] text-zinc-600">
               <span className={`size-2 rounded-sm inline-block ${color}`} />
-              {label}
+              {t(label)}
             </span>
           ))}
         </div>

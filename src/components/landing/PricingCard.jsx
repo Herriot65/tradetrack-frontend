@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { Link } from "react-router-dom";
 import { Check } from "lucide-react";
 
@@ -14,6 +16,7 @@ export default function PricingCard({
   cta,
   highlighted = false,
 }) {
+  useLanguage();
   return (
     <Card
       className={cn(
@@ -23,23 +26,21 @@ export default function PricingCard({
       )}
     >
       {highlighted && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-emerald-500 px-3 py-0.5 text-xs font-semibold text-black">
-          Most Popular
-        </div>
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-emerald-500 px-3 py-0.5 text-xs font-semibold text-black">{t("Most Popular")}</div>
       )}
 
       <CardHeader className="border-b border-zinc-800/60 pb-6">
-        <p className="text-sm font-medium text-zinc-400">{name}</p>
+        <p className="text-sm font-medium text-zinc-400">{t(name)}</p>
         <div className="mt-3 flex items-baseline gap-1">
           <span className="text-4xl font-bold tracking-tight text-white">
-            {price}
+            {t(price)}
           </span>
           {period && (
-            <span className="text-sm text-zinc-500">/ {period}</span>
+            <span className="text-sm text-zinc-500">/ {t(period)}</span>
           )}
         </div>
         <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-          {description}
+          {t(description)}
         </p>
       </CardHeader>
 
@@ -48,7 +49,7 @@ export default function PricingCard({
           {features.map((feature) => (
             <li key={feature} className="flex items-start gap-3 text-sm text-zinc-300">
               <Check className="mt-0.5 size-4 shrink-0 text-emerald-400" />
-              {feature}
+              {t(feature)}
             </li>
           ))}
         </ul>
@@ -61,7 +62,7 @@ export default function PricingCard({
           variant={highlighted ? "default" : "outline"}
           size="lg"
         >
-          <Link to="/register">{cta}</Link>
+          <Link to="/register">{t(cta)}</Link>
         </Button>
       </CardFooter>
     </Card>

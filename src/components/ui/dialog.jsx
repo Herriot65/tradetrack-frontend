@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { Dialog as DialogPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
@@ -5,22 +7,27 @@ import { Button } from "@/components/ui/button";
 import { XIcon } from "lucide-react";
 
 function Dialog({ ...props }) {
+  useLanguage();
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
 }
 
 function DialogTrigger({ ...props }) {
+  useLanguage();
   return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
 }
 
 function DialogPortal({ ...props }) {
+  useLanguage();
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
 }
 
 function DialogClose({ ...props }) {
+  useLanguage();
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
 }
 
 function DialogOverlay({ className, ...props }) {
+  useLanguage();
   return (
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
@@ -34,6 +41,7 @@ function DialogOverlay({ className, ...props }) {
 }
 
 function DialogContent({ className, children, showCloseButton = true, ...props }) {
+  useLanguage();
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -50,7 +58,7 @@ function DialogContent({ className, children, showCloseButton = true, ...props }
           <DialogPrimitive.Close data-slot="dialog-close" asChild>
             <Button variant="ghost" className="absolute top-2 right-2" size="icon-sm">
               <XIcon />
-              <span className="sr-only">Close</span>
+              <span className="sr-only">{t("Close")}</span>
             </Button>
           </DialogPrimitive.Close>
         )}
@@ -60,12 +68,14 @@ function DialogContent({ className, children, showCloseButton = true, ...props }
 }
 
 function DialogHeader({ className, ...props }) {
+  useLanguage();
   return (
     <div data-slot="dialog-header" className={cn("flex flex-col gap-2", className)} {...props} />
   );
 }
 
 function DialogFooter({ className, showCloseButton = false, children, ...props }) {
+  useLanguage();
   return (
     <div
       data-slot="dialog-footer"
@@ -78,7 +88,7 @@ function DialogFooter({ className, showCloseButton = false, children, ...props }
       {children}
       {showCloseButton && (
         <DialogPrimitive.Close asChild>
-          <Button variant="outline">Close</Button>
+          <Button variant="outline">{t("Close")}</Button>
         </DialogPrimitive.Close>
       )}
     </div>
@@ -86,6 +96,7 @@ function DialogFooter({ className, showCloseButton = false, children, ...props }
 }
 
 function DialogTitle({ className, ...props }) {
+  useLanguage();
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
@@ -96,6 +107,7 @@ function DialogTitle({ className, ...props }) {
 }
 
 function DialogDescription({ className, ...props }) {
+  useLanguage();
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"

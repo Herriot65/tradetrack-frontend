@@ -1,3 +1,5 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import {
   Card,
   CardContent,
@@ -15,6 +17,7 @@ export default function ChartCard({
   className,
   contentClassName,
 }) {
+  useLanguage();
   return (
     <Card
       className={cn(
@@ -24,9 +27,9 @@ export default function ChartCard({
     >
       <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
         <div className="space-y-1">
-          <CardTitle className="text-base font-semibold">{title}</CardTitle>
+          <CardTitle className="text-base font-semibold">{t(title)}</CardTitle>
           {description && (
-            <CardDescription>{description}</CardDescription>
+            <CardDescription>{t(description)}</CardDescription>
           )}
         </div>
         {action}

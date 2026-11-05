@@ -1,4 +1,6 @@
-﻿import { useState } from "react";
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
+import { useState } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 
 import { formatPercent, formatValue } from "@/lib/analytics";
@@ -22,6 +24,7 @@ function compareRows(a, b, key) {
 }
 
 function SortHeader({ column, sort, onSort }) {
+  useLanguage();
   const active = sort.key === column.key;
   return (
     <button
@@ -33,7 +36,7 @@ function SortHeader({ column, sort, onSort }) {
         active ? "text-ink-secondary" : "text-ink-muted",
       )}
     >
-      {column.label}
+      {t(column.label)}
       {active ? (
         <span className="text-[12px] leading-none">{sort.dir === "asc" ? "\u2191" : "\u2193"}</span>
       ) : (
@@ -44,6 +47,7 @@ function SortHeader({ column, sort, onSort }) {
 }
 
 function NetCell({ value, maxAbs, unit, diverging = false, muted = false, barTop = false }) {
+  useLanguage();
   const width = maxAbs > 0 ? Math.min(100, Math.abs(value) / maxAbs * 100) : 0;
   return (
     <div className="flex min-w-0 items-center justify-end gap-2">
@@ -69,6 +73,7 @@ function NetCell({ value, maxAbs, unit, diverging = false, muted = false, barTop
 }
 
 function BreakdownRow({ row, unit, maxAbs, diverging, selected, onClick }) {
+  useLanguage();
   return (
     <button
       type="button"
@@ -105,6 +110,7 @@ function BreakdownRow({ row, unit, maxAbs, diverging, selected, onClick }) {
 }
 
 export default function BreakdownCard({ analytics, filters, onFilter }) {
+  useLanguage();
   const tab = "assets";
   const [sort, setSort] = useState({ key: "net", dir: "desc" });
   const [expanded, setExpanded] = useState(false);
@@ -134,7 +140,7 @@ export default function BreakdownCard({ analytics, filters, onFilter }) {
   return (
     <AnalyticsCard>
       <CardHeading
-        title="By asset" detail="Compare your markets. Select an asset to focus the entire report."
+        title={t("By asset")} detail={t("Compare your markets. Select an asset to focus the entire report.")}
 
       />
 
@@ -152,9 +158,7 @@ export default function BreakdownCard({ analytics, filters, onFilter }) {
           </div>
 
           {visibleRows.length === 0 ? (
-            <p className="py-10 text-center text-[12px] text-ink-muted">
-              No trades in this range.
-            </p>
+            <p className="py-10 text-center text-[12px] text-ink-muted">{t("No trades in this range.")}</p>
           ) : (
             <div className="divide-y divide-white/[0.04]">
               {visibleRows.map((row) => (
@@ -175,7 +179,7 @@ export default function BreakdownCard({ analytics, filters, onFilter }) {
             className="mt-1 grid items-center gap-3 border-t border-hairline px-3 py-4"
             style={{ gridTemplateColumns: GRID_TEMPLATE }}
           >
-            <span className="text-[12px] font-medium text-ink-secondary">All assets</span>
+            <span className="text-[12px] font-medium text-ink-secondary">{t("All assets")}</span>
             <span className="text-right text-[12px] tabular-nums text-ink-secondary">
               {summary?.closedCount ?? 0}
             </span>
@@ -206,7 +210,7 @@ export default function BreakdownCard({ analytics, filters, onFilter }) {
             onClick={() => setExpanded((value) => !value)}
             className="text-[12px] text-ink-muted outline-none transition-colors hover:text-ink-secondary focus-visible:ring-2 focus-visible:ring-white/20"
           >
-            {expanded ? "Show top 12" : `Show all (${sortedRows.length})`}
+            {expanded ? t("Show top 12") : `Show all (${sortedRows.length})`}
           </button>
         </div>
       )}

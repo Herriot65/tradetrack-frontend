@@ -1,6 +1,9 @@
+import { translate as t } from "@/i18n/language";
+import { useLanguage } from "@/i18n/useLanguage";
 import { cn } from "@/lib/utils";
 
 export default function AnalyticsCard({ className, children }) {
+  useLanguage();
   return (
     <section
       className={cn(
@@ -14,6 +17,7 @@ export default function AnalyticsCard({ className, children }) {
 }
 
 export function CardHeading({ title, detail, action, className }) {
+  useLanguage();
   return (
     <div
       className={cn(
@@ -22,8 +26,8 @@ export function CardHeading({ title, detail, action, className }) {
       )}
     >
       <div className="min-w-0">
-        <h2 className="text-[14px] font-medium leading-5 tracking-[-0.02em] text-ink">{title}</h2>
-        {detail && <p className="mt-1.5 text-[12px] leading-5 text-ink-muted">{detail}</p>}
+        <h2 className="text-[14px] font-medium leading-5 tracking-[-0.02em] text-ink">{t(title)}</h2>
+        {detail && <p className="mt-1.5 text-[12px] leading-5 text-ink-muted">{t(detail)}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </div>
@@ -31,6 +35,7 @@ export function CardHeading({ title, detail, action, className }) {
 }
 
 export function SegmentedControl({ options, value, onChange, className, label }) {
+  useLanguage();
   return (
     <div
       className={cn(
@@ -70,7 +75,7 @@ export function SegmentedControl({ options, value, onChange, className, label })
                 : "text-ink-secondary hover:text-ink",
             )}
           >
-            {option.label}
+            {t(option.label)}
           </button>
         );
       })}
@@ -79,6 +84,7 @@ export function SegmentedControl({ options, value, onChange, className, label })
 }
 
 export function EmptyChart({ children, className }) {
+  useLanguage();
   return (
     <div
       className={cn(
