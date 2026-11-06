@@ -746,6 +746,5 @@ export default {
   "System": "Système",
   "Appearance": "Apparence",
   "Choose your appearance and the timezone used for trades.": "Choisissez votre apparence et le fuseau horaire utilisé pour les trades.",
-  "Saved automatically to your account. System follows your device’s theme.": "Enregistré automatiquement dans votre compte. Le mode Système suit le thème de votre appareil.",
-  "Couldn’t save theme. Please try again.": "Impossible d’enregistrer le thème. Veuillez réessayer."
+  "Saved in this browser. System follows your device’s theme.": "Enregistré dans ce navigateur. Le mode Système suit le thème de votre appareil."
 };

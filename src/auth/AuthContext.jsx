@@ -6,7 +6,6 @@ import { createContext, useEffect, useState } from "react";
 import api from "../api/axios";
 import { getAccessToken, getRefreshToken, clearTokens } from "./tokenService";
 import { setUserTimezone } from "../lib/timezone";
-import { setTheme } from "../lib/theme";
 import {
   loginUser,
   googleLoginUser,
@@ -26,7 +25,6 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     const { user } = await loginUser(credentials);
     setUserTimezone(user.timezone);
-    setTheme(user.theme || "system");
     setSessionError(null);
     setSessionExpired(false);
     setUser(user);
@@ -67,7 +65,6 @@ export const AuthProvider = ({ children }) => {
         const user = await getCurrentUser({ signal: controller.signal });
         if (controller.signal.aborted) return;
         setUserTimezone(user.timezone);
-        setTheme(user.theme || "system");
         setUser(user);
         setSessionExpired(false);
       } catch (err) {
@@ -94,7 +91,6 @@ export const AuthProvider = ({ children }) => {
         updatePreferences: async preferences => {
           const {data} = await api.patch("/auth/me/", preferences);
           setUserTimezone(data.timezone);
-          setTheme(data.theme || "system");
           setUser(data);
           return data;
         },
@@ -102,7 +98,6 @@ export const AuthProvider = ({ children }) => {
         loginWithGoogle: async credential => {
           const { user } = await googleLoginUser(credential);
           setUserTimezone(user.timezone);
-          setTheme(user.theme || "system");
           setSessionError(null);
           setSessionExpired(false);
           setUser(user);
