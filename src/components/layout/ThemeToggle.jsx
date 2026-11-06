@@ -20,10 +20,9 @@ export default function ThemeToggle() {
           variant="outline"
           aria-label={t("Theme")}
           title={`${t("Theme")}: ${t(labels[theme])}`}
-          className="h-9 w-9 shrink-0 px-0 sm:w-auto sm:px-3"
+          className="h-9 w-9 shrink-0 px-0"
         >
           <Icon aria-hidden="true" className="size-4" />
-          <span className="hidden sm:inline">{t(labels[theme])}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
