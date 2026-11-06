@@ -20,7 +20,9 @@ Trade dates use React DayPicker 9 with Radix popovers; fixed-choice form fields 
 
 ## Theme preferences
 
-`npm run test:theme` checks the Light, Dark and System selector with the real app shell: saved preferences after reload, live device theme changes, storage synchronization, invalid preferences, blocked browser storage, and layouts from 320px to 1440px. Set `CHROME_PATH` if Chromium is installed elsewhere. Screenshots are saved under `artifacts/theme/`.
+Theme choices are stored only in this browser; System is the default. Signing in, signing out and saving account settings preserve this choice. The existing backend theme field is retained for compatibility but is no longer used by the frontend.
+
+`npm run test:theme` builds and checks the real app with stubbed API responses: pre-login selection, login/session/logout persistence, zero theme API writes, live System updates, actual cross-tab synchronization, invalid preferences and blocked theme storage. It also checks the landing, login, registration and dashboard layouts from 320px to 1440px in English and French. Use `PLAYWRIGHT_MODULE` to select an installed Playwright module and `CHROMIUM_PATH` to select Chromium when needed. Screenshots are saved under `artifacts/theme/`.
 
 ## Custom fields and the trades list
 

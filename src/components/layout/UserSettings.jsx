@@ -24,7 +24,7 @@ export default function UserSettings({onClose}) {
     <div className="space-y-2">
       <p className="text-sm font-medium">{t("Appearance")}</p>
       <ThemeToggle />
-      <p className="text-xs text-muted-foreground">{t("Saved automatically to your account. System follows your device’s theme.")}</p>
+      <p className="text-xs text-muted-foreground">{t("Saved in this browser. System follows your device’s theme.")}</p>
     </div>
     <SelectField label={t("Timezone")} value={zone} onValueChange={setZone} options={[{value:"browser",label:`${t("Browser")} (${Intl.DateTimeFormat().resolvedOptions().timeZone})`},...zones.map(value=>({value,label:value.replaceAll("_"," ")}))]} allowClear={false}/>
     {error&&<p role="alert" className="text-red-400">{error}</p>}

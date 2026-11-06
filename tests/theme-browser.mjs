@@ -1,143 +1,153 @@
-import { createServer } from "vite";
-import { spawn } from "node:child_process";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
+// Built application with a stubbed API; never reads or writes live accounts.
+import assert from "node:assert/strict";
+import { mkdir } from "node:fs/promises";
+import { pathToFileURL } from "node:url";
+import { preview } from "vite";
 
-const output = path.resolve("artifacts/theme");
-await mkdir(output, { recursive: true });
-const executable =
-  process.env.CHROME_PATH || (process.platform === "win32"
-    ? "C:/Program Files/Google/Chrome/Application/chrome.exe"
-    : "/usr/bin/chromium");
-const server = await createServer({
-  define: { "import.meta.env.VITE_USE_MOCK": JSON.stringify("false") },
-  server: { host: "127.0.0.1", port: 4191, strictPort: true },
-});
-await server.listen();
-const chrome = spawn(
-  executable,
-  [
-    "--headless",
-    "--disable-gpu",
-    "--no-sandbox",
-    "--no-first-run",
-    "--disable-background-networking",
-    "--remote-debugging-port=4192",
-    `--user-data-dir=${path.join(output, "cdp-profile")}`,
-    "about:blank",
-  ],
-  { windowsHide: true, stdio: "ignore" },
-);
-const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-let socket;
+const { chromium } = await import(process.env.PLAYWRIGHT_MODULE
+  ? pathToFileURL(process.env.PLAYWRIGHT_MODULE).href : "playwright");
+const server = await preview({ preview: { host: "127.0.0.1", port: 4199, strictPort: true } });
+const base = "http://127.0.0.1:4199";
+await mkdir("artifacts/theme", { recursive: true });
+let browser;
 try {
-  let targets;
-  for (let n = 0; n < 60; n++) {
-    try {
-      targets = await (await fetch("http://127.0.0.1:4192/json/list")).json();
-      break;
-    } catch {
-      await pause(100);
-    }
-  }
-  if (!targets) throw new Error("Headless Chrome did not start.");
-  socket = new WebSocket(targets.find((target) => target.type === "page").webSocketDebuggerUrl);
-  await new Promise((resolve, reject) => {
-    socket.addEventListener("open", resolve, { once: true });
-    socket.addEventListener("error", reject, { once: true });
+  browser = await chromium.launch({ headless: true, ...(process.env.CHROMIUM_PATH
+    ? { executablePath: process.env.CHROMIUM_PATH } : { channel: "chrome" }) });
+  const context = await browser.newContext({ colorScheme: "light" });
+  const errors = [];
+  const writes = [];
+  const user = { id: 1, first_name: "Alice", email: "alice@example.test", timezone: "UTC", theme: "dark" };
+  context.on("page", page => page.on("pageerror", error => errors.push(error.message)));
+  await context.route("**/api/**", route => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname;
+    const headers = { "access-control-allow-origin": "*", "access-control-allow-headers": "authorization,content-type", "access-control-allow-methods": "GET,POST,PATCH,OPTIONS" };
+    if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers });
+    if (["POST", "PATCH", "PUT", "DELETE"].includes(request.method())) writes.push({ path, data: request.postDataJSON() });
+    return route.fulfill({ headers, json: path === "/api/auth/login/"
+      ? { access: "test-access", refresh: "test-refresh", user }
+      : path === "/api/auth/me/" ? user : [] });
   });
-  let sequence = 0;
-  const pending = new Map();
-  socket.addEventListener("message", (event) => {
-    const message = JSON.parse(event.data);
-    if (message.id) {
-      const callbacks = pending.get(message.id);
-      if (callbacks) {
-        pending.delete(message.id);
-        message.error
-          ? callbacks.reject(new Error(JSON.stringify(message.error)))
-          : callbacks.resolve(message.result);
+  const page = await context.newPage();
+  const theme = name => page.getByRole("button", { name, exact: true });
+  const choose = async (value, name = "Theme") => {
+    await theme(name).click();
+    await page.getByRole("menuitemradio", { name: value, exact: true }).click();
+  };
+  const checkTheme = async (value, target = page) => {
+    await target.waitForFunction(value => document.documentElement.classList.contains(value), value);
+    assert.equal(await target.evaluate(() => getComputedStyle(document.documentElement).colorScheme), value);
+  };
+  await page.goto(base);
+  await checkTheme("light");
+  await choose("Dark");
+  await checkTheme("dark");
+  assert.equal(await page.evaluate(() => localStorage.getItem("nexora-theme")), "dark");
+  await page.reload();
+  await checkTheme("dark");
+  await page.getByRole("button", { name: "Theme", exact: true }).click();
+  assert.equal(await page.getByRole("menuitemradio", { name: "Dark", exact: true }).getAttribute("aria-checked"), "true");
+  await page.keyboard.press("Escape");
+  console.log("PASS: Theme is available before sign-in and persists after reload");
+
+  await page.goto(`${base}/login`);
+  await checkTheme("dark");
+  await page.getByLabel("Email", { exact: true }).fill(user.email);
+  await page.getByLabel("Password", { exact: true }).fill("testpass123");
+  await choose("Light");
+  assert.equal(await page.getByLabel("Email", { exact: true }).inputValue(), user.email);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.getByRole("heading", { name: "Welcome, Alice!", exact: true }).waitFor();
+  await checkTheme("light");
+  await page.reload();
+  await page.getByRole("heading", { name: "Welcome, Alice!", exact: true }).waitFor();
+  await checkTheme("light");
+  await page.getByRole("button", { name: "Account menu", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Settings", exact: true }).click();
+  await page.getByRole("button", { name: "Save preferences", exact: true }).click();
+  await page.getByRole("dialog").waitFor({ state: "hidden" });
+  await checkTheme("light");
+  assert.equal(writes.filter(write => write.path === "/api/auth/me/").length, 1);
+  assert(writes.filter(write => write.path === "/api/auth/me/").every(write => !Object.hasOwn(write.data, "theme")));
+  console.log("PASS: Sign-in, restored sessions and account settings preserve the browser theme without theme API writes");
+
+  await choose("System");
+  await checkTheme("light");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await checkTheme("dark");
+  await choose("Light");
+  await checkTheme("light");
+  const other = await context.newPage();
+  await other.goto(`${base}/login`);
+  await other.getByRole("button", { name: "Theme", exact: true }).click();
+  await other.getByRole("menuitemradio", { name: "Dark", exact: true }).click();
+  await checkTheme("dark");
+  await other.close();
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.evaluate(() => localStorage.setItem("nexora-theme", "invalid"));
+  await page.reload();
+  await checkTheme("light");
+  console.log("PASS: Live System updates, explicit overrides, actual cross-tab synchronization and invalid preference fallback");
+
+  for (const language of ["en-US", "fr-FR"]) {
+    await page.evaluate(language => localStorage.setItem("nexora_language", language), language);
+    const name = language === "fr-FR" ? "Thème" : "Theme";
+    for (const route of ["/", "/login", "/register", "/dashboard"]) {
+      await page.goto(`${base}${route}`);
+      for (const width of [320, 390, 768, 1024, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        const selector = theme(name);
+        await selector.waitFor({ state: "visible" });
+        await page.waitForFunction(() => document.documentElement.scrollWidth <= innerWidth + 1);
+        const bounds = await selector.boundingBox();
+        assert(bounds.x >= 0 && bounds.x + bounds.width <= width, `${name} fits ${route} at ${width}px`);
+        const languageSelector = page.getByRole("combobox", { name: language === "fr-FR" ? "Choisir la langue" : "Select language" });
+        const languageBounds = await languageSelector.boundingBox();
+        assert(languageBounds.x >= 0 && languageBounds.x + languageBounds.width <= width);
+        if (route === "/login" && width === 320 && language === "en-US") {
+          const controlBottom = Math.max(bounds.y + bounds.height, languageBounds.y + languageBounds.height);
+          assert((await page.getByLabel("Email", { exact: true }).boundingBox()).y > controlBottom);
+        }
+        if (language === "en-US" && ["/", "/login"].includes(route) && [320, 1440].includes(width)) {
+          await page.screenshot({ path: `artifacts/theme/${route === "/" ? "landing" : "login"}-${width}.png` });
+        }
       }
     }
-  });
-  const send = (method, params = {}) =>
-    new Promise((resolve, reject) => {
-      const id = ++sequence;
-      pending.set(id, { resolve, reject });
-      socket.send(JSON.stringify({ id, method, params }));
-    });
-  await send("Page.enable");
-  await send("Runtime.enable");
-
-  const evaluate = async (expression) => {
-    const result = await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
-    if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
-    return result.result.value;
-  };
-  const check = async (expression, message) => {
-    if (!await evaluate(expression)) throw new Error(message);
-    console.log(`PASS ${message}`);
-  };
-  const navigate = async () => {
-    await send("Page.navigate", { url: "http://127.0.0.1:4191/tests/redesign.html?screen=dashboard" });
-    for (let i = 0; i < 100; i++) {
-      if (await evaluate('Boolean(document.querySelector("#nexora-qa-report"))')) return;
-      await pause(100);
-    }
-    throw new Error("Fixture did not load");
-  };
-  const emulate = async (value) => {
-    await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value }] });
-    await pause(100);
-  };
-  const choose = async (label) => {
-    await evaluate(`document.querySelector('[aria-label="Theme"]').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse', ctrlKey: false }))`);
-    await pause(150);
-    await evaluate(`Array.from(document.querySelectorAll('[role="option"]')).find(node => node.textContent.trim() === ${JSON.stringify(label)}).click()`);
-    await pause(150);
-  };
-  await emulate("light");
-  await navigate();
-  await evaluate('localStorage.removeItem("nexora-theme")');
-  await navigate();
-  await check('document.documentElement.classList.contains("light") && document.querySelector("[aria-label=Theme]").textContent.includes("System")', "Default follows system light");
-  await choose("Dark");
-  await check('window.__preferenceWrites.at(-1).theme === "dark"', "Selector saves the account theme preference");
-  await check('document.documentElement.classList.contains("dark") && localStorage.getItem("nexora-theme") === "dark"', "Dark choice applies and persists");
-  await navigate();
-  await check('document.documentElement.classList.contains("dark") && document.querySelector("[aria-label=Theme]").textContent.includes("Dark")', "Dark choice survives reload");
-  await emulate("dark");
-  await choose("Light");
-  await evaluate('window.__rejectPreferences = true');
-  await choose("Dark");
-  await check('document.documentElement.classList.contains("light") && document.querySelector("[role=alert]").textContent.includes("Couldn’t save theme")', "Failed account save keeps the current theme and reports the error");
-  await evaluate('window.__rejectPreferences = false');
-  await check('document.documentElement.classList.contains("light") && getComputedStyle(document.querySelector(".nx-header")).backgroundColor === "rgb(246, 248, 248)"', "Light overrides a dark device and updates header palette");
-  await choose("System");
-  await check('document.documentElement.classList.contains("dark")', "System resolves to device dark");
-  await emulate("light");
-  await check('document.documentElement.classList.contains("light")', "System reacts to device changes live");
-  await evaluate(`localStorage.setItem('nexora-theme', 'dark'); dispatchEvent(new StorageEvent('storage', {key: 'nexora-theme', storageArea: localStorage}))`);
-  await check('document.documentElement.classList.contains("dark") && document.querySelector("[aria-label=Theme]").textContent.includes("Dark")', "Theme synchronizes storage updates");
-  await evaluate('localStorage.setItem("nexora-theme", "invalid")');
-  await navigate();
-  await check('document.documentElement.classList.contains("light") && document.querySelector("[aria-label=Theme]").textContent.includes("System")', "Invalid saved preference falls back to System");
-  await send("Page.addScriptToEvaluateOnNewDocument", { source: `Storage.prototype.getItem = () => { throw new Error('blocked'); }; Storage.prototype.setItem = () => { throw new Error('blocked'); };` });
-  await navigate();
-  await choose("Dark");
-  await check('document.documentElement.classList.contains("dark")', "Theme remains usable with browser storage blocked");
-  await choose("Light");
-  for (const width of [320, 390, 768, 1440]) {
-    await send("Emulation.setDeviceMetricsOverride", { width, height: 1000, deviceScaleFactor: 1, mobile: width < 768 });
-    await pause(100);
-    await check('document.documentElement.scrollWidth <= innerWidth + 1', `No page overflow at ${width}px`);
-    const screenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
-    await writeFile(path.join(output, `light-${width}.png`), Buffer.from(screenshot.data, "base64"));
+    await choose(language === "fr-FR" ? "Sombre" : "Dark", name);
+    await checkTheme("dark");
   }
-  await check('JSON.parse(document.querySelector("#nexora-qa-report").textContent).errors.length === 0', "No fixture runtime errors");
-  await send("Browser.close");
+  console.log("PASS: Landing, sign-in, registration and dashboard controls fit 320–1440px in English and French");
+  await page.evaluate(() => localStorage.setItem("nexora_language", "en-US"));
+  await page.reload();
+  await page.getByRole("button", { name: "Account menu", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Sign out", exact: true }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).waitFor();
+  await checkTheme("dark");
+  assert(!writes.some(write => write.data && Object.hasOwn(write.data, "theme")));
+  await context.close();
+
+  const blocked = await browser.newContext({ colorScheme: "light" });
+  await blocked.addInitScript(() => {
+    const get = Storage.prototype.getItem;
+    const set = Storage.prototype.setItem;
+    Storage.prototype.getItem = function (key) { if (key === "nexora-theme") throw new Error("blocked"); return get.call(this, key); };
+    Storage.prototype.setItem = function (key, value) { if (key === "nexora-theme") throw new Error("blocked"); return set.call(this, key, value); };
+  });
+  const offline = await blocked.newPage();
+  offline.on("pageerror", error => errors.push(error.message));
+  await offline.goto(`${base}/login`);
+  await offline.route("**/api/**", route => route.abort());
+  await offline.getByRole("button", { name: "Theme", exact: true }).click();
+  await offline.getByRole("menuitemradio", { name: "Dark", exact: true }).click();
+  await checkTheme("dark", offline);
+  await offline.getByRole("button", { name: "Theme", exact: true }).click();
+  await offline.keyboard.press("Home");
+  await offline.keyboard.press("Enter");
+  await checkTheme("light", offline);
+  await blocked.close();
+  assert.deepEqual(errors, []);
+  console.log("PASS: Sign-out preserves the theme; pointer and keyboard selection work with theme storage blocked and the API unavailable; no runtime errors");
 } finally {
-  socket?.close();
-  chrome.kill();
-  await server.close();
+  await browser?.close();
+  await new Promise(resolve => server.httpServer.close(resolve));
 }

@@ -3,6 +3,7 @@ import { useLanguage } from "@/i18n/useLanguage";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, BookOpen, BarChart3, ScanLine } from "lucide-react";
 import LanguageSelector from "@/components/layout/LanguageSelector";
+import ThemeToggle from "@/components/layout/ThemeToggle";
 export default function AuthLayout({ children }) {
   useLanguage();
   return (
@@ -41,8 +42,11 @@ export default function AuthLayout({ children }) {
           </Link>
         </div>
       </aside>
-      <main className="nx-auth-content relative">
-        <div className="absolute right-4 top-4"><LanguageSelector /></div>
+      <main className="nx-auth-content relative !pt-24">
+        <div className="absolute right-4 top-4 flex items-center gap-3">
+          <ThemeToggle />
+          <LanguageSelector />
+        </div>
         <div className="w-full max-w-[400px]">
           <Link to="/" className="mb-10 flex items-center justify-center gap-2 md:hidden">
             <img src="/nexora.png" alt="" className="size-9 rounded-lg" />
