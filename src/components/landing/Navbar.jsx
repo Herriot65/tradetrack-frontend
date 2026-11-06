@@ -35,6 +35,10 @@ export default function Navbar() {
             </a>
           ))}
         </div>
+        <div className="hidden shrink-0 items-center gap-2 xl:flex">
+          <ThemeToggle />
+          <LanguageSelector />
+        </div>
         <div className="hidden items-center gap-3 xl:flex">
           {!loading && (
             <Button asChild variant="ghost">
@@ -47,8 +51,6 @@ export default function Navbar() {
           </Button>
         </div>
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          <ThemeToggle />
-          <LanguageSelector />
           <Button
             type="button"
             variant="ghost"
