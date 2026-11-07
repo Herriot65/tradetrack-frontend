@@ -443,6 +443,7 @@ export default function TradePanel({
         <SheetContent
           className={`flex flex-col ${resizing ? "select-none" : ""}`}
           style={{ maxWidth: `${panelWidth}px`, transition: "none" }}
+          data-wide-review={panelWidth > 760}
         >
           <div
             role="separator"
@@ -996,6 +997,8 @@ export default function TradePanel({
                     sections={notesSections}
                     onChange={setNotesSections}
                     onDeleteImage={handleDeleteBackendImage}
+                    wide={panelWidth > 760}
+                    onToggleWide={() => setPanelWidth(width => width > 760 ? 560 : Math.min(window.innerWidth, 1100))}
                   />
                   <TradeCustomFields
                     section="trade_notes"

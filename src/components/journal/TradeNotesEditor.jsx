@@ -1,7 +1,8 @@
 import { translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
 import { useRef, useState } from "react";
-import { ImagePlus, Plus, X } from "lucide-react";
+import { ImagePlus, Plus, X, Maximize2, Minimize2 } from "lucide-react";
+import TradeImage from "./TradeImage";
 import ImageLightbox from "./ImageLightbox";
 
 export const DEFAULT_SECTIONS = [
@@ -28,25 +29,23 @@ function NoteSection({
   const fileInputRef  = useRef(null);
 
   function readFiles(files) {
-    Array.from(files).forEach((file) => {
-      if (!file.type.startsWith("image/")) return;
-      onAddImages([{ id: Date.now() + Math.random(), name: file.name, preview: URL.createObjectURL(file), file }]);
-    });
+    const images = Array.from(files).filter(file => file?.type.startsWith("image/"));
+    if (images.length) onAddImages(images.map(file => ({ id: crypto.randomUUID(), name: file.name || "pasted-image.png", preview: URL.createObjectURL(file), file })));
   }
 
-  function handlePaste(e) {
-    const item = Array.from(e.clipboardData?.items ?? []).find((i) =>
-      i.type.startsWith("image/")
-    );
-    if (!item) return;
-    e.preventDefault();
-    const file = item.getAsFile();
-    onAddImages([{ id: Date.now() + Math.random(), name: "pasted-image.png", preview: URL.createObjectURL(file), file }]);
+  function handlePaste(event) {
+    const files = Array.from(event.clipboardData?.items ?? [])
+      .filter(item => item.type.startsWith("image/"))
+      .map(item => item.getAsFile()).filter(Boolean);
+    if (!files.length) return;
+    event.preventDefault();
+    readFiles(files);
   }
 
   return (
     <div
       className="overflow-hidden rounded-md border border-zinc-800 bg-zinc-900/20"
+      onPaste={handlePaste}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => { e.preventDefault(); readFiles(e.dataTransfer.files); }}
     >
@@ -89,35 +88,16 @@ function NoteSection({
       <textarea
         value={section.text}
         onChange={(e) => onTextChange(e.target.value)}
-        onPaste={handlePaste}
         placeholder={`Notes for ${section.title.toLowerCase()}… (paste an image here)`}
         rows={3}
         className="w-full resize-none bg-transparent px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none"
       />
 
-      {/* Image grid */}
-      {section.images.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 px-3 pb-2">
-          {section.images.map((img) => (
-            <div key={img.id} className="group relative overflow-hidden rounded border border-zinc-800 bg-zinc-900">
-              <img
-                src={img.preview}
-                alt={img.name}
-                className="h-28 w-full cursor-zoom-in object-cover"
-                onClick={() => onImageClick(img.preview)}
-              />
-              <button
-                type="button"
-                onClick={() => onRemoveImage(img.id)}
-                className="absolute right-1 top-1 hidden rounded bg-zinc-900/80 p-0.5 text-zinc-300 hover:text-white group-hover:flex"
-              >
-                <X className="size-3" />
-              </button>
-              <p className="truncate px-1.5 py-1 text-[10px] text-zinc-500">{img.name}</p>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Full-width, uncropped chart documents */}
+      {section.images.length > 0 && <div className="space-y-4 px-3 pb-3">
+        {section.images.map(img => <TradeImage key={img.id} src={img.preview} label={img.name}
+          onOpen={() => onImageClick(img.preview)} onRemove={() => onRemoveImage(img.id)} />)}
+      </div>}
 
       {/* Upload */}
       <div className="border-t border-zinc-800/40 px-3 py-2">
@@ -142,7 +122,7 @@ function NoteSection({
 
 // ─── Editor ───────────────────────────────────────────────────────────────────
 
-export default function TradeNotesEditor({ sections, onChange, onDeleteImage }) {
+export default function TradeNotesEditor({ sections, onChange, onDeleteImage, onToggleWide, wide = false }) {
   useLanguage();
   const [editingId,   setEditingId]   = useState(null);
   const [lightboxSrc, setLightboxSrc] = useState(null);
@@ -184,7 +164,14 @@ export default function TradeNotesEditor({ sections, onChange, onDeleteImage }) 
 
   return (
     <>
-      <div className="space-y-2">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs leading-5 text-muted-foreground">{t("Paste, drop or upload screenshots. Each image shows the complete chart.")}</p>
+        {onToggleWide && <button type="button" aria-pressed={wide} onClick={onToggleWide} className="hidden min-h-10 shrink-0 items-center gap-2 rounded-md border border-border px-3 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground md:flex">
+          {wide ? <Minimize2 aria-hidden="true" className="size-3.5"/> : <Maximize2 aria-hidden="true" className="size-3.5"/>}
+          {wide ? t("Standard width") : t("Wide review")}
+        </button>}
+      </div>
+      <div className="space-y-4">
         {sections.map((s) => (
           <NoteSection
             key={s.id}

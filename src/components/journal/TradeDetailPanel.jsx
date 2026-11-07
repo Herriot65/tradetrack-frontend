@@ -13,6 +13,8 @@ import {
   SheetDescription,
   SheetBody,
 } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import TradeImage from "./TradeImage";
 import ImageLightbox from "./ImageLightbox";
 
 const STATUS_COLORS = {
@@ -56,6 +58,7 @@ export default function TradeDetailPanel({ trade, open, onClose }) {
   useLanguage();
   const context = useContext(JournalContext);
   const unit = context?.activeJournal?.display_unit || "R";
+  const [wide, setWide] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState(null);
   if (!trade) return null;
 
@@ -65,7 +68,7 @@ export default function TradeDetailPanel({ trade, open, onClose }) {
   return (
     <>
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent>
+      <SheetContent style={{maxWidth: wide ? "1100px" : "560px"}}>
         <SheetHeader onClose={onClose}>
           <SheetTitle className="text-base font-semibold">
             {typeof trade.asset === "object" ? trade.asset?.symbol : trade.asset}
@@ -145,17 +148,14 @@ export default function TradeDetailPanel({ trade, open, onClose }) {
             {/* Screenshots */}
             {trade.screenshots?.length > 0 && (
               <section>
-                <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{t("Screenshots")}</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {trade.screenshots.map((s) => (
-                    <img
-                      key={s.id}
-                      src={s.image_url}
-                      alt={t("Trade screenshot")}
-                      className="h-32 w-full cursor-zoom-in rounded-md border border-zinc-800 object-cover transition-opacity hover:opacity-80"
-                      onClick={() => setLightboxSrc(s.image_url)}
-                    />
-                  ))}
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h3 className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{t("Screenshots")}</h3>
+                  <Button type="button" variant="outline" size="sm" className="hidden md:flex" aria-pressed={wide} onClick={() => setWide(value => !value)}>{wide ? t("Standard width") : t("Wide review")}</Button>
+                </div>
+                <div className="space-y-4">
+                  {trade.screenshots.map((image,index) => <TradeImage key={image.id} src={image.image_url}
+                    label={image.section ? t("{section} · Screenshot {number}", {section:image.section,number:index+1}) : t("Screenshot {number}",{number:index+1})}
+                    onOpen={() => setLightboxSrc(image.image_url)} />)}
                 </div>
               </section>
             )}

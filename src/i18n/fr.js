@@ -1,5 +1,16 @@
 // English source strings are stable keys; API values and user content stay unchanged.
 export default {
+  "Close image viewer": "Fermer la visionneuse",
+  "View {image} full screen": "Afficher {image} en plein écran",
+  "Remove {image}": "Retirer {image}",
+  "Full screen": "Plein écran",
+  "Wide review": "Vue élargie",
+  "Standard width": "Largeur standard",
+  "Uploading screenshot": "Envoi de la capture",
+  "Paste, drop or upload screenshots. Each image shows the complete chart.": "Collez, déposez ou ajoutez des captures. Chaque image affiche le graphique complet.",
+  "Screenshot {number}": "Capture {number}",
+  "{section} · Screenshot {number}": "{section} · Capture {number}",
+
   "Manage {field}": "Gérer : {field}",
   "Timeframes": "Unités de temps",
   "Customize choices in this browser. Removing a choice does not change saved trades.": "Personnalisez les choix dans ce navigateur. Supprimer un choix ne modifie pas les trades enregistrés.",
