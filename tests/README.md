@@ -35,3 +35,17 @@ Theme choices are stored only in this browser; System is the default. Signing in
 The header and sign-in pages offer Français (FR) and English (US). English is the default. The choice is stored in `nexora_language` in browser storage and synchronized across tabs. Interface translations live in `src/i18n/fr.js`; user-entered journal names, notes, tags, and custom field options retain their original text. Dates and numbers follow the selected locale; trade timestamps retain their existing timezone behavior.
 
 `npm test` includes translation, interpolation, locale formatting, invalid-language, and unavailable-storage checks. `npm run test:language` builds the app and verifies switching, navigation/reload persistence, form preservation, French validation, settings, cross-tab synchronization, and layouts from 320px through 1280px. Set `PLAYWRIGHT_MODULE` to an installed Playwright entry point and `CHROMIUM_PATH` to a browser executable when needed. API calls in browser tests are stubbed.
+
+## Favorite timeframes
+
+`npm run test:timeframe-favorites` exercises the real trade form: star/unstar
+without selecting or submitting, shared Reference/Opportunity/Entry shortcuts,
+non-favorite selection, save payload, persistence, cross-tab synchronization,
+keyboard selection and 320/390/1280px layout. It also checks malformed and blocked
+storage. Use `PLAYWRIGHT_MODULE` as for the other browser runners. Captures are
+saved in `artifacts/timeframe-favorites/`.
+
+Favorites are a browser preference scoped to the signed-in user (id, or email
+fallback). All three timeframe fields share them, ordered by the existing
+shortest-to-longest timeframe list. No timeframes are preselected or added to the
+supported list. Preference writes do not modify any trade or backend record.

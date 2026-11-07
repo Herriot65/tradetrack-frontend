@@ -10,14 +10,14 @@ try {
  const page=await browser.newPage({viewport:{width:1280,height:900},timezoneId:"America/New_York"});page.setDefaultTimeout(10000);
  const errors=[];page.on("pageerror",e=>errors.push(e.message));
  await page.goto("http://127.0.0.1:4180/tests/trade-form.html?edit=1");
- await page.getByRole("combobox",{name:"Reference TF",exact:true}).waitFor();
+ await page.getByRole("button",{name:"Reference TF",exact:true}).waitFor();
  const sheet=page.locator('[data-slot="sheet-content"]');
  assert.equal(await sheet.evaluate(el=>getComputedStyle(el).position),"fixed","Trade sheet must stay fixed to the viewport");
  const bounds=await sheet.boundingBox();
  assert.ok(bounds&&bounds.y===0&&Math.abs(bounds.x+bounds.width-1280)<2,"Trade sheet must be visible at the right edge");
  assert.equal(await page.getByRole("slider",{name:"Trade score",exact:true}).inputValue(),"0");
- await page.getByRole("combobox",{name:"Reference TF",exact:true}).click();
- await page.getByRole("option",{name:"H4",exact:true}).click();
+ await page.getByRole("button",{name:"Reference TF",exact:true}).click();
+ await page.getByRole("button",{name:"Select H4",exact:true}).click();
  await page.getByRole("slider",{name:"Trade score",exact:true}).focus();
  await page.keyboard.press("End");
  await page.getByRole("button",{name:"Entry date/time",exact:true}).click();
@@ -37,7 +37,7 @@ try {
  assert.equal(payload.entry_datetime,"2026-11-03T09:45:32.123Z");
  assert.equal(payload.exit_datetime,"2026-12-05T11:30:00.000Z");
  await page.getByRole("button",{name:"Edit saved trade",exact:true}).click();
- assert.match(await page.getByRole("combobox",{name:"Reference TF",exact:true}).innerText(),/H4/);
+ assert.match(await page.getByRole("button",{name:"Reference TF",exact:true}).innerText(),/H4/);
  assert.equal(await page.getByRole("slider",{name:"Trade score",exact:true}).inputValue(),"10");
  await mkdir("artifacts/trade-form",{recursive:true});
  for(const width of [320,390,768,1280]) {
@@ -47,7 +47,7 @@ try {
   const bounds=await popover.boundingBox();assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width+1,`Calendar overflows at ${width}`);
   await page.screenshot({path:`artifacts/trade-form/calendar-${width}.png`,fullPage:true});
   await page.getByRole("button",{name:"Done",exact:true}).click();
-  await page.getByRole("combobox",{name:"Reference TF",exact:true}).scrollIntoViewIfNeeded();
+  await page.getByRole("button",{name:"Reference TF",exact:true}).scrollIntoViewIfNeeded();
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`Form overflows at ${width}`);
   await page.screenshot({path:`artifacts/trade-form/setup-${width}.png`,fullPage:true});
  }
@@ -60,8 +60,8 @@ try {
  await page.getByRole("button",{name:"Now",exact:true}).click();
  await page.getByRole("button",{name:"Done",exact:true}).click();
  await page.getByPlaceholder("e.g. 2.00").fill("0");
- await page.getByRole("combobox",{name:"Reference TF",exact:true}).click();
- await page.getByRole("option",{name:"W1",exact:true}).click();
+ await page.getByRole("button",{name:"Reference TF",exact:true}).click();
+ await page.getByRole("button",{name:"Select W1",exact:true}).click();
  await page.getByRole("slider",{name:"Trade score",exact:true}).focus();
  await page.keyboard.press("End");await page.keyboard.press("Home");
  const emotions=page.getByPlaceholder(/Select emotions/);
@@ -73,8 +73,8 @@ try {
  // Check clearing optional values and a nested keyboard-driven menu.
  await page.getByRole("button",{name:"Edit saved trade",exact:true}).click();
  await page.getByRole("button",{name:"Clear trade rating",exact:true}).click();
- await page.getByRole("combobox",{name:"Reference TF",exact:true}).click();
- await page.getByRole("option",{name:"Not set",exact:true}).click();
+ await page.getByRole("button",{name:"Reference TF",exact:true}).click();
+ await page.getByRole("button",{name:"Not set",exact:true}).click();
  await page.getByRole("button",{name:"Save Trade",exact:true}).click();
  await page.getByRole("dialog").waitFor({state:"hidden"});
  const cleared=await page.evaluate(()=>window.__tradePayload);assert.equal(cleared.trade_score,null);assert.equal(cleared.reference_timeframe,null);

@@ -17,6 +17,7 @@ import { UNIT_OPTIONS, riskAmount, tradeAmount } from "@/lib/analytics";
 import { tradeSchema } from "@/schemas/tradeSchema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import TimeframeField from "./TimeframeField";
 import SelectField from "@/components/ui/select-field";
 import DateTimePicker from "@/components/ui/date-time-picker";
 import {
@@ -51,7 +52,6 @@ import { uploadScreenshot, deleteScreenshot, fetchTrade } from "@/api/trades.api
 
 // ─── Options ──────────────────────────────────────────────────────────────────
 
-const TF_OPTIONS = ["M1", "M5", "M15", "M30", "H1", "H4", "D1", "W1", "MN"];
 const TREND_OPTIONS = [
   { value: "BULLISH", label: "Bullish" },
   { value: "BEARISH", label: "Bearish" },
@@ -765,15 +765,13 @@ export default function TradePanel({
                         name="reference_timeframe"
                         control={control}
                         render={({ field }) => (
-                          <SelectField translateOptions
+                          <TimeframeField
                             id="trade-reference_timeframe"
                             label={t("Reference TF")}
                             value={field.value}
                             onValueChange={field.onChange}
                             onBlur={field.onBlur}
                             ref={field.ref}
-                            options={TF_OPTIONS}
-                            placeholder={t("Select timeframe")}
                           />
                         )}
                       />
@@ -825,15 +823,13 @@ export default function TradePanel({
                         name="opportunity_timeframe"
                         control={control}
                         render={({ field }) => (
-                          <SelectField translateOptions
+                          <TimeframeField
                             id="trade-opportunity_timeframe"
                             label={t("Opportunity TF")}
                             value={field.value}
                             onValueChange={field.onChange}
                             onBlur={field.onBlur}
                             ref={field.ref}
-                            options={TF_OPTIONS}
-                            placeholder={t("Select timeframe")}
                           />
                         )}
                       />
@@ -844,15 +840,13 @@ export default function TradePanel({
                         name="entry_timeframe"
                         control={control}
                         render={({ field }) => (
-                          <SelectField translateOptions
+                          <TimeframeField
                             id="trade-entry_timeframe"
                             label={t("Entry TF")}
                             value={field.value}
                             onValueChange={field.onChange}
                             onBlur={field.onBlur}
                             ref={field.ref}
-                            options={TF_OPTIONS}
-                            placeholder={t("Select timeframe")}
                           />
                         )}
                       />

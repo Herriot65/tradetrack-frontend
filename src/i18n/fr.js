@@ -1,5 +1,12 @@
 // English source strings are stable keys; API values and user content stay unchanged.
 export default {
+  "{field} favorites": "Favoris : {field}",
+  "{field} options": "Options : {field}",
+  "Select {timeframe}": "Choisir {timeframe}",
+  "Favorite {timeframe}": "Favori {timeframe}",
+  "Star timeframes to show quick choices above the field.": "Marquez vos unités de temps favorites pour les afficher au-dessus du champ.",
+  "Favorites are saved in this browser.": "Les favoris sont enregistrés dans ce navigateur.",
+
   "Language": "Langue",
   "Select language": "Choisir la langue",
   "Account": "Compte",
