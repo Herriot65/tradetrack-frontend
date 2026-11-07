@@ -13,6 +13,7 @@ import {
   SheetDescription,
   SheetBody,
 } from "@/components/ui/sheet";
+import RichNotesContent from "@/components/notes/RichNotesContent";
 import { Button } from "@/components/ui/button";
 import TradeImage from "./TradeImage";
 import ImageLightbox from "./ImageLightbox";
@@ -136,12 +137,13 @@ export default function TradeDetailPanel({ trade, open, onClose }) {
             )}
 
             {/* Notes */}
-            {trade.notes && (
-              <section>
-                <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{t("Notes")}</h3>
-                <p className="rounded-md border border-zinc-800/60 bg-zinc-900/40 px-3 py-2.5 text-sm leading-relaxed text-zinc-300">
-                  {trade.notes}
-                </p>
+            {(trade.notes || trade.notes_document?.version === 1) && (
+              <section className="space-y-4">
+                <h3 className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{t("Notes")}</h3>
+                {trade.notes_document?.version === 1 ? <>
+                  <RichNotesContent document={trade.notes_document.general}/>
+                  {trade.notes_document.sections?.map(section => <div key={section.id}><h4 className="text-sm font-medium">{section.title}</h4><RichNotesContent document={section.content}/></div>)}
+                </> : <p className="whitespace-pre-wrap rounded-md border border-border p-3 text-sm">{trade.notes}</p>}
               </section>
             )}
 
@@ -153,7 +155,7 @@ export default function TradeDetailPanel({ trade, open, onClose }) {
                   <Button type="button" variant="outline" size="sm" className="hidden md:flex" aria-pressed={wide} onClick={() => setWide(value => !value)}>{wide ? t("Standard width") : t("Wide review")}</Button>
                 </div>
                 <div className="space-y-4">
-                  {trade.screenshots.map((image,index) => <TradeImage key={image.id} src={image.image_url}
+                  {trade.screenshots.map((image,index) => <TradeImage key={image.id} src={image.image_url} width={image.display_width ?? 100}
                     label={image.section ? t("{section} · Screenshot {number}", {section:image.section,number:index+1}) : t("Screenshot {number}",{number:index+1})}
                     onOpen={() => setLightboxSrc(image.image_url)} />)}
                 </div>

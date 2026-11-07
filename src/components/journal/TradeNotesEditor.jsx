@@ -2,6 +2,8 @@ import { translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
 import { useRef, useState } from "react";
 import { ImagePlus, Plus, X, Maximize2, Minimize2 } from "lucide-react";
+import RichNotesEditor from "@/components/notes/RichNotesEditor";
+import { documentFromText } from "@/lib/noteDocument";
 import TradeImage from "./TradeImage";
 import ImageLightbox from "./ImageLightbox";
 
@@ -21,6 +23,7 @@ function NoteSection({
   onFinishRename,
   onRemove,
   onTextChange,
+  onResizeImage,
   onAddImages,
   onRemoveImage,
   onImageClick,
@@ -54,6 +57,7 @@ function NoteSection({
         {isEditingTitle ? (
           <input
             autoFocus
+            maxLength={100}
             defaultValue={DEFAULT_SECTIONS.some(item => item.id === section.id && item.title === section.title) ? t(section.title) : section.title}
             className="flex-1 bg-transparent text-[11px] font-semibold uppercase tracking-wider text-zinc-200 outline-none"
             onBlur={(e) => onFinishRename(e.target.value)}
@@ -85,17 +89,12 @@ function NoteSection({
       </div>
 
       {/* Text */}
-      <textarea
-        value={section.text}
-        onChange={(e) => onTextChange(e.target.value)}
-        placeholder={`Notes for ${section.title.toLowerCase()}… (paste an image here)`}
-        rows={3}
-        className="w-full resize-none bg-transparent px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none"
-      />
+      <RichNotesEditor label={t("Notes for {section}", {section: section.title})} value={section.content ?? documentFromText(section.text)} onChange={(content,text) => onTextChange(text,content)} />
 
       {/* Full-width, uncropped chart documents */}
       {section.images.length > 0 && <div className="space-y-4 px-3 pb-3">
         {section.images.map(img => <TradeImage key={img.id} src={img.preview} label={img.name}
+          width={img.width ?? 100} onResize={width => onResizeImage(img.id,width)}
           onOpen={() => onImageClick(img.preview)} onRemove={() => onRemoveImage(img.id)} />)}
       </div>}
 
@@ -181,7 +180,8 @@ export default function TradeNotesEditor({ sections, onChange, onDeleteImage, on
             onStartRename={() => setEditingId(s.id)}
             onFinishRename={(v) => finishRename(s.id, v)}
             onRemove={() => removeSection(s.id)}
-            onTextChange={(text) => update(s.id, { text })}
+            onTextChange={(text,content) => update(s.id, { text, content })}
+            onResizeImage={(id,width) => update(s.id,{images:s.images.map(image => image.id===id?{...image,width}:image)})}
             onAddImages={(imgs) => addImages(s.id, imgs)}
             onRemoveImage={(imgId) => removeImage(s.id, imgId)}
             onImageClick={setLightboxSrc}

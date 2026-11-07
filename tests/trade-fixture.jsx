@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
+import TradeDetailPanel from "../src/components/journal/TradeDetailPanel";
 import TradePanel from "../src/components/journal/TradePanel";
 import { createTrade, updateTrade } from "../src/api/trades.api";
 import api from "../src/api/axios";
@@ -56,7 +57,17 @@ window.__definitionWrites = 0;
 api.defaults.adapter = async (config) => {
   const reply = (data) => ({ data, status: 200, statusText: "OK", headers: {}, config });
   if (config.url.endsWith("/custom-fields/")) {
-    if (config.method !== "get") {
+    if (config.url.includes('/screenshots/')) {
+    if (config.method === 'post') {
+      const image={id:Date.now()+Math.random(),image_url:await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(config.data.get('file'));}),section:config.data.get('section'),display_width:Number(config.data.get('display_width')||100)};
+      stored.screenshots=[...(stored.screenshots??[]),image];if(customMode)localStorage.setItem("fixture-custom-trade",JSON.stringify(stored));return reply(image);
+    }
+    if(config.method==='patch') {
+      if(window.__failImageWidthOnce){window.__failImageWidthOnce=false;throw new Error('Synthetic image metadata failure');}
+      const changes=JSON.parse(config.data);const image=stored.screenshots.find(image=>config.url.includes('/'+image.id+'/'));Object.assign(image,changes);if(customMode)localStorage.setItem("fixture-custom-trade",JSON.stringify(stored));return reply(image);
+    }
+  }
+  if (config.method !== "get") {
       const definition = { ...JSON.parse(config.data), id: definitions.length + 1 };
       definitions.push(definition);
       window.__definitionWrites++;
@@ -65,6 +76,16 @@ api.defaults.adapter = async (config) => {
       return reply(definition);
     }
     return reply(definitions);
+  }
+  if (config.url.includes('/screenshots/')) {
+    if (config.method === 'post') {
+      const image={id:Date.now()+Math.random(),image_url:await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(config.data.get('file'));}),section:config.data.get('section'),display_width:Number(config.data.get('display_width')||100)};
+      stored.screenshots=[...(stored.screenshots??[]),image];if(customMode)localStorage.setItem("fixture-custom-trade",JSON.stringify(stored));return reply(image);
+    }
+    if(config.method==='patch') {
+      if(window.__failImageWidthOnce){window.__failImageWidthOnce=false;throw new Error('Synthetic image metadata failure');}
+      const changes=JSON.parse(config.data);const image=stored.screenshots.find(image=>config.url.includes('/'+image.id+'/'));Object.assign(image,changes);if(customMode)localStorage.setItem("fixture-custom-trade",JSON.stringify(stored));return reply(image);
+    }
   }
   if (config.method !== "get") {
     const payload = JSON.parse(config.data);
@@ -84,6 +105,7 @@ api.defaults.adapter = async (config) => {
 
 function App() {
   const [open, setOpen] = useState(true);
+  const [review, setReview] = useState(false);
   const [mode, setMode] = useState(
     new URLSearchParams(location.search).has("edit") ? "edit" : "new",
   );
@@ -109,6 +131,8 @@ function App() {
       <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }} data-testid="saved-trade">
         {JSON.stringify(trade)}
       </pre>
+      <button type="button" onClick={()=>setReview(true)}>Review saved details</button>
+      <TradeDetailPanel trade={trade} open={review} onClose={()=>setReview(false)}/>
       <TradePanel
         mode={mode}
         trade={mode === "edit" ? trade : null}

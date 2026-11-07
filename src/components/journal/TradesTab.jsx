@@ -135,10 +135,10 @@ export default function TradesTab({ breakEvenMethod, journalId }) {
   const trades = data?.results ?? [];
   const totalCount = data?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-  async function handleSave(payload) {
+  async function handleSave(payload, savedDraftId) {
     const result =
-      panel?.mode === "edit"
-        ? await updateTrade(journalId, panel.trade.id, payload)
+      savedDraftId || panel?.mode === "edit"
+        ? await updateTrade(journalId, savedDraftId ?? panel.trade.id, payload)
         : await createTrade(journalId, payload);
     if (query.page > 1) setQuery((current) => ({ ...current, page: 1 }));
     else refetch();

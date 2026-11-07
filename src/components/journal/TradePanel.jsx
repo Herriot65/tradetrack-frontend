@@ -49,8 +49,10 @@ import TagPicker from "./TagPicker";
 import TagManager from "./TagManager";
 import AssetCombobox from "./AssetCombobox";
 import CatalogCombobox from "./CatalogCombobox";
+import RichNotesEditor from "@/components/notes/RichNotesEditor";
+import { documentFromText, documentText } from "@/lib/noteDocument";
 import TradeNotesEditor, { DEFAULT_SECTIONS } from "./TradeNotesEditor";
-import { uploadScreenshot, deleteScreenshot, fetchTrade } from "@/api/trades.api";
+import { uploadScreenshot, updateScreenshotWidth, deleteScreenshot, fetchTrade } from "@/api/trades.api";
 
 // ─── Options ──────────────────────────────────────────────────────────────────
 
@@ -116,7 +118,7 @@ function tradeToDefaults(trade, timezone = "UTC") {
     status: trade.status === "OPEN" ? null : (trade.status ?? null),
     emotions,
     mistakes,
-    notes: trade.notes ?? "",
+    notes: trade.notes_document?.version === 1 ? documentText(trade.notes_document.general) : trade.notes ?? "",
     custom_fields: trade.custom_fields ?? {},
   };
 }
@@ -124,8 +126,9 @@ function tradeToDefaults(trade, timezone = "UTC") {
 // Rebuild notesSections from backend screenshots, preserving default section order.
 // Each screenshot carries a `section` string (its section title); nulls fall into
 // the first default section.
-function buildSections(screenshots = []) {
-  const map = new Map(DEFAULT_SECTIONS.map((s) => [s.title, { ...s, text: "", images: [] }]));
+function buildSections(screenshots = [], document = {}) {
+  const sections = document.version === 1 && document.sections?.length ? document.sections : DEFAULT_SECTIONS;
+  const map = new Map(sections.map(s => [s.title, {...s, text: documentText(s.content) || s.text || "", images: []}]));
   for (const sc of screenshots) {
     const title = sc.section ?? DEFAULT_SECTIONS[0].title;
     if (!map.has(title)) {
@@ -137,6 +140,9 @@ function buildSections(screenshots = []) {
       preview: sc.image_url,
       file: null,
       screenshotId: sc.id,
+      width: sc.display_width ?? 100,
+      savedWidth: sc.display_width ?? 100,
+      savedSection: title,
     });
   }
   return Array.from(map.values());
@@ -222,12 +228,20 @@ export default function TradePanel({
   );
   const customFields = useTradeCustomFields(journalId, { enabled: open });
 
-  const [notesSections, setNotesSections] = useState(() => buildSections(trade?.screenshots));
-  const [draftSource, setDraftSource] = useState({ open, trade, mode });
+  const [notesSections, setNotesSections] = useState(() => buildSections(trade?.screenshots, trade?.notes_document));
+  const [generalDocument, setGeneralDocument] = useState(() => trade?.notes_document?.general ?? documentFromText(trade?.notes));
+  const savedDraftId = useRef(null);
+  const notesDirty = useRef(false);
+  const hydratedDraft = useRef(null);
+  const [draftSource, setDraftSource] = useState({ open, tradeId: trade?.id, mode });
   // A new draft must not retain the previous trade's attachments.
-  if (draftSource.open !== open || draftSource.trade !== trade || draftSource.mode !== mode) {
-    setDraftSource({ open, trade, mode });
-    if (open) setNotesSections(buildSections(trade?.screenshots));
+  if (draftSource.open !== open || draftSource.tradeId !== trade?.id || draftSource.mode !== mode) {
+    setDraftSource({ open, tradeId: trade?.id, mode });
+    if (open) {
+      setNotesSections(buildSections(trade?.screenshots, trade?.notes_document));
+      setGeneralDocument(trade?.notes_document?.general ?? documentFromText(trade?.notes));
+
+    }
   }
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -293,23 +307,34 @@ export default function TradePanel({
   });
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) { hydratedDraft.current = null; return; }
+    const identity = `${mode}:${trade?.id ?? 'new'}:${journalId}:${timezone}`;
+    // A parent may refresh the same trade after the first save. Keep any
+    // pending image layout changes intact so partial-save retries are safe.
+    if (hydratedDraft.current === identity) return;
+    hydratedDraft.current = identity;
+    savedDraftId.current = null;
+    notesDirty.current = false;
     reset(tradeToDefaults(trade, timezone));
     if (mode === "edit" && trade?.id && journalId) {
       // The list endpoint doesn't include screenshots; fetch the detail to populate them.
       let cancelled = false;
       fetchTrade(journalId, trade.id)
         .then((full) => {
-          if (!cancelled) setNotesSections(buildSections(full.screenshots));
+          if (!cancelled && !notesDirty.current) {
+            setNotesSections(buildSections(full.screenshots, full.notes_document));
+            setGeneralDocument(full.notes_document?.general ?? documentFromText(full.notes));
+            setValue("notes", full.notes_document?.version === 1 ? documentText(full.notes_document.general) : full.notes ?? "");
+          }
         })
         .catch(() => {
-          if (!cancelled) setNotesSections(buildSections(trade?.screenshots));
+          if (!cancelled) setNotesSections(buildSections(trade?.screenshots, trade?.notes_document));
         });
       return () => {
         cancelled = true;
       };
     }
-  }, [open, trade, reset, mode, journalId, timezone]);
+  }, [open, trade, reset, mode, journalId, timezone, setValue]);
 
   const watchedEmotions = useWatch({ control, name: "emotions" }) ?? [];
   const watchedMistakes = useWatch({ control, name: "mistakes" }) ?? [];
@@ -374,7 +399,8 @@ export default function TradePanel({
       trend_direction: values.trend_direction || null,
       session: values.session || null,
       status: values.status,
-      notes: values.notes || null,
+      notes: [values.notes, ...notesSections.map(section => section.text)].filter(Boolean).join("\n\n") || null,
+      notes_document: { version: 1, general: generalDocument, sections: notesSections.map(section => ({id:String(section.id).slice(0,100),title:section.title.slice(0,100),content:section.content ?? documentFromText(section.text)})) },
       custom_fields: values.custom_fields ?? {},
       // Catalog ID fields — replace raw strings with backend IDs
       asset_id: catalog.assetMap.get(values.asset) ?? null,
@@ -383,21 +409,27 @@ export default function TradePanel({
       setup_id: values.setup ? (catalog.setupMap.get(values.setup) ?? null) : null,
     };
     try {
-      const savedTrade = await onSave(payload);
-      const tradeId = isEdit ? trade.id : savedTrade?.id;
+      const savedTrade = await onSave(payload, savedDraftId.current);
+      const tradeId = savedDraftId.current ?? (isEdit ? trade.id : savedTrade?.id);
+      savedDraftId.current = tradeId;
       if (tradeId && journalId) {
-        const pendingImages = notesSections.flatMap((s) =>
-          s.images
-            .filter((img) => img.file)
-            .map((img) => ({ file: img.file, preview: img.preview, section: s.title })),
-        );
-        if (pendingImages.length > 0) {
-          await Promise.allSettled(
-            pendingImages.map(({ file, section }) =>
-              uploadScreenshot(journalId, tradeId, file, section),
-            ),
-          );
-          pendingImages.forEach(({ preview }) => URL.revokeObjectURL(preview));
+        const updates = new Map();
+        const tasks = notesSections.flatMap(section => section.images.map(image => async () => {
+          if (image.file) {
+            const uploaded = await uploadScreenshot(journalId, tradeId, image.file, section.title, image.width ?? 100);
+            updates.set(image.id, {...image,file:null,screenshotId:uploaded.id,preview:uploaded.image_url,width:uploaded.display_width ?? image.width ?? 100,savedWidth:uploaded.display_width ?? image.width ?? 100,savedSection:section.title});
+            URL.revokeObjectURL(image.preview);
+          } else if (image.screenshotId && ((image.width ?? 100) !== (image.savedWidth ?? 100) || section.title !== image.savedSection)) {
+            await updateScreenshotWidth(journalId, tradeId, image.screenshotId, image.width ?? 100, section.title);
+            updates.set(image.id,{...image,savedWidth:image.width,savedSection:section.title});
+          }
+        }));
+        const results = await Promise.allSettled(tasks.map(task => task()));
+        setNotesSections(current => current.map(section => ({...section,images:section.images.map(image => updates.get(image.id) ?? image)})));
+        if (results.some(result => result.status === 'rejected')) {
+          setError("root", {message:"Trade notes saved, but some images could not be saved. Try saving again to retry the remaining images."});
+          requestAnimationFrame(() => document.getElementById("trade-save-error")?.scrollIntoView({block:"center"}));
+          return;
         }
       }
       onClose();
@@ -474,10 +506,10 @@ export default function TradePanel({
           </SheetHeader>
 
           <SheetBody className="trade-panel-body">
-            <form id="trade-form" onSubmit={handleSubmit(submit)} noValidate>
+            <form id="trade-form" onSubmit={event => handleSubmit(submit)(event)} noValidate>
               {errors.root && (
-                <p className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
-                  {errors.root.message}
+                <p id="trade-save-error" role="alert" className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+                  {t(errors.root.message)}
                 </p>
               )}
 
@@ -972,12 +1004,7 @@ export default function TradePanel({
                 {/* ── Notes ── */}
                 <section>
                   <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">{t("Notes")}</h3>
-                  <textarea
-                    rows={3}
-                    placeholder={t("General trade notes…")}
-                    className="w-full resize-none rounded-md border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-zinc-400/40"
-                    {...register("notes")}
-                  />
+                  <RichNotesEditor label={t("General trade notes")} value={generalDocument} onChange={(content,text) => {notesDirty.current=true;setGeneralDocument(content);setValue("notes",text,{shouldDirty:true});}} />
                   <TradeCustomFields
                     section="notes"
                     fields={customFields.fields}
@@ -995,7 +1022,7 @@ export default function TradePanel({
                   <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">{t("Trade Notes")}</h3>
                   <TradeNotesEditor
                     sections={notesSections}
-                    onChange={setNotesSections}
+                    onChange={sections => {notesDirty.current=true;setNotesSections(sections);}}
                     onDeleteImage={handleDeleteBackendImage}
                     wide={panelWidth > 760}
                     onToggleWide={() => setPanelWidth(width => width > 760 ? 560 : Math.min(window.innerWidth, 1100))}

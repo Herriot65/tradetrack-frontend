@@ -78,5 +78,25 @@ removal. Captures live in `artifacts/image-review/`. No live storage is used.
 Images now retain their full aspect ratio in notes and read-only trade details;
 there is no fixed-height crop or two-column thumbnail grid. Desktop Wide review
 expands the existing sheet, while Full screen remains available for inspection.
-The note payload and screenshot-upload API are unchanged; no editor dependency
-or content migration is required.
+The image-review layout preserves the original image files. Rich formatting
+and persisted size metadata are described in the following section.
+
+## Rich notes and saved image sizes
+
+`npm run test:rich-notes` exercises the actual TipTap toolbar, structured save and
+reload, plaintext compatibility, read-only formatted rendering, slider/keyboard/
+pointer image resizing, metadata-save failure/retry and mobile wrapping.
+Captures are in `artifacts/rich-notes/`. The existing image-review runner also
+continues to cover paste, fullscreen, aspect ratios and wide review.
+
+TipTap is loaded only when editing notes. General notes and each review section
+support headings 1–3, lists, bold/italic/underline/strike, quotes, colors and undo.
+The backend stores versioned JSON in `notes_document`; `notes` retains a plain
+text summary for search and older views. Legacy text loads without migration of
+its content, and formatted review uses React nodes rather than arbitrary HTML.
+
+Each screenshot stores `display_width` (25–100 percent), while the original
+image remains unchanged. Backend migration `0015_rich_notes_and_image_size` must
+be applied with the updated API before deploying this frontend. The screenshot
+PATCH endpoint is journal/trade scoped and accepts width/section metadata.
+No financial formula is changed.

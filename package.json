@@ -17,6 +17,7 @@
     "test:timeframe-favorites": "node tests/timeframe-favorites-browser.mjs",
     "test:setup-options": "node tests/setup-options-browser.mjs",
     "test:image-review": "node tests/image-review-browser.mjs",
+    "test:rich-notes": "node tests/rich-notes-browser.mjs",
     "test:custom-fields": "node tests/custom-fields-browser.mjs",
     "test:trades-list": "node tests/trades-list-browser.mjs",
     "test:language": "npm run build && node tests/language-browser.mjs"
@@ -25,6 +26,10 @@
     "@date-fns/tz": "^1.4.1",
     "@fontsource-variable/geist": "^5.2.9",
     "@hookform/resolvers": "^5.4.0",
+    "@tiptap/extension-text-style": "^3.33.0",
+    "@tiptap/pm": "^3.33.0",
+    "@tiptap/react": "^3.33.0",
+    "@tiptap/starter-kit": "^3.33.0",
     "axios": "^1.17.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
