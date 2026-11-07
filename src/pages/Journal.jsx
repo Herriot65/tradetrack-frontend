@@ -3,9 +3,7 @@ import { useLanguage } from "@/i18n/useLanguage";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
-  Cable,
   FileUp,
-  PlugZap,
   Settings2,
   Trash2,
   Rows3,
@@ -218,31 +216,6 @@ function SettingsDialog({ open, onClose, journal }) {
   );
 }
 
-// ─── Broker Connections dialog ────────────────────────────────────────────────
-
-function BrokerConnectionsDialog({ open, onClose }) {
-  useLanguage();
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="border-zinc-800 bg-zinc-950 sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle>{t("Broker Connections")}</DialogTitle>
-          <DialogDescription className="sr-only">{t("Connect your broker accounts.")}</DialogDescription>
-        </DialogHeader>
-        <div className="flex flex-col items-center gap-3 py-6 text-center">
-          <div className="flex size-12 items-center justify-center rounded-xl bg-zinc-900 ring-1 ring-zinc-800">
-            <PlugZap className="size-5 text-zinc-600" />
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-zinc-300">{t("Broker synchronization")}</p>
-            <p className="max-w-xs text-xs text-zinc-600">{t("Automatic broker sync is coming soon. Trades will be imported directly from MT4/MT5.")}</p>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Journal() {
@@ -267,7 +240,6 @@ export default function Journal() {
   }
 
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [brokerOpen, setBrokerOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -374,8 +346,6 @@ export default function Journal() {
             <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
                 <Settings2 className="size-3.5" />{t("Settings")}</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setBrokerOpen(true)}>
-                <Cable className="size-3.5" />{t("Broker Connections")}</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setImportOpen(true)}>
                 <FileUp className="size-3.5" />{t("Import MT5 Report")}</DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -443,7 +413,6 @@ export default function Journal() {
         onClose={() => setSettingsOpen(false)}
         journal={activeJournal}
       />
-      <BrokerConnectionsDialog open={brokerOpen} onClose={() => setBrokerOpen(false)} />
       <MT5ImportDialog
         open={importOpen}
         onClose={() => setImportOpen(false)}

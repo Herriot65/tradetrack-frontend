@@ -3,20 +3,12 @@ import { useLanguage } from "@/i18n/useLanguage";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  Bot,
-  Calculator,
-  CalendarDays,
   ChevronsLeft,
   ChevronsRight,
-  Globe,
-  GraduationCap,
   LayoutDashboard,
-  Lightbulb,
   LogOut,
   Menu,
-  Newspaper,
   Settings,
-  Shield,
   User,
   X,
   ChevronDown,
@@ -37,16 +29,6 @@ import UserSettings from "./UserSettings";
 import LanguageSelector from "./LanguageSelector";
 import ThemeToggle from "./ThemeToggle";
 
-const TOOLS = [
-  { label: "Economic Calendar", icon: CalendarDays },
-  { label: "Lot Size Calculator", icon: Calculator },
-  { label: "Market Sessions", icon: Globe },
-  { label: "Forex News", icon: Newspaper },
-  { label: "Risk Calculator", icon: Shield },
-  { label: "AI Market Brief", icon: Bot },
-  { label: "Trading Academy", icon: GraduationCap },
-  { label: "Strategy Builder", icon: Lightbulb },
-];
 function readCollapsed() {
   try {
     return localStorage.getItem("sidebar_collapsed") === "true";
@@ -182,22 +164,6 @@ export default function AppShell({ children }) {
               <span className="nx-nav-label">{t("Dashboard")}</span>
             </Link>
           </Hint>
-          <div className="flex items-center justify-between">
-            <p className="nx-sidebar-caption">{t("Tools")}</p>
-            {!compact && (
-              <span className="mt-5 rounded border border-border px-1.5 py-0.5 text-[8px] uppercase tracking-wider text-zinc-500">{t("Soon")}</span>
-            )}
-          </div>
-          <div className="space-y-0.5">
-            {TOOLS.map(({ label, icon: Icon }) => (
-              <Hint key={label} label={`${t(label)} · ${t("Coming soon")}`}>
-                <div aria-disabled="true" className="nx-nav-item cursor-not-allowed opacity-50">
-                  <Icon className="size-4 shrink-0" />
-                  <span className="nx-nav-label">{t(label)}</span>
-                </div>
-              </Hint>
-            ))}
-          </div>
         </nav>
         <div className="space-y-3 border-t border-border/60 p-3">
           {!compact && (

@@ -1,5 +1,10 @@
-# Geist Mono assets
+# Font assets
 
-Unmodified Latin and Latin Extended variable WOFF2 files from the locally installed Next.js 15.5.26 distribution (`next/dist/next-devtools/server/font/`). Upstream: https://github.com/vercel/geist-font.
+The active UI uses the same self-hosted Inter variable assets as the preserved
+redesign branch. Latin and Latin Extended WOFF2, weights 100–900, sourced from
+`@fontsource-variable/inter` 5.3.0. License: `INTER-LICENSE.txt` (SIL OFL 1.1).
+No remote font requests or new runtime dependencies.
 
-Distributed under the SIL Open Font License 1.1; see `OFL.txt`. Next.js is not a runtime dependency of this application. CSS exposes weights 400 and 500. A numeric-only CSS face reuses the same font file to render digits within otherwise sans-serif UI strings without changing markup or duplicating the asset.
+Legacy Geist Mono files and `OFL.txt` remain for provenance. They are no longer
+loaded by the active stylesheet. This branch changes font family only; existing
+font sizes, weights, colors, spacing and card styles are retained from main.

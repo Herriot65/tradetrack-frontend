@@ -132,15 +132,6 @@ export default function Workspace() {
             />
           </div>
 
-          {/* Account filter (placeholder — multi-account support coming) */}
-          <select
-            disabled
-            title={t("Account filter — coming soon")}
-            className="h-8 cursor-not-allowed rounded-md border border-zinc-800/60 bg-zinc-900/60 px-2.5 text-xs text-zinc-600"
-          >
-            <option>{t("All Accounts")}</option>
-          </select>
-
           {/* Status pills */}
           <div className="flex flex-wrap items-center gap-1.5">
             {STATUS_FILTERS.map((f) => (

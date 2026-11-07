@@ -1,43 +1,29 @@
-@import "@fontsource-variable/geist";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Numeric glyphs use the same Mono asset inside otherwise sans-serif strings. */
 @font-face {
-  font-family: "Geist Mono Numerals";
+  font-family: "Inter";
   font-style: normal;
-  font-weight: 400 600;
+  font-weight: 100 900;
   font-display: swap;
-  src: url("./assets/fonts/geist-mono-latin.woff2") format("woff2");
-  unicode-range: U+0030-0039, U+0024-0025, U+002B, U+2212;
-}
-
-@font-face {
-  font-family: "Geist Mono";
-  font-style: normal;
-  font-weight: 400 500;
-  font-display: swap;
-  src: url("./assets/fonts/geist-mono-latin-ext.woff2") format("woff2");
-  unicode-range: U+0100-024F, U+1E00-1EFF, U+20A0-20AB;
+  src: url("./assets/fonts/inter-latin-wght-normal.woff2") format("woff2");
 }
 @font-face {
-  font-family: "Geist Mono";
+  font-family: "Inter";
   font-style: normal;
-  font-weight: 400 500;
+  font-weight: 100 900;
   font-display: swap;
-  src: url("./assets/fonts/geist-mono-latin.woff2") format("woff2");
-  unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
-    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url("./assets/fonts/inter-latin-ext-wght-normal.woff2") format("woff2");
+  unicode-range: U+0100-02FF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
 }
 
 @layer base {
   :root {
     color-scheme: dark;
-    --font-ui: "Geist Variable", sans-serif;
-    --font-sans: "Geist Mono Numerals", "Geist Variable", sans-serif;
-    --font-mono: "Geist Mono", monospace;
+    --font-ui: "Inter", sans-serif;
+    --font-sans: "Inter", sans-serif;
+    --font-mono: "Inter", sans-serif;
     --bg-ground: #000000;
     --bg-card: #08080a;
     --border-hairline: #17171a;
