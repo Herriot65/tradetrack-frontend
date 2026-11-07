@@ -1,3 +1,4 @@
+import { clearQueryCache } from "../lib/queryCache.js";
 // Central Axios instance for API requests.
 // Adds Authorization headers automatically and handles token refresh
 // on 401 responses using refresh tokens.
@@ -75,7 +76,10 @@ const refreshAccessToken = () => {
    RESPONSE INTERCEPTOR
 ========================= */
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (!["get", "head", "options"].includes(response.config.method)) clearQueryCache();
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
     const isLoginRequest = ["/auth/login/", "/auth/google/", "/auth/register/", "/auth/logout/"].some(path => originalRequest?.url?.includes(path));

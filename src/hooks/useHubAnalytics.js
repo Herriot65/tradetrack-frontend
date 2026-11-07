@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 
 import { fetchHubTrades } from "@/api/hub.api";
+import { computeAnalytics as computeSharedAnalytics } from "@/lib/analytics";
 import { deriveStatus } from "@/lib/deriveStatus";
 import { useWorkspace } from "@/workspaces/useWorkspace";
 
@@ -11,8 +12,8 @@ const assetSymbol = (a) =>
   typeof a === "object" && a !== null ? (a.symbol ?? String(a)) : String(a ?? "");
 
 function computeAnalytics(allTrades) {
-  const openTrades      = allTrades.filter((t) => t.pnl_r === null);
-  const trades          = allTrades.filter((t) => t.pnl_r !== null);
+  const openTrades      = allTrades.filter((t) => deriveStatus(t) === "OPEN");
+  const trades          = allTrades.filter((t) => deriveStatus(t) !== "OPEN").sort((a,b) => new Date(a.entry_datetime) - new Date(b.entry_datetime) || Number(a.id) - Number(b.id));
   const openPositions   = openTrades.length;
   const closedPositions = trades.length;
   const floatingProfit  = 0;
@@ -66,8 +67,9 @@ function computeAnalytics(allTrades) {
   const losses    = trades.filter((t) => deriveStatus(t) === "LOSS").length;
   const breakEven = trades.filter((t) => deriveStatus(t) === "BE").length;
 
+  const shared = computeSharedAnalytics(trades).summary;
   const totalR   = Math.round(cum * 100) / 100;
-  const avgR     = Math.round((totalR / trades.length) * 100) / 100;
+
   const winRate  = Math.round((wins / trades.length) * 10000) / 100;
 
   // ── Max drawdown ─────────────────────────────────────────────────────────────
@@ -77,14 +79,12 @@ function computeAnalytics(allTrades) {
 
   // ── Gross profit / loss / profit factor ─────────────────────────────────────
   const grossProfit = Math.round(
-    trades.filter((t) => parseFloat(t.pnl_r) > 0).reduce((s, t) => s + parseFloat(t.pnl_r), 0) * 100
+    trades.filter((t) => deriveStatus(t) === "WIN").reduce((s, t) => s + parseFloat(t.pnl_r), 0) * 100
   ) / 100;
   const grossLoss = Math.round(
-    Math.abs(trades.filter((t) => parseFloat(t.pnl_r) < 0).reduce((s, t) => s + parseFloat(t.pnl_r), 0)) * 100
+    Math.abs(trades.filter((t) => deriveStatus(t) === "LOSS").reduce((s, t) => s + parseFloat(t.pnl_r), 0)) * 100
   ) / 100;
-  const profitFactor = grossLoss === 0
-    ? grossProfit
-    : Math.round((grossProfit / grossLoss) * 100) / 100;
+
 
   // ── Win / loss streaks ───────────────────────────────────────────────────────
   let maxWinStreak = 0, maxLossStreak = 0, curWin = 0, curLoss = 0;
@@ -123,7 +123,7 @@ function computeAnalytics(allTrades) {
       calendarData[day] = { totalR: 0, count: 0, wins: 0, losses: 0, open: 0 };
     }
     calendarData[day].count++;
-    if (t.pnl_r !== null) {
+    if (deriveStatus(t) !== "OPEN") {
       calendarData[day].totalR = Math.round((calendarData[day].totalR + parseFloat(t.pnl_r)) * 100) / 100;
       const s = deriveStatus(t);
       if (s === "WIN")  calendarData[day].wins++;
@@ -144,10 +144,14 @@ function computeAnalytics(allTrades) {
       totalTrades: allTrades.length,
       openPositions, closedPositions, floatingProfit,
       wins, losses, breakEven,
-      totalR, avgR, winRate,
-      maxDrawdownR, profitFactor,
+      totalR, avgR: shared.avgR, winRate,
+      maxDrawdownR, profitFactor: shared.profitFactor,
       grossProfit, grossLoss,
       maxWinStreak, maxLossStreak,
+      expectancy: shared.expectancy,
+      avgConsecutiveWins: shared.avgWinStreak,
+      avgConsecutiveLosses: shared.avgLossStreak,
+      avgWinR: shared.avgWinR, avgLossR: shared.avgLossR,
     },
   };
 }

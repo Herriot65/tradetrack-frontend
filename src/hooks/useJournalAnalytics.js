@@ -147,7 +147,7 @@ export function useJournalAnalytics({
       month: openMonth.month,
       key: monthKey(openMonth.year, openMonth.month),
       ...computeAnalytics(monthTrades, {
-        unit,
+        unit: effectiveUnit,
         startingCapital,
         breakEvenThreshold,
       }),
@@ -158,7 +158,7 @@ export function useJournalAnalytics({
     filters,
     openMonth,
     startingCapital,
-    unit,
+    effectiveUnit,
     timezone,
   ]);
 

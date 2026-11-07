@@ -20,7 +20,7 @@ test("saved conversion basis preserves risk and PnL independently of current cap
   assert.equal(riskDisplayAmount(saved,"PCT",currentCapital),1);
  }
  const imported={...saved,pnl_r:"0.2",pnl_amount:"20",risk_amount:null,risk_percent:null};
- assert.equal(tradeAmount(imported,"R"),null);
+ assert.equal(tradeAmount(imported,"R"),0.2);
  assert.equal(tradeAmount(imported,"USD"),20);
  assert.equal(tradeAmount(imported,"PCT"),0.2);
  assert.equal(riskDisplayAmount(imported,"USD"),null);
@@ -38,7 +38,7 @@ test("calendar and timing use the saved timezone without changing trade instants
  } finally {setUserTimezone(previous);}
 });
 
-test("all metric formulas, baseline, ordering and BE-preserving streaks",()=>{
+test("all metric formulas, baseline, ordering and BE-ending streaks",()=>{
  const a=computeAnalytics([...fixture].reverse()); const s=a.summary;
  assert.equal(s.net,5); assert.equal(s.closedCount,8);
  assert.deepEqual([s.wins,s.losses,s.breakEven],[3,3,2]);
@@ -52,8 +52,8 @@ test("all metric formulas, baseline, ordering and BE-preserving streaks",()=>{
  assert.equal(s.maxWinStreak,1);assert.equal(s.maxLossStreak,2);
  assert.equal(s.avgWinStreak,1);assert.equal(s.avgLossStreak,1.5);
  const streak=computeAnalytics([1,0,2,-1,0,-1,3].map((r,i)=>trade(r,i))).summary;
- assert.equal(streak.maxWinStreak,2);assert.equal(streak.maxLossStreak,2);
- assert.equal(streak.avgWinStreak,1.5);assert.equal(streak.avgLossStreak,2);
+ assert.equal(streak.maxWinStreak,1);assert.equal(streak.maxLossStreak,1);
+ assert.equal(streak.avgWinStreak,1);assert.equal(streak.avgLossStreak,1);
 });
 test("journal BE threshold and explicit overrides match backend rules",()=>{
  assert.equal(breakEvenThresholdR({break_even_method:"ratio",break_even_value:"0.2"}),0.2);
@@ -135,4 +135,22 @@ test("analytics widgets contain no literal colors, smoothing, gradients or indep
   const source=readFileSync(new URL(`../src/components/analytics/${name}`,import.meta.url),"utf8");
   assert.doesNotMatch(source,/#[0-9a-f]{6}|linearGradient|type="monotone"|type="basis"|shadow-xl|uppercase|useAsyncQuery|fetchHubTrades/i,name);
  }
+});
+
+
+test("backend effective status, open positions and canonical R are respected", () => {
+ const rows = [trade(5, 0, {exit_datetime:null, status:"WIN", effective_status:"OPEN"}),
+   trade(.1, 1, {effective_status:"BE"}), trade(-1, 2, {effective_status:"LOSS"})];
+ const result = computeAnalytics(rows);
+ assert.equal(result.summary.closedCount, 2);
+ assert.equal(result.summary.totalR, -.9);
+ assert.equal(result.summary.breakEven, 1);
+ assert.equal(tradeAmount({pnl_r:"2",capital_basis:10000,risk_amount:100,pnl_amount:199.999999}),2);
+});
+
+test("averages retain precision until the final result and saved profit enables currency units", () => {
+ const result = computeAnalytics([trade(.004,0),trade(.004,1)]).summary;
+ assert.equal(result.totalR,.01);
+ assert.equal(result.avgR,0);
+ assert.deepEqual(availableUnits([{pnl_r:.2,capital_basis:10000,risk_amount:null,pnl_amount:20}]).map(o=>o.value),["R","USD","PCT"]);
 });

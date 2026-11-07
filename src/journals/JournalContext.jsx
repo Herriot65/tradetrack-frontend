@@ -31,7 +31,12 @@ function saveMeta(id, meta) {
 }
 
 function enrichJournal(workspace) {
-  return { ...workspace, ...loadMeta(workspace.id) };
+  return {
+    ...workspace, ...loadMeta(workspace.id),
+    ...(workspace.starting_capital != null && { startingCapital: Number(workspace.starting_capital) }),
+    ...(workspace.break_even_method != null && { breakEvenMethod: workspace.break_even_method }),
+    ...(workspace.break_even_value != null && { breakEvenValue: Number(workspace.break_even_value) }),
+  };
 }
 
 export const JournalContext = createContext(null);
@@ -61,9 +66,10 @@ export function JournalProvider({ children }) {
       await Promise.all(
         enriched.map(async (j) => {
           const backendCapital = parseFloat(j.starting_capital ?? 0);
-          const localCapital = parseFloat(j.startingCapital ?? 0);
+          const localCapital = parseFloat(loadMeta(j.id).startingCapital ?? 0);
           if (backendCapital === 0 && localCapital > 0) {
-            await apiUpdate(j.id, { starting_capital: localCapital }).catch(() => {});
+            const updated = await apiUpdate(j.id, { starting_capital: localCapital }).catch(() => null);
+            if (updated) Object.assign(j, enrichJournal(updated));
           }
         }),
       );
@@ -96,7 +102,7 @@ export function JournalProvider({ children }) {
     async (payload) => {
       const { name, journalType, startingCapital, currency, breakEvenMethod, breakEvenValue } =
         payload;
-      const created = await apiCreate({ name, starting_capital: startingCapital ?? 0 });
+      const created = await apiCreate({ name, starting_capital: startingCapital ?? 0, break_even_method: breakEvenMethod ?? "ratio", break_even_value: breakEvenValue ?? 0 });
       const meta = { journalType, startingCapital, currency, breakEvenMethod, breakEvenValue };
       saveMeta(created.id, meta);
       const enriched = { ...created, ...meta };
@@ -131,6 +137,8 @@ export function JournalProvider({ children }) {
         displayUnit,
       } = payload;
       const backendPayload = {};
+      if (breakEvenMethod != null) backendPayload.break_even_method = breakEvenMethod;
+      if (breakEvenValue != null) backendPayload.break_even_value = breakEvenValue;
       if (displayUnit != null) backendPayload.display_unit = displayUnit;
       if (name != null) backendPayload.name = name;
       if (startingCapital != null) backendPayload.starting_capital = startingCapital;

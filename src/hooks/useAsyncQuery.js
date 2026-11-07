@@ -1,3 +1,4 @@
+import { clearQueryCache } from "../lib/queryCache.js";
 import { useCallback, useEffect, useState } from "react";
 
 function getErrorMessage(err) {
@@ -20,6 +21,7 @@ export function useAsyncQuery(
   const [reloadKey, setReloadKey] = useState(0);
 
   const refetch = useCallback(() => {
+    clearQueryCache();
     setReloadKey((key) => key + 1);
   }, []);
 

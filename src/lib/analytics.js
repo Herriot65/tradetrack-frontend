@@ -143,6 +143,8 @@ export function filterTrades(trades = [], { range = "ALL", customRange, assets =
 }
 
 export function effectiveStatus(trade, threshold = 0) {
+  if (trade?.effective_status) return trade.effective_status;
+  if (Object.hasOwn(trade ?? {}, "exit_datetime") && trade.exit_datetime == null) return "OPEN";
   if (trade?.status) return trade.status;
   if (trade?.pnl_r === null || trade?.pnl_r === undefined) return "OPEN";
   const pnl = Number(trade.pnl_r);
@@ -179,19 +181,22 @@ export function riskDisplayAmount(trade, unit="R", startingCapital=0) {
 }
 
 export function availableUnits(trades, startingCapital = 0) {
-  const closed = trades.filter(t => t.pnl_r != null);
-  const dollars = closed.length > 0 && closed.every(t => riskAmount(t, startingCapital) !== null);
-  return UNIT_OPTIONS.filter(o => o.value === "R" || (dollars && (o.value !== "PCT" || startingCapital > 0)));
+  const closed = trades.filter(t => t.pnl_r != null && effectiveStatus(t) !== "OPEN");
+  const supports = unit => closed.length > 0 && closed.every(t => {
+    const value = tradeAmount(t, unit, startingCapital);
+    return value != null && Number.isFinite(value);
+  });
+  return UNIT_OPTIONS.filter(o => o.value === "R" || supports(o.value));
 }
 
 export function tradeAmount(trade, unit = "R", startingCapital = 0) {
   if (Object.hasOwn(trade ?? {}, "capital_basis")) {
     const profit = trade.pnl_amount == null ? null : Number(trade.pnl_amount);
-    const risk = riskAmount(trade);
     const capital = Number(trade.capital_basis);
     if (unit === "USD") return profit;
     if (unit === "PCT") return profit !== null && capital>0 ? profit/capital*100 : null;
-    if (profit !== null) return risk ? profit/risk : null;
+    // pnl_r is the canonical result used by backend summaries, including imports.
+    if (unit === "R" && trade.pnl_r != null) return Number(trade.pnl_r);
   }
   const pnlR = Number(trade?.pnl_r ?? 0);
   if (!Number.isFinite(pnlR)) return 0;
@@ -321,7 +326,7 @@ export function computeAnalytics(
   } = {},
 ) {
   const closed = sortedTrades(
-    trades.filter((trade) => trade?.pnl_r !== null && trade?.pnl_r !== undefined),
+    trades.filter((trade) => trade?.pnl_r != null && effectiveStatus(trade, breakEvenThreshold) !== "OPEN"),
   );
 
   const rows = closed.map((trade, index) => {
@@ -346,26 +351,32 @@ export function computeAnalytics(
   const losses = rows.filter((trade) => trade.status === "LOSS");
   const breakEven = rows.filter((trade) => trade.status === "BE");
 
-  const totalR = round(rows.reduce((sum, trade) => sum + trade.pnlR, 0));
-  const net = round(rows.reduce((sum, trade) => sum + trade.value, 0));
-  const grossProfitR = round(wins.reduce((sum, trade) => sum + trade.pnlR, 0));
-  const grossLossR = round(losses.reduce((sum, trade) => sum + trade.pnlR, 0));
-  const grossProfit = round(wins.reduce((sum, trade) => sum + trade.value, 0));
-  const grossLoss = round(losses.reduce((sum, trade) => sum + trade.value, 0));
+  const totalRRaw = rows.reduce((sum, trade) => sum + trade.pnlR, 0);
+  const totalR = round(totalRRaw);
+  const netRaw = rows.reduce((sum, trade) => sum + trade.value, 0);
+  const net = round(netRaw);
+  const grossProfitRRaw = wins.reduce((sum, trade) => sum + trade.pnlR, 0);
+  const grossProfitR = round(grossProfitRRaw);
+  const grossLossRRaw = losses.reduce((sum, trade) => sum + trade.pnlR, 0);
+  const grossLossR = round(grossLossRRaw);
+  const grossProfitRaw = wins.reduce((sum, trade) => sum + trade.value, 0);
+  const grossProfit = round(grossProfitRaw);
+  const grossLossRaw = losses.reduce((sum, trade) => sum + trade.value, 0);
+  const grossLoss = round(grossLossRaw);
 
   const closedCount = rows.length;
   const decidedCount = wins.length + losses.length;
   const winRate = closedCount > 0 ? round((wins.length / closedCount) * 100) : 0;
   const decidedWinRate = decidedCount > 0 ? round((wins.length / decidedCount) * 100) : 0;
-  const avgR = closedCount > 0 ? round(totalR / closedCount) : 0;
-  const expectancy = closedCount > 0 ? round(net / closedCount) : 0;
-  const avgWinR = wins.length > 0 ? round(grossProfitR / wins.length) : 0;
-  const avgLossR = losses.length > 0 ? round(grossLossR / losses.length) : 0;
-  const avgWin = wins.length > 0 ? round(grossProfit / wins.length) : 0;
-  const avgLoss = losses.length > 0 ? round(grossLoss / losses.length) : 0;
-  const profitFactor = grossLoss < 0 ? round(grossProfit / Math.abs(grossLoss)) : null;
+  const avgR = closedCount > 0 ? round(totalRRaw / closedCount) : 0;
+  const expectancy = closedCount > 0 ? round(netRaw / closedCount) : 0;
+  const avgWinR = wins.length > 0 ? round(grossProfitRRaw / wins.length) : 0;
+  const avgLossR = losses.length > 0 ? round(grossLossRRaw / losses.length) : 0;
+  const avgWin = wins.length > 0 ? round(grossProfitRaw / wins.length) : 0;
+  const avgLoss = losses.length > 0 ? round(grossLossRaw / losses.length) : 0;
+  const profitFactor = grossLossRaw !== 0 ? round(Math.abs(grossProfitRaw / grossLossRaw)) : null;
   const payoff = wins.length && losses.length
-    ? round((grossProfit / wins.length) / Math.abs(grossLoss / losses.length))
+    ? round((grossProfitRaw / wins.length) / Math.abs(grossLossRaw / losses.length))
     : null;
 
   let cumulative = 0;
@@ -435,6 +446,10 @@ export function computeAnalytics(
       currentLossStreak += 1;
       if (currentLossStreak > maxLossStreak) maxLossStreak = currentLossStreak;
     } else {
+      if (currentWinStreak > 0) winStreaks.push(currentWinStreak);
+      if (currentLossStreak > 0) lossStreaks.push(currentLossStreak);
+      currentWinStreak = 0;
+      currentLossStreak = 0;
       return;
     }
 

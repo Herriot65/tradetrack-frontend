@@ -1,3 +1,4 @@
+import { cachedQuery } from "../lib/queryCache.js";
 import api from "./axios";
 import { USE_MOCK, mockFetchHubTrades, mockFetchCareerData } from "@/mocks/mockData";
 
@@ -5,10 +6,10 @@ const EMPTY_CAREER = { yearSummaries: [], heatmap: {}, years: [] };
 
 // years: number[] — empty array means all available years
 // Fetches ALL trades by paginating through the backend's paginated responses.
-export const fetchHubTrades = async (workspaceId, { years = [] } = {}) => {
+const loadHubTrades = async (workspaceId, { years = [] } = {}) => {
   if (USE_MOCK) return mockFetchHubTrades(workspaceId, { years });
 
-  const params = { ordering: "entry_datetime", page_size: 200 };
+  const params = { ordering: "entry_datetime,id", page_size: 200 };
   if (years.length > 0) params.year__in = years.join(",");
 
   const { data: firstPage } = await api.get(`/journals/${workspaceId}/trades/`, { params });
@@ -46,3 +47,8 @@ export const fetchPerformanceByHour = async (workspaceId, tz = "UTC") => {
   const { data } = await api.get(`/journals/${workspaceId}/analytics/performance-by-hour/`, { params: { tz } });
   return Array.isArray(data) ? data : (data.results ?? []);
 };
+
+export const fetchHubTrades = (workspaceId, { years = [] } = {}) => cachedQuery(
+  JSON.stringify(["hub-trades", workspaceId, [...years].sort()]),
+  () => loadHubTrades(workspaceId, { years }),
+);

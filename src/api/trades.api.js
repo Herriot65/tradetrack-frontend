@@ -1,3 +1,4 @@
+import { clearQueryCache } from "../lib/queryCache.js";
 import api from "./axios";
 import {
   USE_MOCK,
@@ -21,19 +22,19 @@ export const fetchTrade = async (workspaceId, id) => {
 };
 
 export const createTrade = async (workspaceId, payload) => {
-  if (USE_MOCK) return mockCreateTrade(workspaceId, payload);
+  if (USE_MOCK) { const result = await mockCreateTrade(workspaceId, payload); clearQueryCache(); return result; }
   const { data } = await api.post(`/journals/${workspaceId}/trades/`, payload);
   return data;
 };
 
 export const updateTrade = async (workspaceId, id, payload) => {
-  if (USE_MOCK) return mockUpdateTrade(workspaceId, id, payload);
+  if (USE_MOCK) { const result = await mockUpdateTrade(workspaceId, id, payload); clearQueryCache(); return result; }
   const { data } = await api.patch(`/journals/${workspaceId}/trades/${id}/`, payload);
   return data;
 };
 
 export const deleteTrade = async (workspaceId, id) => {
-  if (USE_MOCK) return mockDeleteTrade(workspaceId, id);
+  if (USE_MOCK) { const result = await mockDeleteTrade(workspaceId, id); clearQueryCache(); return result; }
   await api.delete(`/journals/${workspaceId}/trades/${id}/`);
 };
 

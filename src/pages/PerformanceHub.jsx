@@ -1,13 +1,11 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import AppShell from "@/components/layout/AppShell";
 import AnalyticsPane from "@/components/hub/AnalyticsPane";
 import HubHeader from "@/components/hub/HubHeader";
 import KpiStrip from "@/components/hub/KpiStrip";
 import MonthDetailDialog from "@/components/hub/MonthDetailDialog";
-import { useCareerData } from "@/hooks/useCareerData";
 import { useHubAnalytics } from "@/hooks/useHubAnalytics";
-import { buildMergedSummary } from "@/lib/buildMergedSummary";
 
 function yearsLabel(selectedYears) {
   if (selectedYears.length === 0) return "All";
@@ -25,12 +23,7 @@ export default function PerformanceHub() {
     openMonth,
   });
 
-  const { data: careerData } = useCareerData();
-
-  const mergedSummary = useMemo(
-    () => buildMergedSummary(yearAnalytics?.summary, careerData, selectedYears),
-    [yearAnalytics?.summary, careerData, selectedYears]
-  );
+  const mergedSummary = yearAnalytics?.summary;
 
   const handleYearToggle = (year) => {
     setSelectedYears((prev) =>

@@ -16,6 +16,26 @@ try {
  await page.getByRole("button",{name:"All",exact:true}).click();
  await page.getByRole("heading",{name:"Equity and drawdown"}).waitFor();
  assert.equal(await page.getByRole("heading",{name:"Monthly net R"}).count(),1);
+ // Repeated analytics reads share one request, including simultaneous tab mounts.
+ await page.evaluate(async () => {
+  const {default: api} = await import('/src/api/axios.js');
+  const {fetchHubTrades} = await import('/src/api/hub.api.js');
+  const {clearQueryCache} = await import('/src/lib/queryCache.js');
+  const adapter = api.defaults.adapter;
+  let calls = 0;
+  api.defaults.adapter = async config => { calls++; return adapter(config); };
+  try {
+   clearQueryCache();
+   const [first, second] = await Promise.all([fetchHubTrades(1), fetchHubTrades(1)]);
+   if (calls !== 1 || first !== second) throw new Error('Tab requests were not shared');
+   await fetchHubTrades(1);
+   if (calls !== 1) throw new Error('Tab revisit fetched history again');
+   await api.patch('/journals/1/', {break_even_value:0});
+   await fetchHubTrades(1);
+   if (calls !== 3) throw new Error('Mutation failed to invalidate analytics');
+  } finally { api.defaults.adapter = adapter; clearQueryCache(); }
+ });
+
  await page.getByRole("button",{name:"Custom",exact:true}).click();
  await page.locator("#analytics-start").fill("2025-01-01");
  await page.locator("#analytics-end").fill("2025-12-31");

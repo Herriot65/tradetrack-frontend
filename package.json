@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node --test tests/analytics.test.js tests/tradeForm.test.js tests/breakdown.test.js tests/language.test.js",
+    "test": "node --test tests/queryCache.test.js tests/analytics.test.js tests/tradeForm.test.js tests/breakdown.test.js tests/language.test.js",
     "test:session": "npm run build && node tests/session-browser.mjs",
     "test:redesign": "node tests/redesign-qa.mjs",
     "test:theme": "npm run build && node tests/theme-browser.mjs",
