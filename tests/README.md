@@ -35,3 +35,68 @@ Theme choices are stored only in this browser; System is the default. Signing in
 The header and sign-in pages offer Français (FR) and English (US). English is the default. The choice is stored in `nexora_language` in browser storage and synchronized across tabs. Interface translations live in `src/i18n/fr.js`; user-entered journal names, notes, tags, and custom field options retain their original text. Dates and numbers follow the selected locale; trade timestamps retain their existing timezone behavior.
 
 `npm test` includes translation, interpolation, locale formatting, invalid-language, and unavailable-storage checks. `npm run test:language` builds the app and verifies switching, navigation/reload persistence, form preservation, French validation, settings, cross-tab synchronization, and layouts from 320px through 1280px. Set `PLAYWRIGHT_MODULE` to an installed Playwright entry point and `CHROMIUM_PATH` to a browser executable when needed. API calls in browser tests are stubbed.
+
+## Favorite timeframes
+
+`npm run test:timeframe-favorites` exercises the real trade form: star/unstar
+without selecting or submitting, shared Reference/Opportunity/Entry shortcuts,
+non-favorite selection, save payload, persistence, cross-tab synchronization,
+keyboard selection and 320/390/1280px layout. It also checks malformed and blocked
+storage. Use `PLAYWRIGHT_MODULE` as for the other browser runners. Captures are
+saved in `artifacts/timeframe-favorites/`.
+
+Favorites are a browser preference scoped to the signed-in user (id, or email
+fallback). All three timeframe fields share them, ordered by the existing
+shortest-to-longest timeframe list. No timeframes are preselected or added to the
+supported list. Preference writes do not modify any trade or backend record.
+
+## Setup options and rating stars
+
+`npm run test:setup-options` covers Manage actions on all Setup fields except
+Trade score, custom timeframes/trends/sessions, safe removal of choices without
+changing trade values, restoring defaults, persistence and yellow favorite
+stars. Mobile touch checks at 320/390px and desktop verify that fractional
+rating fills share exactly the same origin and bounds as the original icons.
+
+Timeframes share a choice list; trends and sessions have their own lists.
+Choices are saved per signed-in user in this browser. Removing a choice only
+hides it from future selection; saved trades keep their original values.
+Custom fields use the existing 10/20/50-character timeframe/trend/session limits.
+Backend migration `0014_custom_trend_options` removes the fixed trend-choice
+restriction so custom trend names round-trip through the API. Existing trend
+codes and all financial calculations remain unchanged. Deploy the updated
+backend with its migration before using custom trends in a deployed frontend.
+
+## Inline trade image review
+
+`npm run test:image-review` pastes two synthetic chart images into the real notes
+editor, checks full-width stacking and original aspect ratios at 320/390/1440px,
+and opens the real read-only and editing sheets in Wide review. It verifies
+fullscreen keyboard dismissal without closing the underlying trade, and image
+removal. Captures live in `artifacts/image-review/`. No live storage is used.
+
+Images now retain their full aspect ratio in notes and read-only trade details;
+there is no fixed-height crop or two-column thumbnail grid. Desktop Wide review
+expands the existing sheet, while Full screen remains available for inspection.
+The image-review layout preserves the original image files. Rich formatting
+and persisted size metadata are described in the following section.
+
+## Rich notes and saved image sizes
+
+`npm run test:rich-notes` exercises the actual TipTap toolbar, structured save and
+reload, plaintext compatibility, read-only formatted rendering, slider/keyboard/
+pointer image resizing, metadata-save failure/retry and mobile wrapping.
+Captures are in `artifacts/rich-notes/`. The existing image-review runner also
+continues to cover paste, fullscreen, aspect ratios and wide review.
+
+TipTap is loaded only when editing notes. General notes and each review section
+support headings 1–3, lists, bold/italic/underline/strike, quotes, colors and undo.
+The backend stores versioned JSON in `notes_document`; `notes` retains a plain
+text summary for search and older views. Legacy text loads without migration of
+its content, and formatted review uses React nodes rather than arbitrary HTML.
+
+Each screenshot stores `display_width` (25–100 percent), while the original
+image remains unchanged. Backend migration `0015_rich_notes_and_image_size` must
+be applied with the updated API before deploying this frontend. The screenshot
+PATCH endpoint is journal/trade scoped and accepts width/section metadata.
+No financial formula is changed.

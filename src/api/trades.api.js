@@ -38,9 +38,10 @@ export const deleteTrade = async (workspaceId, id) => {
   await api.delete(`/journals/${workspaceId}/trades/${id}/`);
 };
 
-export const uploadScreenshot = async (journalId, tradeId, file, section = null) => {
+export const uploadScreenshot = async (journalId, tradeId, file, section = null, displayWidth = 100) => {
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("display_width", String(displayWidth));
   if (section) formData.append("section", section);
   const { data } = await api.post(
     `/journals/${journalId}/trades/${tradeId}/screenshots/`,
@@ -51,4 +52,9 @@ export const uploadScreenshot = async (journalId, tradeId, file, section = null)
 
 export const deleteScreenshot = async (journalId, tradeId, screenshotId) => {
   await api.delete(`/journals/${journalId}/trades/${tradeId}/screenshots/${screenshotId}/`);
+};
+
+export const updateScreenshotWidth = async (journalId, tradeId, screenshotId, width, section) => {
+  const {data} = await api.patch(`/journals/${journalId}/trades/${tradeId}/screenshots/${screenshotId}/`, {display_width: width, ...(section != null ? {section} : {})});
+  return data;
 };
