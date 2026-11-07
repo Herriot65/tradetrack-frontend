@@ -17,6 +17,8 @@ import { UNIT_OPTIONS, riskAmount, tradeAmount } from "@/lib/analytics";
 import { tradeSchema } from "@/schemas/tradeSchema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import SetupOptionManager from "./SetupOptionManager";
+import { useSetupOptions } from "@/hooks/useSetupOptions";
 import TimeframeField from "./TimeframeField";
 import SelectField from "@/components/ui/select-field";
 import DateTimePicker from "@/components/ui/date-time-picker";
@@ -51,13 +53,6 @@ import TradeNotesEditor, { DEFAULT_SECTIONS } from "./TradeNotesEditor";
 import { uploadScreenshot, deleteScreenshot, fetchTrade } from "@/api/trades.api";
 
 // ─── Options ──────────────────────────────────────────────────────────────────
-
-const TREND_OPTIONS = [
-  { value: "BULLISH", label: "Bullish" },
-  { value: "BEARISH", label: "Bearish" },
-  { value: "RANGE", label: "Range" },
-];
-const SESSION_OPTIONS = ["Asian", "London", "New York", "London/NY Overlap", "Pre-Market"];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -185,12 +180,13 @@ function DollarInput({ className = "", ...props }) {
 }
 
 // Small "Manage" gear button used in section headers
-function ManageBtn({ onClick }) {
+function ManageBtn({ onClick, label }) {
   useLanguage();
   return (
     <button
       type="button"
       onClick={onClick}
+      aria-label={label}
       className="flex items-center gap-1 text-[10px] text-zinc-600 hover:text-zinc-400"
     >
       <Settings2 className="size-3" />{t("Manage")}</button>
@@ -212,6 +208,9 @@ export default function TradePanel({
 }) {
   useLanguage();
   const isEdit = mode === "edit";
+  const [manageOptions, setManageOptions] = useState(null);
+  const { options: trendOptions } = useSetupOptions("trends");
+  const { options: sessionOptions } = useSetupOptions("sessions");
   const auth = useAuth();
   const timezone = auth?.user?.timezone || getUserTimezone();
   const journalContext = useJournal();
@@ -760,7 +759,7 @@ export default function TradePanel({
                 <section>
                   <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">{t("Setup")}</h3>
                   <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-x-4 gap-y-4">
-                    <F label={t("Reference TF")} id="trade-reference_timeframe">
+                    <F label={t("Reference TF")} id="trade-reference_timeframe" action={<ManageBtn label={t("Manage {field}", {field: t("Reference TF")})} onClick={() => setManageOptions("timeframes")} />}>
                       <Controller
                         name="reference_timeframe"
                         control={control}
@@ -818,7 +817,7 @@ export default function TradePanel({
                       />
                     </F>
 
-                    <F label={t("Opportunity TF")} id="trade-opportunity_timeframe">
+                    <F label={t("Opportunity TF")} id="trade-opportunity_timeframe" action={<ManageBtn label={t("Manage {field}", {field: t("Opportunity TF")})} onClick={() => setManageOptions("timeframes")} />}>
                       <Controller
                         name="opportunity_timeframe"
                         control={control}
@@ -835,7 +834,7 @@ export default function TradePanel({
                       />
                     </F>
 
-                    <F label={t("Entry TF")} id="trade-entry_timeframe">
+                    <F label={t("Entry TF")} id="trade-entry_timeframe" action={<ManageBtn label={t("Manage {field}", {field: t("Entry TF")})} onClick={() => setManageOptions("timeframes")} />}>
                       <Controller
                         name="entry_timeframe"
                         control={control}
@@ -852,7 +851,7 @@ export default function TradePanel({
                       />
                     </F>
 
-                    <F label={t("Trend")} id="trade-trend_direction">
+                    <F label={t("Trend")} id="trade-trend_direction" action={<ManageBtn label={t("Manage {field}", {field: t("Trend")})} onClick={() => setManageOptions("trends")} />}>
                       <Controller
                         name="trend_direction"
                         control={control}
@@ -864,14 +863,14 @@ export default function TradePanel({
                             onValueChange={field.onChange}
                             onBlur={field.onBlur}
                             ref={field.ref}
-                            options={TREND_OPTIONS}
+                            options={trendOptions}
                             placeholder={t("Select trend")}
                           />
                         )}
                       />
                     </F>
 
-                    <F label={t("Session")} id="trade-session">
+                    <F label={t("Session")} id="trade-session" action={<ManageBtn label={t("Manage {field}", {field: t("Session")})} onClick={() => setManageOptions("sessions")} />}>
                       <Controller
                         name="session"
                         control={control}
@@ -883,7 +882,7 @@ export default function TradePanel({
                             onValueChange={field.onChange}
                             onBlur={field.onBlur}
                             ref={field.ref}
-                            options={SESSION_OPTIONS}
+                            options={sessionOptions}
                             placeholder={t("Select session")}
                           />
                         )}
@@ -1054,6 +1053,8 @@ export default function TradePanel({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {manageOptions && <SetupOptionManager key={manageOptions} kind={manageOptions} onClose={() => setManageOptions(null)} />}
 
       {/* Catalog managers */}
       <TagManager

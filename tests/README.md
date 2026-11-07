@@ -49,3 +49,20 @@ Favorites are a browser preference scoped to the signed-in user (id, or email
 fallback). All three timeframe fields share them, ordered by the existing
 shortest-to-longest timeframe list. No timeframes are preselected or added to the
 supported list. Preference writes do not modify any trade or backend record.
+
+## Setup options and rating stars
+
+`npm run test:setup-options` covers Manage actions on all Setup fields except
+Trade score, custom timeframes/trends/sessions, safe removal of choices without
+changing trade values, restoring defaults, persistence and yellow favorite
+stars. Mobile touch checks at 320/390px and desktop verify that fractional
+rating fills share exactly the same origin and bounds as the original icons.
+
+Timeframes share a choice list; trends and sessions have their own lists.
+Choices are saved per signed-in user in this browser. Removing a choice only
+hides it from future selection; saved trades keep their original values.
+Custom fields use the existing 10/20/50-character timeframe/trend/session limits.
+Backend migration `0014_custom_trend_options` removes the fixed trend-choice
+restriction so custom trend names round-trip through the API. Existing trend
+codes and all financial calculations remain unchanged. Deploy the updated
+backend with its migration before using custom trends in a deployed frontend.

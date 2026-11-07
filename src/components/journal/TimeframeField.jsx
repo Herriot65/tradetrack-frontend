@@ -1,15 +1,18 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Check, ChevronDown, Star } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useTimeframeFavorites, TIMEFRAME_OPTIONS } from '@/hooks/useTimeframeFavorites';
+import { useTimeframeFavorites } from '@/hooks/useTimeframeFavorites';
 import { translate as t } from '@/i18n/language';
 import { useLanguage } from '@/i18n/useLanguage';
+import { useSetupOptions } from '@/hooks/useSetupOptions';
 import { cn } from '@/lib/utils';
 
 export default function TimeframeField({ id, label, value, onValueChange, onBlur, ref }) {
   useLanguage();
   const [open, setOpen] = useState(false);
-  const { favorites, toggleFavorite } = useTimeframeFavorites();
+  const { options } = useSetupOptions("timeframes");
+  const timeframes = useMemo(() => options.map(option => option.value), [options]);
+  const { favorites, toggleFavorite } = useTimeframeFavorites(timeframes);
   function select(next) {
     onValueChange(next);
     onBlur?.();
@@ -34,13 +37,13 @@ export default function TimeframeField({ id, label, value, onValueChange, onBlur
         style={{maxHeight:'min(380px, var(--radix-popover-content-available-height))'}}>
         <p className="px-2 pb-2 text-xs leading-5 text-muted-foreground">{t('Star timeframes to show quick choices above the field.')}</p>
         <button type="button" aria-pressed={!value} onClick={() => select('')} className="flex min-h-11 w-full items-center gap-2 rounded-md px-2 text-left text-sm hover:bg-secondary"><Check aria-hidden="true" className={cn('size-3.5', value && 'invisible')}/>{t('Not set')}</button>
-        <div className="mt-1 border-t border-border pt-1">{TIMEFRAME_OPTIONS.map(timeframe => <div key={timeframe} className="flex items-center gap-1">
+        <div className="mt-1 border-t border-border pt-1">{timeframes.map(timeframe => <div key={timeframe} className="flex items-center gap-1">
           <button type="button" aria-label={t('Select {timeframe}', {timeframe})} aria-pressed={value === timeframe} onClick={() => select(timeframe)}
             className={cn('flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-md px-2 text-left text-sm hover:bg-secondary', value === timeframe && 'bg-primary/10 text-primary')}>
             <Check aria-hidden="true" className={cn('size-3.5', value !== timeframe && 'invisible')}/>{timeframe}
           </button>
           <button type="button" aria-label={t('Favorite {timeframe}', {timeframe})} aria-pressed={favorites.includes(timeframe)} onClick={() => toggleFavorite(timeframe)}
-            className={cn('flex size-11 shrink-0 items-center justify-center rounded-md hover:bg-secondary', favorites.includes(timeframe) ? 'text-primary' : 'text-muted-foreground')}>
+            className={cn('flex size-11 shrink-0 items-center justify-center rounded-md hover:bg-secondary', favorites.includes(timeframe) ? 'text-[#facc15]' : 'text-muted-foreground')}>
             <Star aria-hidden="true" className="size-4" fill={favorites.includes(timeframe) ? 'currentColor' : 'none'}/>
           </button>
         </div>)}</div>

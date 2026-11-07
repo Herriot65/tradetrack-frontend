@@ -1,5 +1,16 @@
 // English source strings are stable keys; API values and user content stay unchanged.
 export default {
+  "Manage {field}": "Gérer : {field}",
+  "Timeframes": "Unités de temps",
+  "Customize choices in this browser. Removing a choice does not change saved trades.": "Personnalisez les choix dans ce navigateur. Supprimer un choix ne modifie pas les trades enregistrés.",
+  "New option": "Nouvelle option",
+  "No options. Add one below.": "Aucune option. Ajoutez-en une ci-dessous.",
+  "Restore defaults": "Rétablir les valeurs par défaut",
+  "Remove {option}": "Retirer {option}",
+  "Enter a name of 1–{max} characters.": "Saisissez un nom de 1 à {max} caractères.",
+  "This option already exists.": "Cette option existe déjà.",
+  "You can have up to 100 options.": "Vous pouvez avoir jusqu’à 100 options.",
+
   "{field} favorites": "Favoris : {field}",
   "{field} options": "Options : {field}",
   "Select {timeframe}": "Choisir {timeframe}",

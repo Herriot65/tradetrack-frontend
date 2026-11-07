@@ -23,25 +23,25 @@ function read(key) {
   if (memory.has(key)) return memory.get(key);
   try { return localStorage.getItem(key); } catch { return null; }
 }
-function decode(raw) {
+function decode(raw, options) {
   try {
     const values = JSON.parse(raw);
-    return Array.isArray(values) ? TIMEFRAME_OPTIONS.filter(value => values.includes(value)) : [];
+    return Array.isArray(values) ? options.filter(value => values.includes(value)) : [];
   } catch { return []; }
 }
-export function useTimeframeFavorites() {
+export function useTimeframeFavorites(options = TIMEFRAME_OPTIONS) {
   const auth = useAuth();
   const key = `nexora_timeframe_favorites:${auth?.user?.id ?? auth?.user?.email ?? 'browser'}`;
   const snapshot = useSyncExternalStore(subscribe, () => read(key), () => null);
-  const favorites = useMemo(() => decode(snapshot), [snapshot]);
+  const favorites = useMemo(() => decode(snapshot, options), [snapshot, options]);
   const toggleFavorite = useCallback(value => {
-    if (!TIMEFRAME_OPTIONS.includes(value)) return;
-    const previous = decode(read(key));
+    if (!options.includes(value)) return;
+    const previous = decode(read(key), options);
     const next = previous.includes(value) ? previous.filter(item => item !== value) : [...previous, value];
     const raw = JSON.stringify(next);
     memory.set(key, raw);
     try { localStorage.setItem(key, raw); } catch { /* In-memory preference remains available. */ }
     notify();
-  }, [key]);
+  }, [key, options]);
   return { favorites, toggleFavorite };
 }
