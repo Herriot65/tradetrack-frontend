@@ -54,9 +54,8 @@ No timeframes are preselected or added to the supported list. Preference writes 
 ## Setup options and rating stars
 
 `npm run test:setup-options` checks removal confirmation, Cancel/Escape and focus
-restoration, inline Add/delete in timeframe dropdowns, and Manage actions for
-Trend and Session. It covers custom timeframes/trends/sessions, duplicate
-validation, safe removal of choices without
+restoration, along with Manage actions on all Setup fields except
+Trade score, custom timeframes/trends/sessions, safe removal of choices without
 changing trade values, restoring defaults, persistence and yellow favorite
 stars. Mobile touch checks at 320/390px and desktop verify that fractional
 rating fills share exactly the same origin and bounds as the original icons.

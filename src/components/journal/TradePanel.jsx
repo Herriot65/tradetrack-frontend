@@ -792,7 +792,7 @@ export default function TradePanel({
                 <section>
                   <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">{t("Setup")}</h3>
                   <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-x-4 gap-y-4">
-                    <F label={t("Reference TF")} id="trade-reference_timeframe">
+                    <F label={t("Reference TF")} id="trade-reference_timeframe" action={<ManageBtn label={t("Manage {field}", {field: t("Reference TF")})} onClick={() => setManageOptions("timeframes")} />}>
                       <Controller
                         name="reference_timeframe"
                         control={control}
@@ -850,7 +850,7 @@ export default function TradePanel({
                       />
                     </F>
 
-                    <F label={t("Opportunity TF")} id="trade-opportunity_timeframe">
+                    <F label={t("Opportunity TF")} id="trade-opportunity_timeframe" action={<ManageBtn label={t("Manage {field}", {field: t("Opportunity TF")})} onClick={() => setManageOptions("timeframes")} />}>
                       <Controller
                         name="opportunity_timeframe"
                         control={control}
@@ -867,7 +867,7 @@ export default function TradePanel({
                       />
                     </F>
 
-                    <F label={t("Entry TF")} id="trade-entry_timeframe">
+                    <F label={t("Entry TF")} id="trade-entry_timeframe" action={<ManageBtn label={t("Manage {field}", {field: t("Entry TF")})} onClick={() => setManageOptions("timeframes")} />}>
                       <Controller
                         name="entry_timeframe"
                         control={control}
