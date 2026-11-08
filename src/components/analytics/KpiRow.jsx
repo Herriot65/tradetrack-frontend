@@ -1,6 +1,6 @@
 import { translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
-import { formatPercent, formatRatio, formatValue } from "@/lib/analytics";
+import { formatRatio, formatValue } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 function valueTone(value) {
@@ -79,15 +79,15 @@ export default function KpiRow({ summary, unit, summaryOnly = false, children })
       tone: valueTone(summary?.net),
     },
     {
-      label: "Win rate",
-      value: formatPercent(summary?.winRate ?? 0),
-      detail: "of closed trades",
-      tone: "text-ink",
+      label: "Expectancy",
+      value: formatValue(summary?.expectancy, unit),
+      detail: "per trade",
+      tone: valueTone(summary?.expectancy),
     },
     {
-      label: "Profit factor",
-      value: formatRatio(summary?.profitFactor),
-      detail: "gross profit ÷ gross loss",
+      label: "Payoff ratio",
+      value: formatRatio(summary?.payoff),
+      detail: "avg win ÷ avg loss",
       tone: "text-ink",
     },
     {
@@ -99,8 +99,6 @@ export default function KpiRow({ summary, unit, summaryOnly = false, children })
   ];
 
   const strip = [
-    {label:"Expectancy", value:formatValue(summary?.expectancy, unit), detail:"per trade", tone:valueTone(summary?.expectancy)},
-    {label:"Payoff ratio", value:formatRatio(summary?.payoff), detail:"avg win ÷ avg loss", tone:"text-ink"},
     {
       label: "Avg win",
       value: formatValue(summary?.avgWin, unit),

@@ -1,5 +1,7 @@
 // English source strings are stable keys; API values and user content stay unchanged.
 export default {
+  "Open positions": "Positions ouvertes",
+  "per trade": "par trade",
   "Gross profit divided by the absolute gross loss.": "Gains bruts divisés par la valeur absolue des pertes brutes.",
   "avg win ÷ avg loss": "gain moyen ÷ perte moyenne",
   "gross profit ÷ gross loss": "gains bruts ÷ pertes brutes",

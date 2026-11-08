@@ -3,7 +3,7 @@ import { ArrowRight, BarChart3 } from 'lucide-react';
 import { translate as t } from '@/i18n/language';
 import { useLanguage } from '@/i18n/useLanguage';
 import { useJournalAnalytics } from '@/hooks/useJournalAnalytics';
-import { formatDateLabel, formatRatio, formatValue } from '@/lib/analytics';
+import { formatDateLabel, formatValue } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import SelectField from '@/components/ui/select-field';
@@ -69,7 +69,7 @@ export default function OverviewTab({
       <AnalyticsCard>
         <CardHeading title={t('Performance summary')} />
         <dl className="grid grid-cols-2 gap-x-5 px-5 pb-3 pt-3 md:grid-cols-3 xl:grid-cols-6">
-          {[[t('Total trades'), summary.totalTrades], [t('Winning trades'), summary.wins], [t('Losing trades'), summary.losses], [t('Break-even trades'), summary.breakEven], [t('Average R'), formatValue(summary.avgR, 'R')], [t('Payoff ratio'), formatRatio(summary.payoff)]].map(([label, value]) => <div key={label} className="min-w-0 border-b border-border py-4 text-sm"><dt className="text-muted-foreground">{label}</dt><dd className="mt-2 font-medium tabular-nums">{value}</dd></div>)}
+          {[[t('Total trades'), summary.totalTrades], [t('Winning trades'), summary.wins], [t('Losing trades'), summary.losses], [t('Break-even trades'), summary.breakEven], [t('Average R'), formatValue(summary.avgR, 'R')], [t('Open positions'), summary.openPositions]].map(([label, value]) => <div key={label} className="min-w-0 border-b border-border py-4 text-sm"><dt className="text-muted-foreground">{label}</dt><dd className="mt-2 font-medium tabular-nums">{value}</dd></div>)}
         </dl>
         <div className="border-t border-border p-4"><Button className="w-full" variant="ghost" onClick={() => onNavigate('analytics')}>{t('Explore analytics')}<ArrowRight className="size-4" /></Button></div>
       </AnalyticsCard>
