@@ -53,7 +53,8 @@ No timeframes are preselected or added to the supported list. Preference writes 
 
 ## Setup options and rating stars
 
-`npm run test:setup-options` covers Manage actions on all Setup fields except
+`npm run test:setup-options` checks removal confirmation, Cancel/Escape and focus
+restoration, along with Manage actions on all Setup fields except
 Trade score, custom timeframes/trends/sessions, safe removal of choices without
 changing trade values, restoring defaults, persistence and yellow favorite
 stars. Mobile touch checks at 320/390px and desktop verify that fractional

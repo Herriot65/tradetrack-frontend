@@ -8,6 +8,17 @@ try {
  browser=await chromium.launch({headless:true,channel:'chrome'});
  const context=await browser.newContext({viewport:{width:390,height:900},hasTouch:true,isMobile:true});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  const url='http://127.0.0.1:4208/tests/trade-form.html?edit=1';await page.goto(url);
+ async function removeOption(manager,label){
+  const trigger=manager.getByRole('button',{name:'Remove '+label,exact:true});
+  await trigger.click();let confirmation=page.getByRole('alertdialog',{name:`Remove “${label}”?`,exact:true});
+  await confirmation.waitFor();assert.equal(await confirmation.getByRole('button',{name:'Cancel',exact:true}).evaluate(el=>el===document.activeElement),true,'Cancel should receive initial focus');
+  await confirmation.getByRole('button',{name:'Cancel',exact:true}).click();await confirmation.waitFor({state:'hidden'});
+  assert.equal(await trigger.count(),1,'Cancel must preserve the option');
+  await trigger.click();await confirmation.waitFor();await page.keyboard.press('Escape');await confirmation.waitFor({state:'hidden'});
+  await page.waitForFunction(label=>document.activeElement?.getAttribute('aria-label')==='Remove '+label,label,{timeout:3000});
+  await trigger.click();await confirmation.getByRole('button',{name:'Remove option',exact:true}).click();await confirmation.waitFor({state:'hidden'});
+  assert.equal(await trigger.count(),0,'Only confirmation should remove the option');
+ }
  async function manage(field){await page.getByRole('button',{name:'Manage '+field,exact:true}).click();return page.getByRole('dialog',{name:'Manage '+(field.includes('TF')?'Timeframes':field),exact:true});}
  for(const field of ['Reference TF','Opportunity TF','Entry TF','Trend','Session'])assert.equal(await page.getByRole('button',{name:'Manage '+field,exact:true}).count(),1);
  assert.equal(await page.getByRole('button',{name:'Manage Trade score',exact:true}).count(),0);
@@ -15,8 +26,8 @@ try {
  await page.getByRole('button',{name:'Entry TF',exact:true}).click();await page.getByRole('button',{name:'Favorite M45',exact:true}).click();const star=page.getByRole('button',{name:'Favorite M45',exact:true});assert.equal(await star.evaluate(e=>getComputedStyle(e).color),'rgb(250, 204, 21)');await page.getByRole('button',{name:'Select M45',exact:true}).click();
  assert.equal(await page.getByRole('group',{name:'Reference TF favorites',exact:true}).count(),0);
  await page.getByRole('button',{name:'Reference TF',exact:true}).click();await page.getByRole('button',{name:'Favorite M45',exact:true}).click();await page.getByRole('button',{name:'Select M45',exact:true}).click();
- dialog=await manage('Opportunity TF');await dialog.getByRole('button',{name:'Remove M45',exact:true}).click();await dialog.getByRole('button',{name:'Done',exact:true}).click();assert.match(await page.getByRole('button',{name:'Reference TF',exact:true}).innerText(),/M45/);assert.equal(await page.getByRole('group',{name:'Reference TF favorites',exact:true}).count(),0);
- dialog=await manage('Trend');await dialog.getByLabel('New option',{exact:true}).fill('Neutral');await dialog.getByRole('button',{name:'Add',exact:true}).click();await dialog.getByRole('button',{name:'Remove Bullish',exact:true}).click();await dialog.getByRole('button',{name:'Done',exact:true}).click();
+ dialog=await manage('Opportunity TF');await removeOption(dialog,'M45');await dialog.getByRole('button',{name:'Done',exact:true}).click();assert.match(await page.getByRole('button',{name:'Reference TF',exact:true}).innerText(),/M45/);assert.equal(await page.getByRole('group',{name:'Reference TF favorites',exact:true}).count(),0);
+ dialog=await manage('Trend');await dialog.getByLabel('New option',{exact:true}).fill('Neutral');await dialog.getByRole('button',{name:'Add',exact:true}).click();await removeOption(dialog,'Bullish');await dialog.getByRole('button',{name:'Done',exact:true}).click();
  await page.getByRole('combobox',{name:'Trend',exact:true}).click();assert.equal(await page.getByRole('option',{name:'Bullish',exact:true}).count(),0);await page.getByRole('option',{name:'Neutral',exact:true}).click();
  dialog=await manage('Session');await dialog.getByLabel('New option',{exact:true}).fill('After hours');await dialog.getByRole('button',{name:'Add',exact:true}).click();await dialog.getByRole('button',{name:'Done',exact:true}).click();await page.getByRole('combobox',{name:'Session',exact:true}).click();await page.getByRole('option',{name:'After hours',exact:true}).click();
  await page.getByRole('button',{name:'Star rating',exact:true}).click();await page.getByRole('slider',{name:'Trade quality stars',exact:true}).fill('2.5');
