@@ -72,3 +72,8 @@
     grid-row: 1;
   }
 }
+
+/* Overview stays compact; detailed outcome charts belong to Analytics. */
+@container performance (min-width: 1000px) {
+  .nx-overview-grid { grid-template-columns: minmax(0, 2.2fr) minmax(280px, 1fr); }
+}

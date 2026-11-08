@@ -59,8 +59,7 @@ try{
  await page.goto(`${base}/journal/1?tab=overview`);await main.getByText('Performance summary',{exact:true}).waitFor();
  assert.equal(await nav.getByRole('link').count(),3);
  assert.equal(await main.getByRole('navigation').count(),0,'Overview has no unrelated local tabs');
- await main.getByRole('heading',{name:'Win / loss',exact:true}).waitFor();
- await main.getByRole('heading',{name:'Profit / loss',exact:true}).waitFor();
+ assert.equal(await main.getByRole('heading',{name:'Win / loss',exact:true}).count(),0,'Overview stays compact without detailed donut charts');
  await capture('overview-desktop');
  await go('Analytics');await main.getByRole('navigation',{name:'Analytics sections'}).waitFor();
  await main.getByRole('group',{name:'Date range',exact:true}).getByRole('button',{name:'All',exact:true}).click();
@@ -107,7 +106,7 @@ try{
    await touch.locator('#app-navigation').getByRole('link',{name,exact:true}).tap();
    await touch.locator('#main-content').getByRole('heading',{name,level:1,exact:true}).waitFor();
    assert.ok(await touch.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${name} overflows at ${width}`);
-   if(name==='Analytics'||name==='Overview'){const donut=touch.locator('#main-content .analytics-outcomes-grid:visible'),equity=touch.locator('#main-content .analytics-featured-equity:visible');await donut.waitFor();assert.ok((await donut.boundingBox()).y<(await equity.boundingBox()).y,'Outcome charts must precede equity on narrow layouts');}
+   if(name==='Analytics'){const donut=touch.locator('#main-content .analytics-outcomes-grid:visible'),equity=touch.locator('#main-content .analytics-featured-equity:visible');await donut.waitFor();assert.ok((await donut.boundingBox()).y<(await equity.boundingBox()).y,'Outcome charts must precede equity on narrow layouts');}
    if(width===390)await touch.screenshot({path:`${output}/${name.toLowerCase()}-mobile.png`,fullPage:false});
   }
  }

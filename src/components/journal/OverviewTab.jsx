@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import SelectField from '@/components/ui/select-field';
 import KpiRow from '@/components/analytics/KpiRow';
-import DonutSection from '@/components/analytics/DonutSection';
 import EquitySection from '@/components/analytics/EquitySection';
 import AnalyticsCard, { CardHeading, SegmentedControl } from '@/components/analytics/AnalyticsCard';
 import TradeDetailPanel from './TradeDetailPanel';
@@ -61,18 +60,17 @@ export default function OverviewTab({
     </div>
     {syntheticEnabled && <p className="rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted-foreground">{t('Sample data is enabled')}</p>}
     {!hasData || !hasRangeData ? <div className="nx-surface px-6 py-16 text-center"><BarChart3 aria-hidden="true" className="mx-auto size-7 text-muted-foreground" /><h2 className="mt-4 text-lg font-medium">{t(hasData ? 'No trades in this range' : 'No data yet')}</h2><p className="mt-2 text-sm text-muted-foreground">{t(hasData ? 'Try a longer date range or clear the active filters.' : 'Log your trades to start reviewing your performance.')}</p><Button className="mt-5" variant="outline" onClick={() => hasData ? setRange('ALL') : onNavigate('trades')}>{t(hasData ? 'All time' : 'Open journal')}<ArrowRight className="size-4" /></Button></div> : <>
-      <KpiRow summary={summary} unit={analytics.unit} summaryOnly />
-      <div className="analytics-featured-insights grid gap-5">
-        <DonutSection analytics={analytics} />
-        <div className="analytics-featured-equity"><EquitySection analytics={analytics} /></div>
+      <KpiRow summary={summary} unit={analytics.unit} summaryOnly overview />
+      <div className="nx-overview-grid grid items-start gap-6">
+        <EquitySection analytics={analytics} compact />
+        <AnalyticsCard>
+          <CardHeading title={t('Performance summary')} />
+          <dl className="divide-y divide-border px-5 pb-3 pt-3">
+            {[[t('Closed trades'), summary.closedCount], [t('Winning trades'), summary.wins], [t('Losing trades'), summary.losses], [t('Break-even trades'), summary.breakEven]].map(([label, value]) => <div key={label} className="flex items-center justify-between gap-4 py-4 text-sm"><dt className="text-muted-foreground">{label}</dt><dd className="font-medium tabular-nums">{value}</dd></div>)}
+          </dl>
+          <div className="border-t border-border p-4"><Button className="w-full" variant="ghost" onClick={() => onNavigate('analytics')}>{t('Explore analytics')}<ArrowRight className="size-4" /></Button></div>
+        </AnalyticsCard>
       </div>
-      <AnalyticsCard>
-        <CardHeading title={t('Performance summary')} />
-        <dl className="grid grid-cols-2 gap-x-5 px-5 pb-3 pt-3 md:grid-cols-3 xl:grid-cols-6">
-          {[[t('Total trades'), summary.totalTrades], [t('Winning trades'), summary.wins], [t('Losing trades'), summary.losses], [t('Break-even trades'), summary.breakEven], [t('Average R'), formatValue(summary.avgR, 'R')], [t('Open positions'), summary.openPositions]].map(([label, value]) => <div key={label} className="min-w-0 border-b border-border py-4 text-sm"><dt className="text-muted-foreground">{label}</dt><dd className="mt-2 font-medium tabular-nums">{value}</dd></div>)}
-        </dl>
-        <div className="border-t border-border p-4"><Button className="w-full" variant="ghost" onClick={() => onNavigate('analytics')}>{t('Explore analytics')}<ArrowRight className="size-4" /></Button></div>
-      </AnalyticsCard>
       <AnalyticsCard>
         <CardHeading title={t('Recent trades')} action={<Button variant="ghost" size="sm" onClick={() => onNavigate('trades')}>{t('View journal')}<ArrowRight className="size-4" /></Button>} />
         <div className="mt-4 overflow-x-auto">

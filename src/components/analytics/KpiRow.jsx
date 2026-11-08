@@ -1,6 +1,6 @@
 import { translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
-import { formatRatio, formatValue } from "@/lib/analytics";
+import { formatPercent, formatRatio, formatValue } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 function valueTone(value) {
@@ -69,7 +69,7 @@ function StripCell({ label, value, detail, tone = "text-ink" }) {
   );
 }
 
-export default function KpiRow({ summary, unit, summaryOnly = false, children }) {
+export default function KpiRow({ summary, unit, summaryOnly = false, overview = false, children }) {
   useLanguage();
   const hero = [
     {
@@ -79,15 +79,15 @@ export default function KpiRow({ summary, unit, summaryOnly = false, children })
       tone: valueTone(summary?.net),
     },
     {
-      label: "Expectancy",
-      value: formatValue(summary?.expectancy, unit),
-      detail: "per trade",
-      tone: valueTone(summary?.expectancy),
+      label: overview ? "Win rate" : "Expectancy",
+      value: overview ? formatPercent(summary?.winRate ?? 0) : formatValue(summary?.expectancy, unit),
+      detail: overview ? "of closed trades" : "per trade",
+      tone: overview ? "text-ink" : valueTone(summary?.expectancy),
     },
     {
-      label: "Payoff ratio",
-      value: formatRatio(summary?.payoff),
-      detail: "avg win ÷ avg loss",
+      label: overview ? "Profit factor" : "Payoff ratio",
+      value: formatRatio(overview ? summary?.profitFactor : summary?.payoff),
+      detail: overview ? "gross profit ÷ gross loss" : "avg win ÷ avg loss",
       tone: "text-ink",
     },
     {
