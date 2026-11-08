@@ -1,50 +1,48 @@
-// Manages authentication state across the entire app.
-// Other components can access the shared information using useContext(AuthContext)
-// to retrieve user data and perform actions like login and logout...
-
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useRef, useState } from "react";
 import api from "../api/axios";
-import { getAccessToken, getRefreshToken, clearTokens } from "./tokenService";
+import { getAccessToken, getRefreshToken, clearTokens, getSavedUser, saveUser } from "./tokenService";
 import { setUserTimezone } from "../lib/timezone";
-import {
-  loginUser,
-  googleLoginUser,
-  logoutUser,
-  getCurrentUser,
-} from "../api/auth.api";
+import { loginUser, googleLoginUser, logoutUser, getCurrentUser } from "../api/auth.api";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [sessionError, setSessionError] = useState(null);
+  const [user, setUser] = useState(getSavedUser);
+  const [loading, setLoading] = useState(() => !getSavedUser());
   const [sessionExpired, setSessionExpired] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
+  const generation = useRef(0);
 
-  const login = async (credentials) => {
-    const { user } = await loginUser(credentials);
+  const acceptUser = user => {
+    saveUser(user);
     setUserTimezone(user.timezone);
-    setSessionError(null);
-    setSessionExpired(false);
     setUser(user);
+    setLoading(false);
+    setSessionExpired(false);
   };
-
+  const resetSession = () => {
+    generation.current++;
+    clearTokens();
+    setUser(null);
+    setLoading(false);
+    setSessionExpired(false);
+  };
+  const login = async credentials => {
+    const { user } = await loginUser(credentials);
+    generation.current++;
+    acceptUser(user);
+  };
   const logout = async () => {
+    generation.current++;
     setUser(null);
-    setSessionError(null);
-    try {
-      await logoutUser();
-    } catch (err) {
-      console.error(err);
-    }
-    setUser(null);
+    setLoading(false);
+    setSessionExpired(false);
+    try { await logoutUser(); } catch { /* Local sign-out is already complete. */ }
   };
 
   useEffect(() => {
     const expire = () => {
+      generation.current++;
       setUser(null);
-      setSessionError(null);
       setSessionExpired(true);
       setLoading(false);
     };
@@ -54,69 +52,62 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const controller = new AbortController();
+    let timer;
+    let pending = false;
+    let failures = 0;
     const loadUser = async () => {
+      if (pending || controller.signal.aborted) return;
+      clearTimeout(timer);
       if (!getAccessToken() && !getRefreshToken()) {
         setLoading(false);
         return;
       }
-      setLoading(true);
-      setSessionError(null);
+      pending = true;
+      const startedGeneration = generation.current;
       try {
-        const user = await getCurrentUser({ signal: controller.signal });
-        if (controller.signal.aborted) return;
-        setUserTimezone(user.timezone);
-        setUser(user);
+        const currentUser = await getCurrentUser({ signal: controller.signal });
+        if (controller.signal.aborted || generation.current !== startedGeneration) return;
+        saveUser(currentUser);
+        setUserTimezone(currentUser.timezone);
+        setUser(currentUser);
         setSessionExpired(false);
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        // Authentication rejection is handled centrally; keep credentials for
-        // temporary network/server failures so Retry can restore the session.
-        if (getAccessToken() || getRefreshToken()) {
-          setSessionError(err.response?.status >= 500
-            ? "The server is temporarily unavailable. Please try again."
-            : "We couldn’t reconnect to your account. Check your connection and try again.");
+        setLoading(false);
+        failures = 0;
+      } catch {
+        // Keep the current page mounted while connectivity recovers. Only an
+        // explicit authentication rejection can end the session.
+        if (!controller.signal.aborted && generation.current === startedGeneration &&
+            (getAccessToken() || getRefreshToken())) {
+          timer = setTimeout(loadUser, Math.min(30000, 2000 * 2 ** Math.min(failures++, 4)));
         }
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        pending = false;
       }
     };
+    const resume = () => { if (document.visibilityState === "visible") loadUser(); };
     loadUser();
-    return () => controller.abort();
-  }, [retryKey]);
+    window.addEventListener("online", loadUser);
+    document.addEventListener("visibilitychange", resume);
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+      window.removeEventListener("online", loadUser);
+      document.removeEventListener("visibilitychange", resume);
+    };
+  }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        updatePreferences: async preferences => {
-          const {data} = await api.patch("/auth/me/", preferences);
-          setUserTimezone(data.timezone);
-          setUser(data);
-          return data;
-        },
-        login,
-        loginWithGoogle: async credential => {
-          const { user } = await googleLoginUser(credential);
-          setUserTimezone(user.timezone);
-          setSessionError(null);
-          setSessionExpired(false);
-          setUser(user);
-        },
-        logout,
-        loading,
-        sessionError,
-        sessionExpired,
-        retrySession: () => setRetryKey(key => key + 1),
-        resetSession: () => {
-          clearTokens();
-          setSessionError(null);
-          setSessionExpired(false);
-          setUser(null);
-        },
-        isAuthenticated: !!user,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{
+    user, loading, sessionExpired, isAuthenticated: !!user,
+    login, logout, resetSession,
+    loginWithGoogle: async credential => {
+      const { user } = await googleLoginUser(credential);
+      generation.current++;
+      acceptUser(user);
+    },
+    updatePreferences: async preferences => {
+      const { data } = await api.patch("/auth/me/", preferences);
+      acceptUser(data);
+      return data;
+    },
+  }}>{children}</AuthContext.Provider>;
 };
