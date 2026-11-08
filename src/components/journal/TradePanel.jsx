@@ -1065,6 +1065,8 @@ export default function TradePanel({
               </Button>
             </div>
           </SheetFooter>
+          {/* Keep portaled options in the sheet's React tree so touch dismissal stays local. */}
+          {manageOptions && <SetupOptionManager key={manageOptions} kind={manageOptions} onClose={() => setManageOptions(null)} />}
         </SheetContent>
       </Sheet>
 
@@ -1083,8 +1085,6 @@ export default function TradePanel({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {manageOptions && <SetupOptionManager key={manageOptions} kind={manageOptions} onClose={() => setManageOptions(null)} />}
 
       {/* Catalog managers */}
       <TagManager
