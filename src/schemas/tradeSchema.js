@@ -23,7 +23,7 @@ export const tradeSchema = z.object({
   setup:                z.string().nullable().optional(),
   session:              z.string().max(50).nullable().optional(),
   status:               z.enum(["WIN", "LOSS", "BE"]).nullable().optional(),
-  emotions:             z.array(z.string()).min(1, "At least one emotion is required"),
+  emotions:             z.array(z.string()),
   mistakes:             z.array(z.string()),
   notes:                z.string().nullable().optional(),
   custom_fields:        z.record(z.string(), z.union([z.string().max(2000), z.number().finite(), z.boolean(), z.null()])).default({}),

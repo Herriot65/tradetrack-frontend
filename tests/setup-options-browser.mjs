@@ -5,11 +5,12 @@ import {mkdir} from 'node:fs/promises';
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE?pathToFileURL(process.env.PLAYWRIGHT_MODULE).href:'playwright');
 const server=await createServer({server:{host:'127.0.0.1',port:4208,strictPort:true}});await server.listen();let browser;
 try {
- browser=await chromium.launch({headless:true,channel:'chrome'});
+ browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH ? {executablePath:process.env.CHROMIUM_PATH} : {channel:'chrome'})});
  const context=await browser.newContext({viewport:{width:390,height:900},hasTouch:true,isMobile:true});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  const url='http://127.0.0.1:4208/tests/trade-form.html?edit=1';await page.goto(url);
- async function manage(field){await page.getByRole('button',{name:'Manage '+field,exact:true}).click();return page.getByRole('dialog',{name:'Manage '+(field.includes('TF')?'Timeframes':field),exact:true});}
- for(const field of ['Reference TF','Opportunity TF','Entry TF','Trend','Session'])assert.equal(await page.getByRole('button',{name:'Manage '+field,exact:true}).count(),1);
+ async function manage(field){if(await page.getByRole('button',{name:'Customize Setup',exact:true}).count())await page.getByRole('button',{name:'Customize Setup',exact:true}).click();await page.getByRole('button',{name:'Edit '+field+' field',exact:true}).click();await page.getByRole('button',{name:'Edit dropdown options',exact:true}).click();return page.getByRole('dialog',{name:'Manage '+(field.includes('TF')?'Timeframes':field),exact:true});}
+ await page.getByRole('button',{name:'Customize Setup',exact:true}).click();
+ for(const field of ['Reference TF','Opportunity TF','Entry TF','Trend','Session'])assert.equal(await page.getByRole('button',{name:'Edit '+field+' field',exact:true}).count(),1);
  assert.equal(await page.getByRole('button',{name:'Manage Trade score',exact:true}).count(),0);
  // Done must dismiss only the manager for touch, mouse and keyboard interaction.
  // Keep a draft-only value through repeated closes, then verify it reaches Save.
@@ -49,6 +50,6 @@ try {
   await page.screenshot({path:`artifacts/setup-options/rating-${width}.png`});
  }
  await page.getByRole('button',{name:'Save Trade',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});const payload=await page.evaluate(()=>window.__tradePayload);assert.equal(payload.reference_timeframe,'M45');assert.equal(payload.entry_timeframe,'M45');assert.equal(payload.trend_direction,'Neutral');assert.equal(payload.session,'After hours');assert.equal(payload.trade_score,5);
- await page.reload();await page.getByRole('button',{name:'Manage Trend',exact:true}).waitFor();dialog=await manage('Trend');await dialog.getByText('Neutral',{exact:true}).waitFor();await dialog.getByRole('button',{name:'Restore defaults',exact:true}).click();assert.equal(await dialog.getByText('Neutral',{exact:true}).count(),0);await dialog.getByText('Bullish',{exact:true}).waitFor();await dialog.getByRole('button',{name:'Done',exact:true}).tap();
+ await page.reload();await page.getByRole('button',{name:'Customize Setup',exact:true}).waitFor();dialog=await manage('Trend');await dialog.getByText('Neutral',{exact:true}).waitFor();await dialog.getByRole('button',{name:'Restore defaults',exact:true}).click();assert.equal(await dialog.getByText('Neutral',{exact:true}).count(),0);await dialog.getByText('Bullish',{exact:true}).waitFor();await dialog.getByRole('button',{name:'Done',exact:true}).tap();
  assert.deepEqual(errors,[]);console.log('PASS: all Setup managers except score, custom options/save payload, removal without clearing trade values, yellow favorites, persistence/restore, aligned fractional stars on touch at 320/390/1280px.');
 } finally {await browser?.close();await server.close();}

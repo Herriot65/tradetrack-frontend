@@ -15,6 +15,7 @@
     "test:browser": "node tests/browser.mjs",
     "test:trade-browser": "node tests/trade-browser.mjs",
     "test:timeframe-favorites": "node tests/timeframe-favorites-browser.mjs",
+    "test:entry-preferences": "node tests/entry-preferences-browser.mjs",
     "test:setup-options": "node tests/setup-options-browser.mjs",
     "test:image-review": "node tests/image-review-browser.mjs",
     "test:rich-notes": "node tests/rich-notes-browser.mjs",

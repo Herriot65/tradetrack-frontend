@@ -1,3 +1,4 @@
+import { AuthContext } from "../src/auth/AuthContext";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import TradeDetailPanel from "../src/components/journal/TradeDetailPanel";
@@ -147,13 +148,32 @@ function App() {
           return result;
         }}
         catalog={catalog}
-        journalId={1}
+        journalId={Number(new URLSearchParams(location.search).get("journal") || 1)}
       />
     </>
   );
 }
+function AccountFixture({children}) {
+ const [user, setUser] = useState(() => ({id:42,entry_configuration:JSON.parse(localStorage.getItem('fixture-account-configuration') || '{}')}));
+ if (!new URLSearchParams(location.search).has('account')) return children;
+ return <AuthContext.Provider value={{user,updatePreferences:async payload => {
+  window.__configurationPayload = payload;
+  if (window.__failConfigurationSave) throw new Error('Synthetic save failure');
+  const change = payload.entry_configuration_update;
+  const config = structuredClone(user.entry_configuration);
+  config.journals ??= {};
+  if (change.scope === 'future') {
+   for (const id of [1,2]) config.journals[id] ??= structuredClone(config.defaults ?? {});
+   config.defaults = change.fields;
+  }
+  config.journals[change.journal_id] = change.fields;
+  localStorage.setItem('fixture-account-configuration',JSON.stringify(config));
+  setUser({...user,entry_configuration:config});
+  return {...user,entry_configuration:config};
+ }}}>{children}</AuthContext.Provider>;
+}
 createRoot(document.getElementById("root")).render(
   <JournalContext.Provider value={{ activeJournal: { id: 1, startingCapital: 10000 } }}>
-    <App />
+    <AccountFixture><App /></AccountFixture>
   </JournalContext.Provider>,
 );

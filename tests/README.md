@@ -101,3 +101,14 @@ image remains unchanged. Backend migration `0015_rich_notes_and_image_size` must
 be applied with the updated API before deploying this frontend. The screenshot
 PATCH endpoint is journal/trade scoped and accepts width/section metadata.
 No financial formula is changed.
+
+## Entry layout preferences
+
+`npm run test:entry-preferences` checks section customization, protected calculation
+fields, optional fee fields, account saving for one journal or future journals,
+save failure/retry, unchanged/reverted edits, exit Save/Discard/Keep editing, and
+accessible save confirmations. API data is stubbed; no live journals are changed.
+Set `PLAYWRIGHT_MODULE` to an installed Playwright entry point and `CHROMIUM_PATH`
+to a Chromium executable when needed. Screenshots are saved in
+`artifacts/entry-preferences/`. Deploy the backend's user entry configuration
+migration before the frontend to enable account-backed preferences.
