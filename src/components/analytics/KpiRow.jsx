@@ -69,7 +69,7 @@ function StripCell({ label, value, detail, tone = "text-ink" }) {
   );
 }
 
-export default function KpiRow({ summary, unit, summaryOnly = false }) {
+export default function KpiRow({ summary, unit, summaryOnly = false, children }) {
   useLanguage();
   const hero = [
     {
@@ -134,6 +134,8 @@ export default function KpiRow({ summary, unit, summaryOnly = false }) {
           <KpiCard key={kpi.label} {...kpi} />
         ))}
       </div>
+
+      {children}
 
       {!summaryOnly && <div className="analytics-stats-grid grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-hairline bg-hairline">
         {strip.map((stat) => (

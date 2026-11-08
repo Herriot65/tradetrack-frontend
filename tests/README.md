@@ -114,6 +114,8 @@ are saved under `artifacts/navigation/`.
 
 The existing `/journal/:id?tab=...` URLs remain supported. `/dashboard` retains
 account creation/selection/deletion; opening an account starts on Overview.
+Both donut charts appear beside equity on wide layouts and immediately after
+the primary KPIs on narrow layouts, in both Overview and Performance.
 All trading calculations use the existing analytics helpers. Expectancy and payoff
 remain visible in the supporting statistics beneath the four primary KPI cards.
 No backend migration or new dependency is required.

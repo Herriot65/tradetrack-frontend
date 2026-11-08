@@ -59,6 +59,8 @@ try{
  await page.goto(`${base}/journal/1?tab=overview`);await main.getByText('Performance summary',{exact:true}).waitFor();
  assert.equal(await nav.getByRole('link').count(),3);
  assert.equal(await main.getByRole('navigation').count(),0,'Overview has no unrelated local tabs');
+ await main.getByRole('heading',{name:'Win / loss',exact:true}).waitFor();
+ await main.getByRole('heading',{name:'Profit / loss',exact:true}).waitFor();
  await capture('overview-desktop');
  await go('Analytics');await main.getByRole('navigation',{name:'Analytics sections'}).waitFor();
  await main.getByRole('group',{name:'Date range',exact:true}).getByRole('button',{name:'All',exact:true}).click();
@@ -80,7 +82,7 @@ try{
  await page.getByRole('spinbutton',{name:'PnL (R)',exact:true}).fill('2');
  await page.getByRole('button',{name:'Save Trade',exact:true}).click();await page.locator('[data-slot="sheet-content"]').waitFor({state:'hidden'});
  await go('Overview');await main.locator('[data-testid="analytics-kpis"]:visible').getByText('+31.00R',{exact:true}).waitFor();
- await go('Analytics');await main.locator('[data-testid="analytics-kpis"]:visible').getByText('+$3,100',{exact:true}).waitFor();
+ await go('Analytics');await main.locator('[data-testid="analytics-kpis"]:visible .analytics-hero-grid').getByText('+$3,100',{exact:true}).waitFor();
  await go('Settings');await main.getByRole('button',{name:'Custom Fields',exact:true}).click();await main.getByText('Market condition',{exact:true}).waitFor();await capture('custom-fields-desktop');
  await main.getByRole('button',{name:'Account',exact:true}).click();await main.getByRole('button',{name:'Edit account settings',exact:true}).click();await page.getByRole('dialog',{name:'Journal Settings',exact:true}).getByRole('button',{name:'Cancel',exact:true}).click();
  await main.getByRole('button',{name:'Import MT5 Report',exact:true}).click();await page.getByRole('dialog').waitFor();await page.keyboard.press('Escape');
@@ -105,6 +107,7 @@ try{
    await touch.locator('#app-navigation').getByRole('link',{name,exact:true}).tap();
    await touch.locator('#main-content').getByRole('heading',{name,level:1,exact:true}).waitFor();
    assert.ok(await touch.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${name} overflows at ${width}`);
+   if(name==='Analytics'||name==='Overview'){const donut=touch.locator('#main-content .analytics-outcomes-grid:visible'),equity=touch.locator('#main-content .analytics-featured-equity:visible');await donut.waitFor();assert.ok((await donut.boundingBox()).y<(await equity.boundingBox()).y,'Outcome charts must precede equity on narrow layouts');}
    if(width===390)await touch.screenshot({path:`${output}/${name.toLowerCase()}-mobile.png`,fullPage:false});
   }
  }

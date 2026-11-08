@@ -109,7 +109,7 @@ try {
      const columns=selector=>getComputedStyle(document.querySelector(selector)).gridTemplateColumns.split(" ").length;
      return {width:document.querySelector(".analytics-page").clientWidth,outcomes:columns(".analytics-outcomes-grid"),kpis:columns(".analytics-hero-grid")};
    });
-   assert.equal(layout.outcomes,layout.width>=900?2:1,`Outcome columns at ${width}`);
+   assert.equal(layout.outcomes,layout.width>=900&&layout.width<1100?2:1,`Outcome columns at ${width}`);
    assert.equal(layout.kpis,layout.width>=760?4:2,`KPI columns at ${width}`);
    if([320,390,768,900,1024,1440,1920].includes(width)) await page.screenshot({path:`artifacts/analytics/modern-${width}.png`,fullPage:true});
  }

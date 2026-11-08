@@ -262,11 +262,12 @@ export default function AnalyticsTab({
         />
       ) : (
         <>
-          <KpiRow summary={analytics.summary} unit={analytics.unit} />
-
-          <EquitySection analytics={analytics} />
-
-          <DonutSection analytics={analytics} />
+          <KpiRow summary={analytics.summary} unit={analytics.unit}>
+            <div className="analytics-featured-insights grid gap-5">
+              <DonutSection analytics={analytics} />
+              <div className="analytics-featured-equity"><EquitySection analytics={analytics} /></div>
+            </div>
+          </KpiRow>
 
           <SequenceCards analytics={analytics} onOpenTrade={setSelectedTrade} />
 
