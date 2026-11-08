@@ -6,13 +6,15 @@ import {
   ChevronsLeft,
   ChevronsRight,
   LayoutDashboard,
+  BookOpen,
+  ChartNoAxesCombined,
   LogOut,
   Menu,
   Settings,
-  User,
   X,
   ChevronDown,
 } from "lucide-react";
+import { useJournal } from "@/journals/useJournal";
 import { useAuth } from "@/auth/useAuth";
 import {
   DropdownMenu,
@@ -49,6 +51,7 @@ export default function AppShell({ children }) {
   useLanguage();
   const { user, logout } = useAuth();
   const location = useLocation();
+  const { journals, activeJournal } = useJournal();
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -63,6 +66,7 @@ export default function AppShell({ children }) {
     const navigation = document.getElementById("app-navigation");
     navigation.querySelector("a,button")?.focus();
     const close = (event) => {
+      if(event.defaultPrevented) return;
       if (event.key === "Escape") setMobileOpen(false);
       if (event.key === "Tab") {
         const nodes = [...navigation.querySelectorAll("a[href],button:not(:disabled)")].filter(
@@ -93,6 +97,19 @@ export default function AppShell({ children }) {
   const initials =
     (user?.first_name?.[0] || user?.email?.[0] || "N") + (user?.last_name?.[0] || "");
   const journalRoute = location.pathname.startsWith("/journal/");
+  const journal = journals.find(item => String(item.id) === location.pathname.split('/')[2]) ?? activeJournal;
+  const tab = new URLSearchParams(location.search).get('tab') ?? 'trades';
+  const section = !journalRoute ? 'accounts' : ['analytics','breakdown'].includes(tab) ? 'analytics' : ['settings','custom-fields'].includes(tab) ? 'settings' : tab === 'overview' ? 'overview' : 'journal';
+  function sectionLink(next) {
+    const params = new URLSearchParams(journalRoute ? location.search : '');
+    params.set('tab', next);
+    return journal ? `/journal/${journal.id}?${params}` : '/dashboard';
+  }
+  const destinations = [
+    {id:'overview', label:'Overview', icon:LayoutDashboard, tab:'overview'},
+    {id:'journal', label:'Journal', icon:BookOpen, tab:'trades'},
+    {id:'analytics', label:'Analytics', icon:ChartNoAxesCombined, tab:'analytics'},
+  ];
   function toggleCollapsed() {
     setCollapsed((value) => {
       try {
@@ -150,28 +167,27 @@ export default function AppShell({ children }) {
             <X />
           </Button>
         </div>
-        <nav className="flex-1 overflow-y-auto px-3 pb-5 pt-5">
-          <p className="nx-sidebar-caption !mt-0">{t("Workspace")}</p>
-          <Hint label={t("Dashboard")}>
-            <Link
-              to="/dashboard"
-              className="nx-nav-item"
-              data-active={!journalRoute}
-              aria-current={!journalRoute ? "page" : undefined}
-              onClick={() => setMobileOpen(false)}
-            >
-              <LayoutDashboard className="size-4 shrink-0" />
-              <span className="nx-nav-label">{t("Dashboard")}</span>
+        <div className="border-b border-border/60 px-3 py-5">
+          {!compact && <p className="mb-2 px-1 text-xs text-muted-foreground">{t('Trading account')}</p>}
+          <JournalSwitcher compact={compact} />
+          {!compact && <Link to="/dashboard" onClick={()=>setMobileOpen(false)} className="mt-3 block rounded px-1 py-1 text-xs text-muted-foreground hover:text-foreground" aria-current={section==='accounts'?'page':undefined}>{t('Manage accounts')}</Link>}
+        </div>
+        <nav className="flex-1 space-y-2 overflow-y-auto px-3 py-6" aria-label={t('Main sections')}>
+          {destinations.map(item=><Hint key={item.id} label={t(item.label)}>
+            <Link to={sectionLink(item.tab)} className="nx-nav-item" data-active={section===item.id}
+              aria-label={t(item.label)} aria-current={section===item.id?'page':undefined}
+              aria-disabled={!journal || undefined} onClick={event=>{if(!journal)event.preventDefault();else setMobileOpen(false);}}>
+              <item.icon aria-hidden="true" className="size-[18px] shrink-0"/>
+              <span className="nx-nav-label">{t(item.label)}</span>
             </Link>
-          </Hint>
+          </Hint>)}
         </nav>
-        <div className="space-y-3 border-t border-border/60 p-3">
-          {!compact && (
-            <div className="rounded-lg border border-border/50 bg-card p-3">
-              <p className="text-[11px] font-medium text-zinc-300">{t("A clearer view of your edge.")}</p>
-              <p className="mt-1 text-[10px] leading-4 text-zinc-500">{t("Every trade tells a story. Make yours count.")}</p>
-            </div>
-          )}
+        <div className="space-y-2 border-t border-border/60 p-3">
+          <Hint label={t('Settings')}>
+            {journal ? <Link to={sectionLink('settings')} className="nx-nav-item" data-active={section==='settings'} aria-label={t('Settings')} aria-current={section==='settings'?'page':undefined} onClick={()=>setMobileOpen(false)}>
+              <Settings aria-hidden="true" className="size-[18px] shrink-0"/><span className="nx-nav-label">{t('Settings')}</span>
+            </Link> : <button type="button" className="nx-nav-item w-full" aria-label={t('Settings')} onClick={()=>{setMobileOpen(false);setSettingsOpen(true);}}><Settings className="size-[18px] shrink-0"/><span className="nx-nav-label">{t('Settings')}</span></button>}
+          </Hint>
           <button
             type="button"
             onClick={toggleCollapsed}
@@ -206,9 +222,10 @@ export default function AppShell({ children }) {
             >
               <Menu />
             </Button>
-            <span className="hidden text-[12px] text-zinc-500 lg:block">{t("Workspace")}</span>
-            <span className="hidden text-border lg:block">/</span>
-            <JournalSwitcher />
+            <div className="min-w-0 md:hidden"><JournalSwitcher /></div>
+            <div className="hidden min-w-0 items-center gap-2 text-xs text-muted-foreground md:flex">
+              <span>{t('Trading workspace')}</span>{journalRoute && <><span aria-hidden="true">/</span><span className="truncate text-foreground">{journal?.name}</span></>}
+            </div>
           </div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-4">
             <LanguageSelector />
@@ -235,8 +252,6 @@ export default function AppShell({ children }) {
                   <p className="mt-1 truncate text-[11px] text-muted-foreground">{user?.email}</p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem disabled>
-                  <User className="size-4" />{t("Profile")}</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
                   <Settings className="size-4" />{t("Settings")}</DropdownMenuItem>
                 <DropdownMenuSeparator />

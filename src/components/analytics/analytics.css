@@ -54,3 +54,26 @@
     position: static;
   }
 }
+
+/* Keep both outcome charts in the primary reading path. On narrow screens,
+   their DOM order puts them before the taller equity chart. */
+@container performance (min-width: 1100px) {
+  .analytics-featured-insights {
+    grid-template-columns: minmax(0, 1.7fr) minmax(360px, 1fr);
+  }
+  .analytics-featured-insights > .analytics-outcomes-grid {
+    grid-column: 2;
+    grid-row: 1;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+  .analytics-featured-equity {
+    grid-column: 1;
+    grid-row: 1;
+  }
+}
+
+/* Overview stays compact; detailed outcome charts belong to Analytics. */
+@container performance (min-width: 1000px) {
+  .nx-overview-grid { grid-template-columns: minmax(0, 2.2fr) minmax(280px, 1fr); }
+}

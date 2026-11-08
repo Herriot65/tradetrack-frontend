@@ -59,9 +59,11 @@ try {
   savedJournals=[{id:1,name:'Dashboard',journalType:'trading',startingCapital:10000,starting_capital:10000,currency:'USD',breakEvenMethod:'ratio',breakEvenValue:0}];
   await page.goto('http://127.0.0.1:4198/dashboard');
   await page.getByRole('button',{name:'Dashboard',exact:true}).click();
-  await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
+  await page.getByRole('heading',{name:'Vue d’ensemble',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Changer de journal',exact:true}).getByText('Dashboard',{exact:true}).waitFor();
+  await page.locator('#app-navigation').getByRole('link',{name:'Journal',exact:true}).click();
   await page.getByRole('button',{name:'Nouveau trade',exact:true}).click();
-  await page.getByRole('combobox',{name:'UT de référence',exact:true}).waitFor();
+  await page.getByRole('button',{name:'UT de référence',exact:true}).waitFor();
   await page.getByRole('button',{name:'Date et heure d’entrée',exact:true}).click();
   await page.getByText('Heure (format 24 h)',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Terminé',exact:true}).click();

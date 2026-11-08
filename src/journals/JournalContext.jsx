@@ -195,6 +195,8 @@ export function JournalProvider({ children }) {
     [activeJournal?.id, journals],
   );
 
+  const refreshAnalytics = useCallback(() => setAnalyticsVersion(version => version + 1), []);
+
   const value = {
     // Primary journal API
     journals,
@@ -209,6 +211,7 @@ export function JournalProvider({ children }) {
     loading,
     error,
     analyticsVersion,
+    refreshAnalytics,
     // Backward-compat aliases so existing hooks (useTrades, useHubAnalytics, etc.)
     // continue to work without modification
     workspaces: journals,

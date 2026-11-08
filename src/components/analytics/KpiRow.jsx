@@ -1,6 +1,6 @@
 import { translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
-import { formatRatio, formatValue } from "@/lib/analytics";
+import { formatPercent, formatRatio, formatValue } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 function valueTone(value) {
@@ -10,6 +10,9 @@ function valueTone(value) {
 
 const DEFINITIONS = {
   "Net result": "Sum of all closed trade results in the active filters.",
+  "Closed trades": "Number of completed trades in the selected period.",
+  "Win rate": "Percentage of closed trades that closed in profit.",
+  "Profit factor": "Gross profit divided by the absolute gross loss.",
   Expectancy: "Net result divided by the number of closed trades.",
   "Payoff ratio": "Average win divided by the absolute average loss.",
   "Max drawdown": "Largest decline from an equity peak, including the initial zero baseline.",
@@ -24,7 +27,7 @@ function KpiCard({ label, value, detail, tone = "text-ink" }) {
       />
       <p
         tabIndex={0}
-        title={DEFINITIONS[label]}
+        title={t(DEFINITIONS[label])}
         className="text-[12px] leading-4 text-ink-secondary"
       >
         {t(label)}
@@ -49,25 +52,25 @@ function StripCell({ label, value, detail, tone = "text-ink" }) {
       <p
         tabIndex={0}
         title={
-          label.includes("streak")
+          (DEFINITIONS[label] ? t(DEFINITIONS[label]) : null) ?? (label.includes("streak")
             ? t("Break-even trades neither extend nor break a streak.")
             : label === "Avg win"
               ? t("Gross profit divided by winning trades.")
-              : t("Gross loss divided by losing trades.")
+              : t("Gross loss divided by losing trades."))
         }
         className="text-[12px] leading-4 text-ink-secondary"
       >
         {t(label)}
       </p>
       <p className={cn("mt-1.5 text-[15px] font-medium leading-5 tabular-nums", tone)}>
-        {value}{" "}
+        <span>{value}</span>{" "}
         {detail && <span className="ml-1 text-[12px] font-normal text-ink-muted">{t(detail)}</span>}
       </p>
     </div>
   );
 }
 
-export default function KpiRow({ summary, unit }) {
+export default function KpiRow({ summary, unit, summaryOnly = false, overview = false, children }) {
   useLanguage();
   const hero = [
     {
@@ -77,15 +80,15 @@ export default function KpiRow({ summary, unit }) {
       tone: valueTone(summary?.net),
     },
     {
-      label: "Expectancy",
-      value: formatValue(summary?.expectancy, unit),
-      detail: "per trade",
-      tone: valueTone(summary?.expectancy),
+      label: overview ? "Win rate" : "Expectancy",
+      value: overview ? (summary?.closedCount ? formatPercent(summary.winRate) : "—") : formatValue(summary?.expectancy, unit),
+      detail: overview ? "of closed trades" : "per trade",
+      tone: overview ? "text-ink" : valueTone(summary?.expectancy),
     },
     {
-      label: "Payoff ratio",
-      value: formatRatio(summary?.payoff),
-      detail: "avg win \u00f7 avg loss",
+      label: overview ? "Profit factor" : "Payoff ratio",
+      value: formatRatio(overview ? summary?.profitFactor : summary?.payoff),
+      detail: overview ? "gross profit ÷ gross loss" : "avg win ÷ avg loss",
       tone: "text-ink",
     },
     {
@@ -94,6 +97,13 @@ export default function KpiRow({ summary, unit }) {
       detail: `Recovery factor ${formatRatio(summary?.recoveryFactor, 1)}`,
       tone: "text-loss",
     },
+  ];
+
+  const overviewHero = [
+    {...hero[0], detail: "From closed trades"},
+    hero[1],
+    {...hero[3], detail: "Peak-to-trough decline"},
+    {label: "Closed trades", value: String(summary?.closedCount ?? 0), detail: "In the selected period", tone: "text-ink"},
   ];
 
   const strip = [
@@ -126,16 +136,18 @@ export default function KpiRow({ summary, unit }) {
   return (
     <div data-testid="analytics-kpis" className="space-y-4">
       <div className="analytics-hero-grid grid grid-cols-2 items-stretch gap-4">
-        {hero.map((kpi) => (
+        {(overview ? overviewHero : hero).map((kpi) => (
           <KpiCard key={kpi.label} {...kpi} />
         ))}
       </div>
 
-      <div className="analytics-stats-grid grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-hairline bg-hairline">
+      {children}
+
+      {!summaryOnly && <div className="analytics-stats-grid grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-hairline bg-hairline">
         {strip.map((stat) => (
           <StripCell key={stat.label} {...stat} />
         ))}
-      </div>
+      </div>}
     </div>
   );
 }

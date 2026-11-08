@@ -112,3 +112,25 @@ Set `PLAYWRIGHT_MODULE` to an installed Playwright entry point and `CHROMIUM_PAT
 to a Chromium executable when needed. Screenshots are saved in
 `artifacts/entry-preferences/`. Deploy the backend's user entry configuration
 migration before the frontend to enable account-backed preferences.
+
+## Sidebar navigation and Overview
+
+`npm run test:navigation` starts the real application with synthetic HTTP responses
+at the API boundary. It covers Overview, Journal, Analytics (Performance / Breakdown),
+Settings (Account / Custom Fields), legacy deep links, reloads, account switching,
+retained filters, the collapsed sidebar and mobile drawer at 320/390/768/1440px.
+It checks that Edit dropdown options → Done leaves the trade open, and that an explicit trade
+edit refreshes both Overview and Analytics. No live accounts are used. Screenshots
+are saved under `artifacts/navigation/`.
+
+The existing `/journal/:id?tab=...` URLs remain supported. `/dashboard` retains
+account creation/selection/deletion; opening an account starts on Overview.
+Overview stays focused on four essential KPIs, a compact equity chart, trade
+status counts (including open positions) and the five most recent trades,
+including open trades. Detailed donut charts stay in Analytics, beside equity
+on wide layouts and before equity on narrow layouts. Analytics highlights
+Expectancy and Payoff Ratio; Overview shows Net Result, Win Rate, Max Drawdown
+and Closed Trades. Overview uses an equity-only chart; the full drawdown chart
+remains in Analytics.
+All trading calculations use the existing analytics helpers.
+No backend migration or new dependency is required.

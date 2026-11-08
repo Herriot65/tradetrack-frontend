@@ -26,7 +26,7 @@ import { useJournal } from "@/journals/useJournal";
 
 import JournalFormDialog from "./JournalFormDialog";
 
-export default function JournalSwitcher() {
+export default function JournalSwitcher({ compact = false }) {
   useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
@@ -46,7 +46,7 @@ export default function JournalSwitcher() {
 
   const handleCreate = async (payload) => {
     const created = await createJournal(payload);
-    navigate(`/journal/${created.id}`);
+    navigate(`/journal/${created.id}?tab=overview`);
   };
 
   const handleDelete = async () => {
@@ -66,8 +66,8 @@ export default function JournalSwitcher() {
   if (!activeJournal && journals.length === 0) {
     return (
       <>
-        <Button variant="outline" size="sm" className="min-w-0 shrink" onClick={() => setCreateOpen(true)}>
-          <Plus className="size-3.5" /><span className="truncate">{t("New Journal")}</span></Button>
+        <Button variant="outline" size="sm" aria-label={t("New Journal")} className={cn("min-w-0 shrink", compact && "w-full px-0")} onClick={() => setCreateOpen(true)}>
+          <Plus className="size-3.5" /><span className={cn("truncate", compact && "hidden")}>{t("New Journal")}</span></Button>
         <JournalFormDialog
           open={createOpen}
           onOpenChange={setCreateOpen}
@@ -84,12 +84,12 @@ export default function JournalSwitcher() {
           <Button
             variant="outline"
             size="sm"
-            className="min-w-0 max-w-[220px] shrink gap-1.5"
+            className={cn('min-w-0 w-full justify-between gap-2', compact && 'px-0 justify-center')}
             aria-label={t("Switch journal")}
           >
             <BookOpen className="size-3.5 shrink-0 text-muted-foreground" />
-            <span className="truncate">{showingAll ? t("All journals") : activeJournal?.name ?? t("All journals")}</span>
-            <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+            <span className={cn("truncate", compact && "hidden")}>{showingAll ? t("All journals") : activeJournal?.name ?? t("All journals")}</span>
+            <ChevronDown className={cn("size-3.5 shrink-0 text-muted-foreground", compact && "hidden")} />
           </Button>
         </DropdownMenuTrigger>
 
@@ -106,7 +106,7 @@ export default function JournalSwitcher() {
               key={j.id}
               onClick={() => {
                 selectJournal(j);
-                navigate(`/journal/${j.id}`);
+                navigate(`/journal/${j.id}${location.pathname.startsWith("/journal/") ? location.search : "?tab=overview"}`);
               }}
               className="gap-2"
             >
