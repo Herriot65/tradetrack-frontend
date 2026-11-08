@@ -1,5 +1,15 @@
 // English source strings are stable keys; API values and user content stay unchanged.
 export default {
+  "Equity curve": "Courbe de performance",
+  "Recent trades": "Trades récents",
+  "From closed trades": "Trades clôturés",
+  "Peak-to-trough decline": "Recul depuis un sommet",
+  "In the selected period": "Sur la période sélectionnée",
+  "Number of completed trades in the selected period.": "Nombre de trades clôturés sur la période sélectionnée.",
+  "Your cumulative return over the selected period.": "Votre rendement cumulé sur la période sélectionnée.",
+  "No closed trades yet": "Aucun trade clôturé pour le moment",
+  "Close a trade to see your equity curve. Open trades appear in recent activity below.": "Clôturez un trade pour afficher votre courbe de performance. Les trades ouverts figurent dans l’activité récente ci-dessous.",
+  "Recent trades in the selected period": "Derniers trades sur la période sélectionnée",
   "Open positions": "Positions ouvertes",
   "per trade": "par trade",
   "Gross profit divided by the absolute gross loss.": "Gains bruts divisés par la valeur absolue des pertes brutes.",

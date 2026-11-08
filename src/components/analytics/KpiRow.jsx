@@ -10,6 +10,7 @@ function valueTone(value) {
 
 const DEFINITIONS = {
   "Net result": "Sum of all closed trade results in the active filters.",
+  "Closed trades": "Number of completed trades in the selected period.",
   "Win rate": "Percentage of closed trades that closed in profit.",
   "Profit factor": "Gross profit divided by the absolute gross loss.",
   Expectancy: "Net result divided by the number of closed trades.",
@@ -80,7 +81,7 @@ export default function KpiRow({ summary, unit, summaryOnly = false, overview = 
     },
     {
       label: overview ? "Win rate" : "Expectancy",
-      value: overview ? formatPercent(summary?.winRate ?? 0) : formatValue(summary?.expectancy, unit),
+      value: overview ? (summary?.closedCount ? formatPercent(summary.winRate) : "—") : formatValue(summary?.expectancy, unit),
       detail: overview ? "of closed trades" : "per trade",
       tone: overview ? "text-ink" : valueTone(summary?.expectancy),
     },
@@ -96,6 +97,13 @@ export default function KpiRow({ summary, unit, summaryOnly = false, overview = 
       detail: `Recovery factor ${formatRatio(summary?.recoveryFactor, 1)}`,
       tone: "text-loss",
     },
+  ];
+
+  const overviewHero = [
+    {...hero[0], detail: "From closed trades"},
+    hero[1],
+    {...hero[3], detail: "Peak-to-trough decline"},
+    {label: "Closed trades", value: String(summary?.closedCount ?? 0), detail: "In the selected period", tone: "text-ink"},
   ];
 
   const strip = [
@@ -128,7 +136,7 @@ export default function KpiRow({ summary, unit, summaryOnly = false, overview = 
   return (
     <div data-testid="analytics-kpis" className="space-y-4">
       <div className="analytics-hero-grid grid grid-cols-2 items-stretch gap-4">
-        {hero.map((kpi) => (
+        {(overview ? overviewHero : hero).map((kpi) => (
           <KpiCard key={kpi.label} {...kpi} />
         ))}
       </div>

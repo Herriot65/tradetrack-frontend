@@ -115,8 +115,11 @@ are saved under `artifacts/navigation/`.
 The existing `/journal/:id?tab=...` URLs remain supported. `/dashboard` retains
 account creation/selection/deletion; opening an account starts on Overview.
 Overview stays focused on four essential KPIs, a compact equity chart, trade
-counts and recent trades. Detailed donut charts stay in Analytics, beside equity
+status counts (including open positions) and the five most recent trades,
+including open trades. Detailed donut charts stay in Analytics, beside equity
 on wide layouts and before equity on narrow layouts. Analytics highlights
-Expectancy and Payoff Ratio; Overview highlights Win Rate and Profit Factor.
+Expectancy and Payoff Ratio; Overview shows Net Result, Win Rate, Max Drawdown
+and Closed Trades. Overview uses an equity-only chart; the full drawdown chart
+remains in Analytics.
 All trading calculations use the existing analytics helpers.
 No backend migration or new dependency is required.

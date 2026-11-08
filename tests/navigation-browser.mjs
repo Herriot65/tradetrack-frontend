@@ -14,10 +14,12 @@ const rows=Array.from({length:48},(_,i)=>{
  const r=i%7===0?0:i%3===0?-1:1.5,date=new Date();date.setUTCDate(date.getUTCDate()-i);date.setUTCHours(10,15,0,0);
  return {id:i+1,asset:{id:i%3+1,symbol:['EURUSD','GBPUSD','XAUUSD'][i%3]},side:i%2?'SELL':'BUY',entry_datetime:date.toISOString(),exit_datetime:new Date(+date+3600000).toISOString(),pnl_r:String(r),pnl_amount:String(r*100),risk_amount:'100',risk_percent:'1',capital_basis:'10000',effective_status:r===0?'BE':r>0?'WIN':'LOSS',status:null,setup:{id:1,label:'Breakout'},session:'London',emotions:[{id:1,label:'Calm'}],mistakes:[],screenshots:[],custom_fields:{},notes:'A documented trading decision.',trade_score:8};
 });
+const openDate=new Date();openDate.setUTCHours(12,15,0,0);
+rows.push({...rows[0],id:49,entry_datetime:openDate.toISOString(),exit_datetime:null,pnl_r:null,pnl_amount:null,effective_status:'OPEN'});
 try{
  browser=await chromium.launch({headless:true,channel:'chrome'});
  const errors=[],writes=[];
- async function contextFor({empty=false,fail=false,...options}={}){
+ async function contextFor({empty=false,fail=false,openOnly=false,...options}={}){
   const context=await browser.newContext({colorScheme:'dark',...options});
   await context.addInitScript(()=>{if(location.protocol.startsWith('http')){localStorage.setItem('access','navigation-test-access');localStorage.setItem('nexora-theme','dark');}});
   context.on('page',page=>page.on('pageerror',error=>errors.push(error.message)));
@@ -32,7 +34,7 @@ try{
    if(path.endsWith('/trades/')){
     if(fail)return reply({detail:'Temporary test outage'},503);
     const params=Object.fromEntries(url.searchParams),isSecond=path.includes('/2/');
-    const source=isSecond?rows.slice(0,12):rows;
+    const source=openOnly?[rows.at(-1)]:isSecond?rows.slice(0,12):rows;
     const filtered=source.filter(row=>(!params.search||row.asset.symbol.includes(params.search.toUpperCase()))&&(!params.status||row.effective_status===params.status));
     const size=Number(params.page_size||20),start=(Number(params.page||1)-1)*size;
     return reply({count:filtered.length,results:filtered.slice(start,start+size)});
@@ -56,10 +58,17 @@ try{
  const main=page.locator('#main-content'),nav=page.getByRole('navigation',{name:'Main sections',exact:true});
  const go=async name=>{await page.locator('#app-navigation').getByRole('link',{name,exact:true}).click();await main.getByRole('heading',{name,exact:true,level:1}).waitFor();};
  const capture=async name=>{await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:`${output}/${name}.png`,fullPage:false});};
- await page.goto(`${base}/journal/1?tab=overview`);await main.getByText('Performance summary',{exact:true}).waitFor();
+ await page.goto(`${base}/journal/1?tab=overview`);await main.getByText('Trade status',{exact:true}).waitFor();
  assert.equal(await nav.getByRole('link').count(),3);
  assert.equal(await main.getByRole('navigation').count(),0,'Overview has no unrelated local tabs');
  assert.equal(await main.getByRole('heading',{name:'Win / loss',exact:true}).count(),0,'Overview stays compact without detailed donut charts');
+ const overviewCards=main.locator('.analytics-hero-grid:visible > div');
+ assert.deepEqual(await overviewCards.locator('p:first-of-type').allTextContents(),['Net result','Win rate','Max drawdown','Closed trades']);
+ assert.equal(await main.getByRole('table',{name:'Recent trades in the selected period',exact:true}).getByRole('row').count(),6,'Only five recent trades should be shown');
+ assert.equal(await main.getByRole('table',{name:'Recent trades in the selected period',exact:true}).getByRole('row').filter({hasText:'Open'}).getByText('—',{exact:true}).count(),1,'Open trades must not show a realized zero result');
+ await main.getByRole('button',{name:'Review trade 49',exact:true}).click();await page.getByRole('dialog').waitFor();await page.keyboard.press('Escape');
+ const equity=main.getByRole('img',{name:/^Equity curve across/});await equity.focus();await page.keyboard.press('ArrowRight');await main.getByText(/Trade #1 .*Equity/).waitFor();
+ await equity.blur();
  await capture('overview-desktop');
  await go('Analytics');await main.getByRole('navigation',{name:'Analytics sections'}).waitFor();
  await main.getByRole('group',{name:'Date range',exact:true}).getByRole('button',{name:'All',exact:true}).click();
@@ -92,12 +101,12 @@ try{
  assert.match(page.url(),/journal\/2\?tab=breakdown/,'Switching account preserves section');
  await page.reload();await main.getByRole('button',{name:'Breakdown',exact:true}).waitFor();assert.match(page.url(),/journal\/2\?tab=breakdown/);
  await page.getByRole('button',{name:'Collapse sidebar',exact:true}).click();
- await page.locator('.nx-shell[data-collapsed="true"]').waitFor();await page.locator('#app-navigation').getByRole('link',{name:'Overview',exact:true}).click();await main.getByText('Performance summary',{exact:true}).waitFor();
+ await page.locator('.nx-shell[data-collapsed="true"]').waitFor();await page.locator('#app-navigation').getByRole('link',{name:'Overview',exact:true}).click();await main.getByText('Trade status',{exact:true}).waitFor();
  await capture('collapsed-desktop');await page.getByRole('button',{name:'Expand sidebar',exact:true}).click();
  await context.close();
  // Mobile drawer, all destinations, and layouts at narrow widths.
  const mobile=await contextFor({viewport:{width:390,height:844},hasTouch:true,isMobile:true}),touch=await mobile.newPage();
- await touch.goto(`${base}/journal/1?tab=overview`);await touch.getByText('Performance summary',{exact:true}).waitFor();await touch.screenshot({path:`${output}/overview-mobile.png`,fullPage:true});
+ await touch.goto(`${base}/journal/1?tab=overview`);await touch.getByText('Trade status',{exact:true}).waitFor();await touch.screenshot({path:`${output}/overview-mobile.png`,fullPage:true});
  for(const width of [320,390,768]){
   await touch.setViewportSize({width,height:844});
   for(const name of ['Overview','Journal','Analytics','Settings']){
@@ -111,6 +120,10 @@ try{
   }
  }
  await mobile.close();
+ const open=await contextFor({openOnly:true}),openPage=await open.newPage();await openPage.goto(`${base}/journal/1?tab=overview`);
+ await openPage.getByRole('heading',{name:'No closed trades yet',exact:true}).waitFor();await openPage.getByRole('button',{name:'Review trade 49',exact:true}).waitFor();
+ assert.equal(await openPage.locator('#main-content .analytics-hero-grid:visible > div').filter({hasText:'Win rate'}).getByText('—',{exact:true}).count(),1,'No closed trades must not imply a zero win rate');
+ await open.close();
  const empty=await contextFor({empty:true}),emptyPage=await empty.newPage();await emptyPage.goto(`${base}/dashboard`);await emptyPage.getByRole('heading',{name:'Welcome, Alex!',exact:true}).waitFor();await empty.close();
  const failed=await contextFor({fail:true}),failedPage=await failed.newPage();await failedPage.goto(`${base}/journal/1?tab=overview`);await failedPage.getByRole('alert').getByText('Failed to load analytics',{exact:true}).waitFor();await failed.close();
  assert.deepEqual(writes,['/api/journals/1/trades/1/'],'Only the explicit trade-edit scenario may write to the synthetic API');assert.deepEqual(errors,[]);
