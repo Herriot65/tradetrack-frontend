@@ -13,6 +13,7 @@
     "test:redesign": "node tests/redesign-qa.mjs",
     "test:theme": "npm run build && node tests/theme-browser.mjs",
     "test:browser": "node tests/browser.mjs",
+    "test:navigation": "node tests/navigation-browser.mjs",
     "test:trade-browser": "node tests/trade-browser.mjs",
     "test:timeframe-favorites": "node tests/timeframe-favorites-browser.mjs",
     "test:setup-options": "node tests/setup-options-browser.mjs",

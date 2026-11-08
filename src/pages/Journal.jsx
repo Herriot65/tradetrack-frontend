@@ -6,7 +6,6 @@ import {
   FileUp,
   Settings2,
   Trash2,
-  Rows3,
   ChartNoAxesCombined,
   SlidersHorizontal,
   ChartNoAxesColumn,
@@ -14,6 +13,8 @@ import {
 
 import AppShell from "@/components/layout/AppShell";
 import { MT5ImportDialog } from "@/components/journal/MT5ImportDialog";
+import OverviewTab from "@/components/journal/OverviewTab";
+import UserSettings from "@/components/layout/UserSettings";
 import BreakdownTab from "@/components/journal/BreakdownTab";
 import CustomFieldsTab from "@/components/journal/CustomFieldsTab";
 import TradesTab from "@/components/journal/TradesTab";
@@ -39,12 +40,10 @@ import { useJournal } from "@/journals/useJournal";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const TABS = [
-  { id: "trades", label: "Trades", icon: Rows3 },
-  { id: "analytics", label: "Analytics", icon: ChartNoAxesCombined },
-  { id: "breakdown", label: "Breakdown", icon: ChartNoAxesColumn },
-  { id: "custom-fields", label: "Custom Fields", icon: SlidersHorizontal },
-];
+const SECTION_TABS = {
+  analytics: [{id:'analytics',label:'Performance',icon:ChartNoAxesCombined},{id:'breakdown',label:'Breakdown',icon:ChartNoAxesColumn}],
+  settings: [{id:'settings',label:'Account',icon:Settings2},{id:'custom-fields',label:'Custom Fields',icon:SlidersHorizontal}],
+};
 
 const JOURNAL_TYPE_LABEL = {
   trading: "Trading Journal",
@@ -226,20 +225,31 @@ export default function Journal() {
   const { loading: authLoading } = useAuth();
   const {
     journals,
-    activeJournal,
+    activeJournal: selectedJournal,
     selectJournal,
     deleteJournal,
     setSyntheticData,
+    refreshAnalytics,
     loading: jLoading,
   } = useJournal();
 
+  const activeJournal = journals.find(journal => String(journal.id) === journalId)
+    ?? (String(selectedJournal?.id) === journalId ? selectedJournal : null);
+
+  const accountReady = activeJournal && String(selectedJournal?.id) === journalId;
+
   // Tab is stored in the URL so it survives page refresh
-  const activeTab = searchParams.get("tab") ?? "trades";
+  const requestedTab = searchParams.get("tab") ?? "trades";
+  const activeTab = ['overview','trades','analytics','breakdown','settings','custom-fields'].includes(requestedTab) ? requestedTab : 'trades';
+  const section = ['analytics','breakdown'].includes(activeTab) ? 'analytics' : ['settings','custom-fields'].includes(activeTab) ? 'settings' : activeTab === 'overview' ? 'overview' : 'journal';
+  const sectionTitle = {overview:'Overview',journal:'Journal',analytics:'Analytics',settings:'Settings'}[section];
+  const sectionDescription = {overview:'A clear view of your trading performance.',journal:'Review your trades and the decisions behind them.',analytics:'Understand your trading performance.',settings:'Manage your account and trading workspace.'}[section];
   function setActiveTab(tab) {
-    setSearchParams({ tab }, { replace: true });
+    setSearchParams(current => {const next = new URLSearchParams(current);next.set('tab',tab);return next;});
   }
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -310,16 +320,17 @@ export default function Journal() {
         <div className="nx-page-header">
           <div className="min-w-0">
             <div className="flex items-center gap-2.5">
-              <h1 className="nx-page-title truncate">{activeJournal?.name ?? t("Journal")}</h1>
-              {typeLabel && (
+              <h1 className="nx-page-title truncate">{t(sectionTitle)}</h1>
+              {typeLabel && section === 'settings' && (
                 <span className="shrink-0 rounded-md border border-border bg-card px-2 py-1 text-[10px] font-medium text-muted-foreground">
                   {t(typeLabel)}
                 </span>
               )}
             </div>
-            {activeJournal?.currency && activeJournal?.startingCapital != null && (
-              <p className="nx-subtitle">
-                {activeJournal.currency} ·{" "}
+            <p className="nx-subtitle">{t(sectionDescription)}</p>
+            {section === 'settings' && activeJournal?.currency && activeJournal?.startingCapital != null && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {activeJournal.name} · {activeJournal.currency} ·{" "}
                 {Number(activeJournal.startingCapital).toLocaleString(getLanguage(), {
                   style: "currency",
                   currency: activeJournal.currency,
@@ -362,8 +373,8 @@ export default function Journal() {
         </div>
 
         {/* ── Tab navigation ── */}
-        <nav className="nx-tabs max-w-full overflow-x-auto" aria-label={t("Journal sections")}>
-          {TABS.map((tab) => (
+        <nav className="nx-tabs max-w-full overflow-x-auto" aria-label={t(section==='analytics'?'Analytics sections':'Settings sections')} hidden={!SECTION_TABS[section]}>
+          {(SECTION_TABS[section] ?? []).map((tab) => (
             <button
               key={tab.id}
               type="button"
@@ -380,7 +391,18 @@ export default function Journal() {
         {/* ── Tab content ──
              All panels stay mounted so data isn't lost on tab switches.
              CSS `hidden` hides the inactive ones without unmounting them. */}
-        <div className="pt-5">
+        <div className={SECTION_TABS[section] ? 'pt-6' : ''}>
+          {!accountReady && <div className="nx-surface p-8 text-sm text-muted-foreground" role="status">{t('Loading account…')}</div>}
+          {accountReady && <>
+          <div hidden={activeTab !== 'overview'}>
+            <OverviewTab key={activeJournal?.id} journal={activeJournal} jLoading={jLoading} onNavigate={setActiveTab} syntheticEnabled={syntheticEnabled}/>
+          </div>
+          <div hidden={activeTab !== 'settings'} className="grid gap-5 lg:grid-cols-2">
+            <section className="nx-surface p-6"><h2 className="text-lg font-medium">{t('Journal Settings')}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{t('Configure the name, currency, starting capital and break-even rules for this account.')}</p><Button className="mt-5" variant="outline" onClick={()=>setSettingsOpen(true)}>{t('Edit account settings')}</Button></section>
+            <section className="nx-surface p-6"><h2 className="text-lg font-medium">{t('Preferences')}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{t('Choose your appearance and the timezone used for trades.')}</p><Button className="mt-5" variant="outline" onClick={()=>setPreferencesOpen(true)}>{t('Edit preferences')}</Button></section>
+            <section className="nx-surface p-6"><h2 className="text-lg font-medium">{t('Import MT5 Report')}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{t('Import an existing MetaTrader 5 report into this journal.')}</p><Button className="mt-5" variant="outline" onClick={()=>setImportOpen(true)}><FileUp className="size-4"/>{t('Import MT5 Report')}</Button></section>
+            <section className="nx-surface p-6"><h2 className="text-lg font-medium">{t('Delete Journal')}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{t('All trades, analytics, and catalog data will be permanently deleted. This action cannot be undone.')}</p><Button className="mt-5" variant="outline" onClick={()=>{setDeleteError(null);setDeleteOpen(true);}}>{t('Delete Journal')}</Button></section>
+          </div>
           <div className={activeTab !== "trades" ? "hidden" : ""}>
             <TradesTab
               key={`${activeJournal?.id}-${tradesRefreshKey}`}
@@ -391,6 +413,7 @@ export default function Journal() {
           </div>
           <div className={activeTab !== "analytics" ? "hidden" : ""}>
             <JournalAnalyticsTab
+              embedded
               journal={activeJournal}
               jLoading={jLoading}
               syntheticEnabled={syntheticEnabled}
@@ -405,9 +428,11 @@ export default function Journal() {
           <div className={activeTab !== "custom-fields" ? "hidden" : ""}>
             <CustomFieldsTab journalId={activeJournal?.id} active={activeTab === "custom-fields"} />
           </div>
+          </>}
         </div>
       </div>
 
+      {preferencesOpen && <UserSettings onClose={()=>setPreferencesOpen(false)}/>}
       <SettingsDialog
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
@@ -417,7 +442,7 @@ export default function Journal() {
         open={importOpen}
         onClose={() => setImportOpen(false)}
         journal={activeJournal}
-        onSuccess={() => setTradesRefreshKey((k) => k + 1)}
+        onSuccess={() => {setTradesRefreshKey((k) => k + 1);refreshAnalytics?.();}}
       />
 
       <Dialog open={deleteOpen} onOpenChange={(v) => !v && setDeleteOpen(false)}>

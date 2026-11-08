@@ -101,3 +101,19 @@ image remains unchanged. Backend migration `0015_rich_notes_and_image_size` must
 be applied with the updated API before deploying this frontend. The screenshot
 PATCH endpoint is journal/trade scoped and accepts width/section metadata.
 No financial formula is changed.
+
+## Sidebar navigation and Overview
+
+`npm run test:navigation` starts the real application with synthetic HTTP responses
+at the API boundary. It covers Overview, Journal, Analytics (Performance / Breakdown),
+Settings (Account / Custom Fields), legacy deep links, reloads, account switching,
+retained filters, the collapsed sidebar and mobile drawer at 320/390/768/1440px.
+It checks that Manage → Done leaves the trade open, and that an explicit trade
+edit refreshes both Overview and Analytics. No live accounts are used. Screenshots
+are saved under `artifacts/navigation/`.
+
+The existing `/journal/:id?tab=...` URLs remain supported. `/dashboard` retains
+account creation/selection/deletion; opening an account starts on Overview.
+All trading calculations use the existing analytics helpers. Expectancy and payoff
+remain visible in the supporting statistics beneath the four primary KPI cards.
+No backend migration or new dependency is required.

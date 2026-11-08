@@ -69,7 +69,7 @@ function EmptyTrades({ hasFilters }) {
 
 export default function TradesTab({ breakEvenMethod, journalId }) {
   useLanguage();
-  const { activeJournal, updateJournal } = useJournal();
+  const { activeJournal, updateJournal, refreshAnalytics } = useJournal();
   const [displayUnit, setDisplayUnit] = useState(activeJournal?.display_unit || "R");
   const [unitError, setUnitError] = useState("");
   const [savingUnit, setSavingUnit] = useState(false);
@@ -140,12 +140,14 @@ export default function TradesTab({ breakEvenMethod, journalId }) {
       savedDraftId || panel?.mode === "edit"
         ? await updateTrade(journalId, savedDraftId ?? panel.trade.id, payload)
         : await createTrade(journalId, payload);
+    refreshAnalytics?.();
     if (query.page > 1) setQuery((current) => ({ ...current, page: 1 }));
     else refetch();
     return result;
   }
   async function handleDelete(id) {
     await deleteTrade(journalId, id);
+    refreshAnalytics?.();
     if (trades.length === 1 && query.page > 1)
       setQuery((current) => ({ ...current, page: current.page - 1 }));
     else refetch();

@@ -667,3 +667,10 @@ button:disabled[class], input:disabled[class], select:disabled[class], textarea:
   color: var(--text-tertiary);
   background-color: transparent;
 }
+
+/* Main destinations remain stable; local tabs group related workflows. */
+.nx-nav-item { min-height: 44px; }
+.nx-nav-item[data-active="true"] { box-shadow: none; }
+.nx-nav-item[aria-disabled="true"] { opacity: .45; cursor: default; }
+.nx-tabs[hidden], .nx-page [hidden] { display: none !important; }
+.nx-shell[data-collapsed="true"] .nx-sidebar > div:first-child { padding-inline: 20px; }

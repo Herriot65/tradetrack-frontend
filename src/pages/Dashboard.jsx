@@ -134,7 +134,7 @@ export default function Dashboard() {
 
   const handleCreate = async (payload) => {
     const created = await createJournal(payload);
-    navigate(`/journal/${created.id}`);
+    navigate(`/journal/${created.id}?tab=overview`);
   };
 
   const handleDeleteConfirm = async () => {
@@ -162,9 +162,9 @@ export default function Dashboard() {
             <div>
               <p className="nx-eyebrow mb-3">{t("Your trading workspace")}</p>
               <h1 className="nx-page-title">
-                {user?.first_name ? `Welcome back, ${user.first_name}` : t("Your Journals")}
+                {t("Trading accounts")}
               </h1>
-              <p className="nx-subtitle">{t("Select a journal to view your trades and analytics.")}</p>
+              <p className="nx-subtitle">{t("Choose an account to review your performance or manage your trades.")}</p>
             </div>
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="size-4" />{t("New Journal")}</Button>
@@ -195,7 +195,7 @@ export default function Dashboard() {
                   <JournalCard
                     journal={j}
                     onDelete={setJournalToDelete}
-                    onOpen={() => navigate(`/journal/${j.id}`)}
+                    onOpen={() => navigate(`/journal/${j.id}?tab=overview`)}
                   />
                 </div>
               ))}
