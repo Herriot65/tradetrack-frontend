@@ -1,8 +1,5 @@
 // English source strings are stable keys; API values and user content stay unchanged.
 export default {
-  'Remove “{option}”?': 'Retirer « {option} » ?',
-  'This removes the option from your choices in this browser. Saved trades will keep their existing values.': 'Cette option sera retirée de vos choix dans ce navigateur. Les trades enregistrés conserveront leurs valeurs actuelles.',
-  'Remove option': 'Retirer l’option',
   "General trade notes": "Notes générales du trade",
   "Notes for {section}": "Notes : {section}",
   "{field} formatting": "Mise en forme : {field}",
