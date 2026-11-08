@@ -29,19 +29,22 @@ function decode(raw, options) {
     return Array.isArray(values) ? options.filter(value => values.includes(value)) : [];
   } catch { return []; }
 }
-export function useTimeframeFavorites(options = TIMEFRAME_OPTIONS) {
+export function useTimeframeFavorites(field, options = TIMEFRAME_OPTIONS) {
   const auth = useAuth();
-  const key = `nexora_timeframe_favorites:${auth?.user?.id ?? auth?.user?.email ?? 'browser'}`;
-  const snapshot = useSyncExternalStore(subscribe, () => read(key), () => null);
+  const legacyKey = `nexora_timeframe_favorites:${auth?.user?.id ?? auth?.user?.email ?? 'browser'}`;
+  const key = `${legacyKey}:${field}`;
+  // Keep existing choices as a starting point; each field writes its own preference.
+  const readPreference = () => read(key) ?? read(legacyKey);
+  const snapshot = useSyncExternalStore(subscribe, readPreference, () => null);
   const favorites = useMemo(() => decode(snapshot, options), [snapshot, options]);
   const toggleFavorite = useCallback(value => {
     if (!options.includes(value)) return;
-    const previous = decode(read(key), options);
+    const previous = decode(read(key) ?? read(legacyKey), options);
     const next = previous.includes(value) ? previous.filter(item => item !== value) : [...previous, value];
     const raw = JSON.stringify(next);
     memory.set(key, raw);
     try { localStorage.setItem(key, raw); } catch { /* In-memory preference remains available. */ }
     notify();
-  }, [key, options]);
+  }, [key, legacyKey, options]);
   return { favorites, toggleFavorite };
 }

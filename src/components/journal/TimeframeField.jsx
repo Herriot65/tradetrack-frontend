@@ -12,7 +12,7 @@ export default function TimeframeField({ id, label, value, onValueChange, onBlur
   const [open, setOpen] = useState(false);
   const { options } = useSetupOptions("timeframes");
   const timeframes = useMemo(() => options.map(option => option.value), [options]);
-  const { favorites, toggleFavorite } = useTimeframeFavorites(timeframes);
+  const { favorites, toggleFavorite } = useTimeframeFavorites(id, timeframes);
   function select(next) {
     onValueChange(next);
     onBlur?.();
@@ -25,7 +25,8 @@ export default function TimeframeField({ id, label, value, onValueChange, onBlur
         {timeframe}
       </button>)}
     </div>}
-    <Popover open={open} onOpenChange={setOpen}>
+    {/* The portaled list needs its own modal scroll boundary inside the trade sheet. */}
+    <Popover modal open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button ref={ref} id={id} type="button" aria-label={label} onBlur={onBlur}
           className="flex h-10 w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-zinc-800 bg-background/50 px-3 text-left text-[13px] text-zinc-100 outline-none transition-colors hover:border-zinc-600 focus-visible:ring-2 focus-visible:ring-primary/15">
@@ -33,7 +34,7 @@ export default function TimeframeField({ id, label, value, onValueChange, onBlur
         </button>
       </PopoverTrigger>
       <PopoverContent aria-label={t('{field} options', {field: label})} align="start" sideOffset={6}
-        className="z-50 w-[260px] max-w-[calc(100vw-32px)] overflow-y-auto rounded-lg border border-border bg-popover p-2 text-popover-foreground shadow-lg outline-none"
+        className="z-50 w-[260px] max-w-[calc(100vw-32px)] overflow-y-auto overscroll-contain touch-pan-y rounded-lg border border-border bg-popover p-2 text-popover-foreground shadow-lg outline-none"
         style={{maxHeight:'min(380px, var(--radix-popover-content-available-height))'}}>
         <p className="px-2 pb-2 text-xs leading-5 text-muted-foreground">{t('Star timeframes to show quick choices above the field.')}</p>
         <button type="button" aria-pressed={!value} onClick={() => select('')} className="flex min-h-11 w-full items-center gap-2 rounded-md px-2 text-left text-sm hover:bg-secondary"><Check aria-hidden="true" className={cn('size-3.5', value && 'invisible')}/>{t('Not set')}</button>

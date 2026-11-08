@@ -39,16 +39,17 @@ The header and sign-in pages offer Français (FR) and English (US). English is t
 ## Favorite timeframes
 
 `npm run test:timeframe-favorites` exercises the real trade form: star/unstar
-without selecting or submitting, shared Reference/Opportunity/Entry shortcuts,
+without selecting or submitting, independent Reference/Opportunity/Entry shortcuts,
 non-favorite selection, save payload, persistence, cross-tab synchronization,
-keyboard selection and 320/390/1280px layout. It also checks malformed and blocked
-storage. Use `PLAYWRIGHT_MODULE` as for the other browser runners. Captures are
+keyboard selection, actual touch scrolling and 320/390/1280px layout. It also
+checks malformed and blocked storage. Use `PLAYWRIGHT_MODULE` as for the other browser runners. Captures are
 saved in `artifacts/timeframe-favorites/`.
 
 Favorites are a browser preference scoped to the signed-in user (id, or email
-fallback). All three timeframe fields share them, ordered by the existing
-shortest-to-longest timeframe list. No timeframes are preselected or added to the
-supported list. Preference writes do not modify any trade or backend record.
+fallback) and field. Each field has its own favorites, ordered by the existing
+shortest-to-longest timeframe list. Legacy shared favorites provide an initial
+starting point; subsequent changes are stored independently for each field.
+No timeframes are preselected or added to the supported list. Preference writes do not modify any trade or backend record.
 
 ## Setup options and rating stars
 
