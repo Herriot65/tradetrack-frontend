@@ -81,7 +81,7 @@ Notes use one section canvas: the embedded editor and screenshots have no
 separate card frames. Visible filenames and the duplicate Full screen buttons
 are removed; image click opens the viewer. Images keep their original aspect
 ratios; smaller saved widths can share a row, while full-width images stack.
-Width sliders and Reset size are in each image's resize menu; corner dragging
+Width sliders and Reset size are in each image's options menu; corner dragging
 and keyboard resizing remain available. Saved review groups screenshots with
 their matching note section. Desktop Wide review remains available.
 The image-review layout preserves the original image files. Rich formatting
@@ -139,3 +139,26 @@ and Closed Trades. Overview uses an equity-only chart; the full drawdown chart
 remains in Analytics.
 All trading calculations use the existing analytics helpers.
 No backend migration or new dependency is required.
+
+
+## Manual screenshot placement
+
+`npm run test:image-placement` verifies real mouse and touch dragging, explicit
+Above/Below/Left/Right drop targets, moves into other note sections, auto-scroll
+and Escape cancellation. The grip button also opens image options with labelled
+Move to / Placement controls for keyboard and touch use. Picking a destination
+is required before the Move image action is enabled.
+
+Manual rows stay separate even if smaller images could fit side by side. Placing
+images beside each other retains their widths when possible and fits oversized
+images evenly in the row, up to the existing four-image / 25%-minimum constraint.
+
+Order and row breaks are stored as optional `image_layout` arrays of screenshot
+IDs in `notes_document.sections`. Existing widths and section metadata continue
+to use the screenshot API. New uploads finalize their IDs before saving layout;
+a failed final save can be retried without duplicate uploads. Legacy documents
+and unknown/unreferenced screenshot IDs remain readable. The existing backend
+JSON validator accepts and preserves the metadata; no migration is needed.
+The browser test covers save/reload, shuffled API image order, read-only review,
+and layout-save failure/retry. `npm test` also covers the layout transformations.
+Captures are in `artifacts/image-placement/`.

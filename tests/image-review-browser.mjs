@@ -18,7 +18,7 @@ try {
  assert.equal(await page.getByText('entry-chart.png',{exact:true}).count(),0,'Filenames must not consume editor space');
  assert.equal(await figures.first().evaluate(el=>getComputedStyle(el).borderTopWidth),'0px','Images have no separate card border');
  assert.equal(await page.locator('.rich-notes-editor').evaluate(el=>getComputedStyle(el).borderTopWidth),'0px','Text shares the section canvas');
- async function width(name,value){await page.getByRole('button',{name:'Resize '+name,exact:true}).tap();await page.getByRole('slider',{name:'Width of '+name,exact:true}).fill(value);await page.keyboard.press('Escape');}
+ async function width(name,value){await page.getByRole('button',{name:'Image options for '+name,exact:true}).tap();await page.getByRole('slider',{name:'Width of '+name,exact:true}).fill(value);await page.keyboard.press('Escape');}
  for(const viewport of [1440,390,320]){
   await page.setViewportSize({width:viewport,height:1000});await width('entry-chart.png','43');await width('exit-chart.png','43');
   const first=await figures.nth(0).boundingBox(),second=await figures.nth(1).boundingBox();
@@ -29,7 +29,7 @@ try {
   if(viewport===390){
    const handle=page.getByRole('button',{name:'Drag to resize exit-chart.png',exact:true});await handle.scrollIntoViewIfNeeded();const hit=await handle.boundingBox();
    await page.mouse.move(hit.x+hit.width/2,hit.y+hit.height/2);await page.mouse.down();await page.mouse.move(hit.x+hit.width/2+65,hit.y+hit.height/2,{steps:6});await page.mouse.up();
-   await page.getByRole('button',{name:'Resize exit-chart.png',exact:true}).tap();const resized=Number(await page.getByRole('slider',{name:'Width of exit-chart.png',exact:true}).inputValue());await page.keyboard.press('Escape');
+   await page.getByRole('button',{name:'Image options for exit-chart.png',exact:true}).tap();const resized=Number(await page.getByRole('slider',{name:'Width of exit-chart.png',exact:true}).inputValue());await page.keyboard.press('Escape');
    assert.ok(resized>=60&&resized<75,'Dragging a wrapping image must change width smoothly without jumping to full width');
   }
   await width('entry-chart.png','100');await width('exit-chart.png','100');

@@ -54,14 +54,17 @@ let definitions = customMode
 if (customMode && localStorage.getItem("fixture-custom-trade"))
   stored = JSON.parse(localStorage.getItem("fixture-custom-trade"));
 window.__tradeSaves = 0;
+window.__imageUploads = 0;
+window.__uploadedImages = [];
 window.__definitionWrites = 0;
 api.defaults.adapter = async (config) => {
   const reply = (data) => ({ data, status: 200, statusText: "OK", headers: {}, config });
   if (config.url.endsWith("/custom-fields/")) {
     if (config.url.includes('/screenshots/')) {
     if (config.method === 'post') {
+      window.__imageUploads++;
       const image={id:Date.now()+Math.random(),image_url:await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(config.data.get('file'));}),section:config.data.get('section'),display_width:Number(config.data.get('display_width')||100)};
-      stored.screenshots=[...(stored.screenshots??[]),image];if(customMode)localStorage.setItem("fixture-custom-trade",JSON.stringify(stored));return reply(image);
+      window.__uploadedImages.push({name:config.data.get('file').name,id:image.id});stored.screenshots=[...(stored.screenshots??[]),image];if(customMode)localStorage.setItem("fixture-custom-trade",JSON.stringify(stored));return reply(image);
     }
     if(config.method==='patch') {
       if(window.__failImageWidthOnce){window.__failImageWidthOnce=false;throw new Error('Synthetic image metadata failure');}
@@ -80,8 +83,9 @@ api.defaults.adapter = async (config) => {
   }
   if (config.url.includes('/screenshots/')) {
     if (config.method === 'post') {
+      window.__imageUploads++;
       const image={id:Date.now()+Math.random(),image_url:await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(config.data.get('file'));}),section:config.data.get('section'),display_width:Number(config.data.get('display_width')||100)};
-      stored.screenshots=[...(stored.screenshots??[]),image];if(customMode)localStorage.setItem("fixture-custom-trade",JSON.stringify(stored));return reply(image);
+      window.__uploadedImages.push({name:config.data.get('file').name,id:image.id});stored.screenshots=[...(stored.screenshots??[]),image];if(customMode)localStorage.setItem("fixture-custom-trade",JSON.stringify(stored));return reply(image);
     }
     if(config.method==='patch') {
       if(window.__failImageWidthOnce){window.__failImageWidthOnce=false;throw new Error('Synthetic image metadata failure');}
@@ -90,6 +94,12 @@ api.defaults.adapter = async (config) => {
   }
   if (config.method !== "get") {
     const payload = JSON.parse(config.data);
+    if (Object.keys(payload).length === 1 && payload.notes_document) {
+      if (window.__failImageLayoutOnce) {window.__failImageLayoutOnce=false;throw new Error('Synthetic image layout failure');}
+      stored={...stored,notes_document:payload.notes_document};
+      if(customMode)localStorage.setItem('fixture-custom-trade',JSON.stringify(stored));
+      return reply(stored);
+    }
     window.__tradePayload = payload;
     window.__tradeSaves++;
     stored = {
@@ -139,10 +149,10 @@ function App() {
         trade={mode === "edit" ? trade : null}
         open={open}
         onClose={() => setOpen(false)}
-        onSave={async (payload) => {
+        onSave={async (payload,savedDraftId) => {
           const result =
-            mode === "edit"
-              ? await updateTrade(1, trade.id, payload)
+            savedDraftId || mode === "edit"
+              ? await updateTrade(1, savedDraftId ?? trade.id, payload)
               : await createTrade(1, payload);
           setTrade(result);
           return result;
