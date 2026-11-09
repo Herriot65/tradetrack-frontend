@@ -167,11 +167,6 @@ export default function AppShell({ children }) {
             <X />
           </Button>
         </div>
-        <div className="border-b border-border/60 px-3 py-5">
-          {!compact && <p className="mb-2 px-1 text-xs text-muted-foreground">{t('Trading account')}</p>}
-          <JournalSwitcher compact={compact} />
-          {!compact && <Link to="/dashboard" onClick={()=>setMobileOpen(false)} className="mt-3 block rounded px-1 py-1 text-xs text-muted-foreground hover:text-foreground" aria-current={section==='accounts'?'page':undefined}>{t('Manage accounts')}</Link>}
-        </div>
         <nav className="flex-1 space-y-2 overflow-y-auto px-3 py-6" aria-label={t('Main sections')}>
           {destinations.map(item=><Hint key={item.id} label={t(item.label)}>
             <Link to={sectionLink(item.tab)} className="nx-nav-item" data-active={section===item.id}
@@ -222,10 +217,7 @@ export default function AppShell({ children }) {
             >
               <Menu />
             </Button>
-            <div className="min-w-0 md:hidden"><JournalSwitcher /></div>
-            <div className="hidden min-w-0 items-center gap-2 text-xs text-muted-foreground md:flex">
-              <span>{t('Trading workspace')}</span>{journalRoute && <><span aria-hidden="true">/</span><span className="truncate text-foreground">{journal?.name}</span></>}
-            </div>
+            <div className="w-full min-w-0 max-w-[220px]"><JournalSwitcher /></div>
           </div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-4">
             <LanguageSelector />
