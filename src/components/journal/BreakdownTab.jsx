@@ -17,7 +17,7 @@ export default function BreakdownTab({journal, active, syntheticEnabled}) {
   const [field, setField] = useState('setup');
   const [range, setRange] = useState('ALL');
   const query = useCallback(() => fetchHubTrades(journal.id, {years:[]}), [journal.id]);
-  const {data, loading, error, refetch} = useAsyncQuery(query, [journal.id, analyticsVersion], {enabled:active && !!journal.id});
+  const {data, loading, error, refetch} = useAsyncQuery(query, [journal.id, analyticsVersion], {enabled:active && !!journal.id, retainOnDisable:true});
   const filtered = useMemo(()=>filterTrades(data ?? [], {range}),[data,range]);
   const {rows,excluded,unassigned} = useMemo(()=>buildBreakdown(filtered,field,journal),[filtered,field,journal]);
   const [expanded, setExpanded] = useState(false);

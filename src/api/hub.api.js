@@ -9,7 +9,7 @@ const EMPTY_CAREER = { yearSummaries: [], heatmap: {}, years: [] };
 const loadHubTrades = async (workspaceId, { years = [] } = {}) => {
   if (USE_MOCK) return mockFetchHubTrades(workspaceId, { years });
 
-  const params = { ordering: "entry_datetime,id", page_size: 200 };
+  const params = { ordering: "entry_datetime,id", page_size: 1000, compact: "1" };
   if (years.length > 0) params.year__in = years.join(",");
 
   const { data: firstPage } = await api.get(`/journals/${workspaceId}/trades/`, { params });

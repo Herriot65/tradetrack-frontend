@@ -58,7 +58,9 @@ try {
  await page.keyboard.press("ArrowRight");
  await page.getByText(/Trade #1 .*Equity/).waitFor();
  await page.getByRole("button",{name:"Open trade #1: +2.00R"}).click();
- await page.getByRole("dialog").waitFor();await page.keyboard.press("Escape");
+ await page.getByRole("dialog").waitFor();
+ await page.getByText("Full notes loaded on demand",{exact:true}).waitFor();
+ await page.keyboard.press("Escape");
  await page.getByRole("button",{name:"Distribution",exact:true}).click();
  await page.getByText("How your R-multiples are distributed, in 0.5R buckets").waitFor();
  await page.getByRole("button",{name:"Sequence",exact:true}).click();

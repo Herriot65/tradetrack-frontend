@@ -42,13 +42,15 @@ if (new URLSearchParams(location.search).has("dense")) {
     };
   });
 }
-api.defaults.adapter = async (config) => ({
-  data: { results: rows, count: rows.length },
-  status: 200,
-  statusText: "OK",
-  headers: {},
-  config,
-});
+api.defaults.adapter = async (config) => {
+  const detailId = config.url.match(/\/trades\/(\d+)\/$/)?.[1];
+  return {
+    data: detailId
+      ? { ...rows.find(row => String(row.id) === detailId), notes: "Full notes loaded on demand", screenshots: [] }
+      : { results: rows.map(row => ({...row, analytics_only: true})), count: rows.length },
+    status: 200, statusText: "OK", headers: {}, config,
+  };
+};
 const journal = {
   id: 1,
   name: "Test journal",

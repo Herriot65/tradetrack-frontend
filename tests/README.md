@@ -35,3 +35,19 @@ Theme choices are stored only in this browser; System is the default. Signing in
 The header and sign-in pages offer Français (FR) and English (US). English is the default. The choice is stored in `nexora_language` in browser storage and synchronized across tabs. Interface translations live in `src/i18n/fr.js`; user-entered journal names, notes, tags, and custom field options retain their original text. Dates and numbers follow the selected locale; trade timestamps retain their existing timezone behavior.
 
 `npm test` includes translation, interpolation, locale formatting, invalid-language, and unavailable-storage checks. `npm run test:language` builds the app and verifies switching, navigation/reload persistence, form preservation, French validation, settings, cross-tab synchronization, and layouts from 320px through 1280px. Set `PLAYWRIGHT_MODULE` to an installed Playwright entry point and `CHROMIUM_PATH` to a browser executable when needed. API calls in browser tests are stubbed.
+
+## Tab loading
+
+Run `npm run test:tab-loading` (with `PLAYWRIGHT_MODULE` when needed) to verify that hiding and reopening a loaded tab performs no extra reads, while edits, journal changes, explicit refresh and failed-request recovery fetch fresh results. The analytics browser fixture also tests compact history records and loading complete notes when opening trade details.
+
+History requests use `compact=1&page_size=1000`; older backends can still return their normal representation and page cap. Updated backends omit notes, screenshots and custom field values from this representation and preserve all analytic inputs. Full trade details continue to use the existing detail endpoint. The history pages remain bounded to 1,000 records, while regular list requests retain the 100-record maximum.
+
+## Latency measurements
+
+`tests/tab-latency-benchmark.mjs` compares production builds using the real journal page, 126 synthetic trades and a controlled 150 ms API delay. Build main into `/tmp/tradetrack-latency-baseline-dist`, build the current branch with `npm run build`, then run `PLAYWRIGHT_MODULE=/workspace/.tradetrack/playwright.mjs node tests/tab-latency-benchmark.mjs`. It writes raw results to `artifacts/latency/tab-latency.json`; optional environment variables are `BENCH_TRADES`, `BENCH_ROUNDS`, and `BENCH_API_DELAY_MS`. The main baseline build must match the previous server's 100-record cap. The script also verifies direct authenticated journal loading while journal metadata is still loading.
+
+For real local backend timings excluding network, run `DATABASE_URL=sqlite:////tmp/tradetrack-benchmark.sqlite3 /workspace/.tradetrack/venv/bin/python -m pytest -q -s tests/benchmark_history.py` from the backend. The benchmark uses an isolated pytest database, alternates full/compact requests, and writes `artifacts/latency/backend-latency.json` in the frontend checkout. Production latency requires a deployed URL and authorized session.
+
+## Currency selection and scrolling
+
+Run `npm run test:currency-scroll` with `PLAYWRIGHT_MODULE` as needed. The dense synthetic fixture toggles R, dollars and percent while scrolling down and back up at widths 320, 390, 768, 1280 and 1920. Assertions check the selected unit and KPI output, exactly one KPI block with four main values, no filter/KPI intersections, no report-section intersections and no horizontal overflow. Screenshots are saved under `artifacts/currency-scroll/`. The filter toolbar stays in normal document flow so it cannot cover the KPI cards while scrolling.

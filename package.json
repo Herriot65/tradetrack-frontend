@@ -13,6 +13,8 @@
     "test:redesign": "node tests/redesign-qa.mjs",
     "test:theme": "npm run build && node tests/theme-browser.mjs",
     "test:browser": "node tests/browser.mjs",
+    "test:currency-scroll": "node tests/currency-scroll-browser.mjs",
+    "test:tab-loading": "node tests/tab-loading-browser.mjs",
     "test:trade-browser": "node tests/trade-browser.mjs",
     "test:custom-fields": "node tests/custom-fields-browser.mjs",
     "test:trades-list": "node tests/trades-list-browser.mjs",

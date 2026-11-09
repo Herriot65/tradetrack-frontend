@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
 import "./analytics.css";
@@ -70,7 +71,7 @@ function NoticeCard({ title, description, action }) {
   );
 }
 
-export default function AnalyticsTab({
+function AnalyticsTab({
   journal,
   jLoading,
   syntheticEnabled,
@@ -291,3 +292,5 @@ export default function AnalyticsTab({
     </div>
   );
 }
+
+export default memo(AnalyticsTab);

@@ -1,6 +1,8 @@
+import { fetchTrade } from "@/api/trades.api";
+import { useAsyncQuery } from "@/hooks/useAsyncQuery";
 import { translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
-import { useState, useContext } from "react";
+import { useCallback, useState, useContext } from "react";
 import { JournalContext } from "@/journals/JournalContext";
 import { tradeAmount, riskDisplayAmount, formatValue } from "@/lib/analytics";
 import { formatDate } from "@/lib/formatters";
@@ -52,10 +54,18 @@ function formatDatetime(iso) {
   return zonedDate(iso).toISOString().replace("T", " ").slice(0, 16) + ` ${getUserTimezone()}`;
 }
 
-export default function TradeDetailPanel({ trade, open, onClose }) {
+export default function TradeDetailPanel({ trade: summaryTrade, open, onClose }) {
   useLanguage();
   const context = useContext(JournalContext);
   const unit = context?.activeJournal?.display_unit || "R";
+  const journalId = context?.activeJournal?.id ?? context?.activeWorkspace?.id;
+  const tradeId = summaryTrade?.id;
+  const loadDetail = useCallback(() => fetchTrade(journalId, tradeId), [journalId, tradeId]);
+  const details = useAsyncQuery(loadDetail, [journalId, tradeId], {
+    enabled: !!(open && summaryTrade?.analytics_only && journalId && tradeId),
+  });
+  const trade = details.data?.id === tradeId ? { ...summaryTrade, ...details.data } : summaryTrade;
+
   const [lightboxSrc, setLightboxSrc] = useState(null);
   if (!trade) return null;
 
@@ -84,6 +94,8 @@ export default function TradeDetailPanel({ trade, open, onClose }) {
         </SheetHeader>
 
         <SheetBody>
+          {details.loading && <p role="status">{t("Loading…")}</p>}
+          {details.error && <p role="alert">{details.error} <button onClick={details.refetch}>{t("Retry")}</button></p>}
           <div className="space-y-6">
 
             {/* Execution */}

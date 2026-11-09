@@ -47,10 +47,3 @@
     padding: 24px;
   }
 }
-
-/* Leave the content visible when a landscape phone has little vertical space. */
-@media (max-height: 500px) {
-  .analytics-page .analytics-filters {
-    position: static;
-  }
-}
