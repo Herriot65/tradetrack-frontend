@@ -1,0 +1,18 @@
+.trade-note-images {
+  --trade-image-gap: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  column-gap: var(--trade-image-gap);
+  row-gap: 0;
+  min-width: 0;
+}
+
+.trade-note-images > [data-trade-image] { margin-bottom: var(--trade-image-gap); }
+.trade-image-break { flex-basis: 100%; height: 0; }
+[data-trade-image][data-dragging="true"] { opacity: .45; }
+.trade-image-dropzones { position: absolute; inset: 0; z-index: 10; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 25% 50% 25%; gap: 2px; background: hsl(var(--background) / .35); }
+.trade-image-dropzone { display: flex; align-items: center; justify-content: center; min-width: 0; border: 1px dashed hsl(var(--primary) / .5); border-radius: 4px; background: hsl(var(--background) / .8); color: hsl(var(--foreground)); font-size: 11px; }
+.trade-image-dropzone-above, .trade-image-dropzone-below { grid-column: 1 / -1; }
+.trade-image-drop-end { display: flex; flex-basis: 100%; min-height: 64px; align-items: center; justify-content: center; margin-bottom: 12px; border: 1px dashed hsl(var(--primary) / .5); border-radius: 6px; color: hsl(var(--muted-foreground)); font-size: 12px; }
+.trade-image-dropzone[data-active="true"], .trade-image-drop-end[data-active="true"] { border-style: solid; background: hsl(var(--primary) / .2); color: hsl(var(--primary)); }

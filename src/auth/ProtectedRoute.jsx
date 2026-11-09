@@ -1,24 +1,10 @@
-import { translate as t } from "@/i18n/language";
-import { useLanguage } from "@/i18n/useLanguage";
 import { Navigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "./useAuth";
 
 export default function ProtectedRoute({ children }) {
-  useLanguage();
-  const { isAuthenticated, loading, sessionError, sessionExpired, retrySession, resetSession } = useAuth();
-  if (loading) {
-    return <main className="flex min-h-screen items-center justify-center px-6"><p role="status" className="text-sm text-muted-foreground">{t("Reconnecting to your account…")}</p></main>;
-  }
-  if (sessionError) {
-    return <main className="flex min-h-screen items-center justify-center px-6"><div className="max-w-sm space-y-4 rounded-xl border border-border bg-card p-6">
-      <h1 className="text-lg font-medium">{t("Unable to restore your session")}</h1>
-      <p role="alert" className="text-sm text-muted-foreground">{t(sessionError)}</p>
-      <div className="flex flex-wrap gap-3"><Button onClick={retrySession}>{t("Try again")}</Button><Button variant="outline" onClick={resetSession}>{t("Back to sign in")}</Button></div>
-    </div></main>;
-  }
-  if (!isAuthenticated) {
-    return <Navigate to={sessionExpired ? "/login?reason=session-expired" : "/login"} replace />;
-  }
-  return children;
+  const { isAuthenticated, loading, sessionExpired } = useAuth();
+  if (isAuthenticated) return children;
+  // Existing accounts render immediately; a first session check stays quiet.
+  if (loading) return <main className="min-h-screen bg-background" />;
+  return <Navigate to={sessionExpired ? "/login?reason=session-expired" : "/login"} replace />;
 }

@@ -1,3 +1,8 @@
+import EntrySectionHeader from "./EntrySectionHeader";
+import EntryFieldActions from "./EntryFieldActions";
+import EntryFieldPreferences from "./EntryFieldPreferences";
+import { imageSectionOwners, restoreImageLayout, serializeImageLayout } from "@/lib/imageLayout";
+import { useEntryFieldPreferences } from "@/hooks/useEntryFieldPreferences";
 import { getLanguage, translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
 import { useEffect, useRef, useState } from "react";
@@ -10,13 +15,16 @@ import { useJournal } from "@/journals/useJournal";
 import { getUserTimezone } from "@/lib/timezone";
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Settings2, Trash2, Star, Hash } from "lucide-react";
+import { Trash2, Star, Hash } from "lucide-react";
 import FieldModeToggle from "./FieldModeToggle";
 import { UNIT_OPTIONS, riskAmount, tradeAmount } from "@/lib/analytics";
 
 import { tradeSchema } from "@/schemas/tradeSchema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import SetupOptionManager from "./SetupOptionManager";
+import { useSetupOptions } from "@/hooks/useSetupOptions";
+import TimeframeField from "./TimeframeField";
 import SelectField from "@/components/ui/select-field";
 import DateTimePicker from "@/components/ui/date-time-picker";
 import {
@@ -46,18 +54,12 @@ import TagPicker from "./TagPicker";
 import TagManager from "./TagManager";
 import AssetCombobox from "./AssetCombobox";
 import CatalogCombobox from "./CatalogCombobox";
+import RichNotesEditor from "@/components/notes/RichNotesEditor";
+import { documentFromText, documentText } from "@/lib/noteDocument";
 import TradeNotesEditor, { DEFAULT_SECTIONS } from "./TradeNotesEditor";
-import { uploadScreenshot, deleteScreenshot, fetchTrade } from "@/api/trades.api";
+import { uploadScreenshot, updateScreenshotWidth, deleteScreenshot, fetchTrade } from "@/api/trades.api";
 
 // ─── Options ──────────────────────────────────────────────────────────────────
-
-const TF_OPTIONS = ["M1", "M5", "M15", "M30", "H1", "H4", "D1", "W1", "MN"];
-const TREND_OPTIONS = [
-  { value: "BULLISH", label: "Bullish" },
-  { value: "BEARISH", label: "Bearish" },
-  { value: "RANGE", label: "Range" },
-];
-const SESSION_OPTIONS = ["Asian", "London", "New York", "London/NY Overlap", "Pre-Market"];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -121,7 +123,7 @@ function tradeToDefaults(trade, timezone = "UTC") {
     status: trade.status === "OPEN" ? null : (trade.status ?? null),
     emotions,
     mistakes,
-    notes: trade.notes ?? "",
+    notes: trade.notes_document?.version === 1 ? documentText(trade.notes_document.general) : trade.notes ?? "",
     custom_fields: trade.custom_fields ?? {},
   };
 }
@@ -129,22 +131,30 @@ function tradeToDefaults(trade, timezone = "UTC") {
 // Rebuild notesSections from backend screenshots, preserving default section order.
 // Each screenshot carries a `section` string (its section title); nulls fall into
 // the first default section.
-function buildSections(screenshots = []) {
-  const map = new Map(DEFAULT_SECTIONS.map((s) => [s.title, { ...s, text: "", images: [] }]));
+function buildSections(screenshots = [], document = {}) {
+  const sections = document.version === 1 && document.sections?.length ? document.sections : DEFAULT_SECTIONS;
+  const restored = sections.map(s => ({...s, text: documentText(s.content) || s.text || "", images: []}));
+  const owners = imageSectionOwners(sections);
   for (const sc of screenshots) {
-    const title = sc.section ?? DEFAULT_SECTIONS[0].title;
-    if (!map.has(title)) {
-      map.set(title, { id: `section-${title}`, title, text: "", images: [] });
+    const owner = sections.find(section => section.id === owners.get(String(sc.id)));
+    const title = owner?.title ?? sc.section ?? DEFAULT_SECTIONS[0].title;
+    let section = owner ? restored.find(item => item.id === owner.id) : restored.find(item => item.title === title);
+    if (!section) {
+      section = {id:`section-${title}`,title,text:"",images:[]};
+      restored.push(section);
     }
-    map.get(title).images.push({
+    section.images.push({
       id: sc.id,
       name: `screenshot-${sc.id}`,
       preview: sc.image_url,
       file: null,
       screenshotId: sc.id,
+      width: sc.display_width ?? 100,
+      savedWidth: sc.display_width ?? 100,
+      savedSection: sc.section ?? DEFAULT_SECTIONS[0].title,
     });
   }
-  return Array.from(map.values());
+  return restored.map(section => ({...section,images:restoreImageLayout(section.images,section.image_layout)}));
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -184,19 +194,6 @@ function DollarInput({ className = "", ...props }) {
   );
 }
 
-// Small "Manage" gear button used in section headers
-function ManageBtn({ onClick }) {
-  useLanguage();
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex items-center gap-1 text-[10px] text-zinc-600 hover:text-zinc-400"
-    >
-      <Settings2 className="size-3" />{t("Manage")}</button>
-  );
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function TradePanel({
@@ -211,7 +208,71 @@ export default function TradePanel({
   defaultUnit = "R",
 }) {
   useLanguage();
+  const entryFields = useEntryFieldPreferences(journalId);
+  const [customizingSection, setCustomizingSection] = useState(null);
+  const [saveConfigurationOpen, setSaveConfigurationOpen] = useState(false);
+  const [configurationScope, setConfigurationScope] = useState("journal");
+  const [exitPending, setExitPending] = useState(false);
+  const pendingExit = useRef(null);
+  const [configurationNotice, setConfigurationNotice] = useState(null);
+  useEffect(() => {
+    if (!configurationNotice) return;
+    const timer = setTimeout(() => setConfigurationNotice(null), 4000);
+    return () => clearTimeout(timer);
+  }, [configurationNotice]);
+  useEffect(() => {
+    if (!open || !entryFields.dirty) return;
+    const warn = event => {event.preventDefault();event.returnValue = "";};
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [open, entryFields.dirty]);
+  const requestExit = (action = onClose) => {
+    if (entryFields.saving) return;
+    if (!entryFields.dirty) {action();return;}
+    pendingExit.current = action;
+    setExitPending(true);
+    setSaveConfigurationOpen(true);
+  };
+  const dismissConfiguration = () => {
+    if (entryFields.saving) return;
+    setSaveConfigurationOpen(false);
+    setExitPending(false);
+    pendingExit.current = null;
+  };
+  const toggleCustomization = section => {
+    if (section === null && entryFields.dirty) {
+      setExitPending(false);
+      pendingExit.current = null;
+      setSaveConfigurationOpen(true);
+    } else setCustomizingSection(section);
+  };
+  const saveConfiguration = async () => {
+    if (await entryFields.save(configurationScope)) {
+      const action = pendingExit.current;
+      setSaveConfigurationOpen(false);
+      setExitPending(false);
+      pendingExit.current = null;
+      setCustomizingSection(null);
+      setConfigurationNotice({message:configurationScope === "future" ? "Layout saved for this journal and future journals." : "Layout saved for this journal."});
+      action?.();
+    }
+  };
+  const discardConfiguration = () => {
+    const action = pendingExit.current;
+    entryFields.discard();
+    dismissConfiguration();
+    setCustomizingSection(null);
+    action?.();
+  };
+  const [wasOpen, setWasOpen] = useState(open);
+  if (wasOpen !== open) {
+    setWasOpen(open);
+    if (!open) setCustomizingSection(null);
+  }
   const isEdit = mode === "edit";
+  const [manageOptions, setManageOptions] = useState(null);
+  const { options: trendOptions } = useSetupOptions("trends");
+  const { options: sessionOptions } = useSetupOptions("sessions");
   const auth = useAuth();
   const timezone = auth?.user?.timezone || getUserTimezone();
   const journalContext = useJournal();
@@ -223,12 +284,20 @@ export default function TradePanel({
   );
   const customFields = useTradeCustomFields(journalId, { enabled: open });
 
-  const [notesSections, setNotesSections] = useState(() => buildSections(trade?.screenshots));
-  const [draftSource, setDraftSource] = useState({ open, trade, mode });
+  const [notesSections, setNotesSections] = useState(() => buildSections(trade?.screenshots, trade?.notes_document));
+  const [generalDocument, setGeneralDocument] = useState(() => trade?.notes_document?.general ?? documentFromText(trade?.notes));
+  const savedDraftId = useRef(null);
+  const notesDirty = useRef(false);
+  const hydratedDraft = useRef(null);
+  const [draftSource, setDraftSource] = useState({ open, tradeId: trade?.id, mode });
   // A new draft must not retain the previous trade's attachments.
-  if (draftSource.open !== open || draftSource.trade !== trade || draftSource.mode !== mode) {
-    setDraftSource({ open, trade, mode });
-    if (open) setNotesSections(buildSections(trade?.screenshots));
+  if (draftSource.open !== open || draftSource.tradeId !== trade?.id || draftSource.mode !== mode) {
+    setDraftSource({ open, tradeId: trade?.id, mode });
+    if (open) {
+      setNotesSections(buildSections(trade?.screenshots, trade?.notes_document));
+      setGeneralDocument(trade?.notes_document?.general ?? documentFromText(trade?.notes));
+
+    }
   }
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -294,23 +363,34 @@ export default function TradePanel({
   });
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) { hydratedDraft.current = null; return; }
+    const identity = `${mode}:${trade?.id ?? 'new'}:${journalId}:${timezone}`;
+    // A parent may refresh the same trade after the first save. Keep any
+    // pending image layout changes intact so partial-save retries are safe.
+    if (hydratedDraft.current === identity) return;
+    hydratedDraft.current = identity;
+    savedDraftId.current = null;
+    notesDirty.current = false;
     reset(tradeToDefaults(trade, timezone));
     if (mode === "edit" && trade?.id && journalId) {
       // The list endpoint doesn't include screenshots; fetch the detail to populate them.
       let cancelled = false;
       fetchTrade(journalId, trade.id)
         .then((full) => {
-          if (!cancelled) setNotesSections(buildSections(full.screenshots));
+          if (!cancelled && !notesDirty.current) {
+            setNotesSections(buildSections(full.screenshots, full.notes_document));
+            setGeneralDocument(full.notes_document?.general ?? documentFromText(full.notes));
+            setValue("notes", full.notes_document?.version === 1 ? documentText(full.notes_document.general) : full.notes ?? "");
+          }
         })
         .catch(() => {
-          if (!cancelled) setNotesSections(buildSections(trade?.screenshots));
+          if (!cancelled) setNotesSections(buildSections(trade?.screenshots, trade?.notes_document));
         });
       return () => {
         cancelled = true;
       };
     }
-  }, [open, trade, reset, mode, journalId, timezone]);
+  }, [open, trade, reset, mode, journalId, timezone, setValue]);
 
   const watchedEmotions = useWatch({ control, name: "emotions" }) ?? [];
   const watchedMistakes = useWatch({ control, name: "mistakes" }) ?? [];
@@ -375,7 +455,8 @@ export default function TradePanel({
       trend_direction: values.trend_direction || null,
       session: values.session || null,
       status: values.status,
-      notes: values.notes || null,
+      notes: [values.notes, ...notesSections.map(section => section.text)].filter(Boolean).join("\n\n") || null,
+      notes_document: { version: 1, general: generalDocument, sections: notesSections.map(section => ({id:String(section.id).slice(0,100),title:section.title.slice(0,100),content:section.content ?? documentFromText(section.text),image_layout:serializeImageLayout(section.images)})) },
       custom_fields: values.custom_fields ?? {},
       // Catalog ID fields — replace raw strings with backend IDs
       asset_id: catalog.assetMap.get(values.asset) ?? null,
@@ -384,22 +465,38 @@ export default function TradePanel({
       setup_id: values.setup ? (catalog.setupMap.get(values.setup) ?? null) : null,
     };
     try {
-      const savedTrade = await onSave(payload);
-      const tradeId = isEdit ? trade.id : savedTrade?.id;
+      const savedTrade = await onSave(payload, savedDraftId.current);
+      const tradeId = savedDraftId.current ?? (isEdit ? trade.id : savedTrade?.id);
+      savedDraftId.current = tradeId;
       if (tradeId && journalId) {
-        const pendingImages = notesSections.flatMap((s) =>
-          s.images
-            .filter((img) => img.file)
-            .map((img) => ({ file: img.file, preview: img.preview, section: s.title })),
-        );
-        if (pendingImages.length > 0) {
-          await Promise.allSettled(
-            pendingImages.map(({ file, section }) =>
-              uploadScreenshot(journalId, tradeId, file, section),
-            ),
-          );
-          pendingImages.forEach(({ preview }) => URL.revokeObjectURL(preview));
+        const updates = new Map();
+        const tasks = notesSections.flatMap(section => section.images.map(image => async () => {
+          if (image.file) {
+            const uploaded = await uploadScreenshot(journalId, tradeId, image.file, section.title, image.width ?? 100);
+            updates.set(image.id, {...image,file:null,screenshotId:uploaded.id,preview:uploaded.image_url,width:uploaded.display_width ?? image.width ?? 100,savedWidth:uploaded.display_width ?? image.width ?? 100,savedSection:section.title});
+            URL.revokeObjectURL(image.preview);
+          } else if (image.screenshotId && ((image.width ?? 100) !== (image.savedWidth ?? 100) || section.title !== image.savedSection)) {
+            await updateScreenshotWidth(journalId, tradeId, image.screenshotId, image.width ?? 100, section.title);
+            updates.set(image.id,{...image,savedWidth:image.width,savedSection:section.title});
+          }
+        }));
+        const results = await Promise.allSettled(tasks.map(task => task()));
+        setNotesSections(current => current.map(section => ({...section,images:section.images.map(image => updates.get(image.id) ?? image)})));
+        if (results.some(result => result.status === 'rejected')) {
+          setError("root", {message:"Trade notes saved, but some images could not be saved. Try saving again to retry the remaining images."});
+          requestAnimationFrame(() => document.getElementById("trade-save-error")?.scrollIntoView({block:"center"}));
+          return;
         }
+        const completedDocument = {...payload.notes_document,sections:payload.notes_document.sections.map((section,index)=>({...section,image_layout:serializeImageLayout(notesSections[index].images.map(image=>updates.get(image.id)??image))}))};
+        if (JSON.stringify(completedDocument) !== JSON.stringify(payload.notes_document)) {
+          try { await onSave({notes_document:completedDocument},tradeId); }
+          catch {
+            setError("root", {message:"Trade notes and images were saved, but their layout could not be saved. Save again to retry."});
+            requestAnimationFrame(() => document.getElementById("trade-save-error")?.scrollIntoView({block:"center"}));
+            return;
+          }
+        }
+
       }
       onClose();
     } catch (err) {
@@ -438,12 +535,15 @@ export default function TradePanel({
     }
   }
 
+  const configurationNotification = configurationNotice && <div role="status" aria-live="polite" className="fixed bottom-6 left-1/2 z-[100] w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-lg border border-emerald-500/30 bg-zinc-900 px-4 py-3 text-sm text-emerald-300 shadow-lg">{configurationNotice.message}</div>;
+
   return (
     <>
-      <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
+      <Sheet open={open} onOpenChange={(v) => !v && requestExit()}>
         <SheetContent
           className={`flex flex-col ${resizing ? "select-none" : ""}`}
           style={{ maxWidth: `${panelWidth}px`, transition: "none" }}
+          data-wide-review={panelWidth > 760}
         >
           <div
             role="separator"
@@ -458,7 +558,7 @@ export default function TradePanel({
           >
             <span className="absolute inset-y-0 left-0.5 w-px bg-zinc-800 transition-colors group-hover:bg-zinc-500" />
           </div>
-          <SheetHeader onClose={onClose}>
+          <SheetHeader>
             <div className="flex items-center justify-between gap-3">
               <SheetTitle>
                 {isEdit
@@ -473,11 +573,12 @@ export default function TradePanel({
             </SheetDescription>
           </SheetHeader>
 
+          {configurationNotification}
           <SheetBody className="trade-panel-body">
-            <form id="trade-form" onSubmit={handleSubmit(submit)} noValidate>
+            <form id="trade-form" onSubmit={event => {event.preventDefault();requestExit(() => handleSubmit(submit)());}} noValidate>
               {errors.root && (
-                <p className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
-                  {errors.root.message}
+                <p id="trade-save-error" role="alert" className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+                  {t(errors.root.message)}
                 </p>
               )}
 
@@ -507,13 +608,13 @@ export default function TradePanel({
               <div className="space-y-7">
                 {/* ── Execution ── */}
                 <section>
-                  <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">{t("Execution")}</h3>
+                  <EntrySectionHeader section="execution" title={t("Execution")} active={customizingSection === "execution"} onToggle={toggleCustomization} />
                   <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-x-4 gap-y-4">
                     <F
-                      label={t("Asset *")}
+                      label={entryFields.label("asset", t("Asset")) + " *"}
                       error={errors.asset?.message}
                       span2
-                      action={<ManageBtn onClick={() => setManageAssetsOpen(true)} />}
+                      action={<EntryFieldActions active={customizingSection === "execution"} id="asset" label={t("Asset")} settings={entryFields} onEditOptions={() => setManageAssetsOpen(true)} />}
                     >
                       <Controller
                         name="asset"
@@ -529,7 +630,7 @@ export default function TradePanel({
                       />
                     </F>
 
-                    <F label={t("Side *")} error={errors.side?.message}>
+                    <F label={entryFields.label("side", t("Side")) + " *"} action={<EntryFieldActions active={customizingSection === "execution"} id="side" label={t("Side")} settings={entryFields} />} error={errors.side?.message}>
                       <div className="flex gap-2">
                         {["BUY", "SELL"].map((s) => {
                           const active = watchedSide === s;
@@ -556,7 +657,7 @@ export default function TradePanel({
                     </F>
 
                     <F
-                      label={t("Entry date/time *")}
+                      label={entryFields.label("entry_datetime", t("Entry date/time")) + " *"} action={<EntryFieldActions active={customizingSection === "execution"} id="entry_datetime" label={entryFields.label("entry_datetime", t("Entry date/time"))} settings={entryFields} />}
                       id="trade-entry_datetime"
                       error={errors.entry_datetime?.message}
                     >
@@ -566,7 +667,7 @@ export default function TradePanel({
                         render={({ field }) => (
                           <DateTimePicker
                             id="trade-entry_datetime"
-                            label={t("Entry date/time")}
+                            label={entryFields.label("entry_datetime", t("Entry date/time"))}
                             value={field.value}
                             onChange={field.onChange}
                             onBlur={field.onBlur}
@@ -578,7 +679,7 @@ export default function TradePanel({
                     </F>
 
                     <F
-                      label={t("Exit date/time")}
+                      label={entryFields.label("exit_datetime", t("Exit date/time"))} action={<EntryFieldActions active={customizingSection === "execution"} id="exit_datetime" label={entryFields.label("exit_datetime", t("Exit date/time"))} settings={entryFields} />}
                       id="trade-exit_datetime"
                       error={errors.exit_datetime?.message}
                     >
@@ -588,7 +689,7 @@ export default function TradePanel({
                         render={({ field }) => (
                           <DateTimePicker
                             id="trade-exit_datetime"
-                            label={t("Exit date/time")}
+                            label={entryFields.label("exit_datetime", t("Exit date/time"))}
                             value={field.value}
                             onChange={field.onChange}
                             onBlur={field.onBlur}
@@ -600,11 +701,11 @@ export default function TradePanel({
                     </F>
 
                     <F
-                      label={t("Risk")}
+                      label={entryFields.label("risk_percent", t("Risk"))}
                       id="trade-risk"
                       error={errors.risk_percent?.message}
                       action={
-                        <FieldModeToggle
+                        <EntryFieldActions active={customizingSection === "execution"} id="risk_percent" label={t("Risk")} settings={entryFields}><FieldModeToggle
                           label={t("Risk unit")}
                           options={[
                             { value: "PCT", label: "%" },
@@ -620,7 +721,7 @@ export default function TradePanel({
                           ]}
                           value={capital > 0 ? riskUnit : "PCT"}
                           onChange={setRiskUnit}
-                        />
+                        /></EntryFieldActions>
                       }
                     >
                       <Controller
@@ -646,14 +747,14 @@ export default function TradePanel({
 
                 {/* ── Performance ── */}
                 <section>
-                  <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">{t("Performance")}</h3>
+                  <EntrySectionHeader section="performance" title={t("Performance")} active={customizingSection === "performance"} onToggle={toggleCustomization} />
                   <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-x-4 gap-y-4">
                     <F
-                      label={t("PnL")}
+                      label={entryFields.label("pnl_r", t("PnL"))}
                       error={errors.pnl_r?.message}
                       span2
                       action={
-                        <FieldModeToggle
+                        <EntryFieldActions active={customizingSection === "performance"} id="pnl_r" label={t("PnL")} settings={entryFields}><FieldModeToggle
                           label={t("PnL unit")}
                           options={UNIT_OPTIONS.map((option) => ({
                             ...option,
@@ -674,7 +775,7 @@ export default function TradePanel({
                                 : "R"
                           }
                           onChange={setPnlUnit}
-                        />
+                        /></EntryFieldActions>
                       }
                     >
                       <Controller
@@ -699,7 +800,7 @@ export default function TradePanel({
                       />
                     </F>
 
-                    <F label={t("Status")} span2>
+                    <F label={entryFields.label("status", t("Status"))} action={<EntryFieldActions active={customizingSection === "performance"} id="status" label={t("Status")} settings={entryFields} />} span2>
                       <div className="flex flex-wrap gap-1.5">
                         {[
                           { value: null, label: "Auto" },
@@ -736,13 +837,13 @@ export default function TradePanel({
                       )}
                     </F>
 
-                    <F label={t("Commission")} error={errors.commission?.message}>
+                    {entryFields.visible("commission") && (<F label={entryFields.label("commission", t("Commission"))} action={<EntryFieldActions active={customizingSection === "performance"} id="commission" label={t("Commission")} settings={entryFields} />} error={errors.commission?.message}>
                       <DollarInput placeholder="0.00" {...register("commission")} />
-                    </F>
+                    </F>)}
 
-                    <F label="Swap" error={errors.swap?.message}>
+                    {entryFields.visible("swap") && (<F label={entryFields.label("swap", t("Swap"))} action={<EntryFieldActions active={customizingSection === "performance"} id="swap" label={t("Swap")} settings={entryFields} />} error={errors.swap?.message}>
                       <DollarInput placeholder="0.00" {...register("swap")} />
-                    </F>
+                    </F>)}
                   </div>
                   <TradeCustomFields
                     section="performance"
@@ -754,37 +855,37 @@ export default function TradePanel({
                     disabled={customFields.loading || !!customFields.error}
                     showAdd={false}
                   />
+                {customizingSection === "performance" && <EntryFieldPreferences section="performance" settings={entryFields} />}
                 </section>
 
                 {/* ── Setup ── */}
                 <section>
-                  <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">{t("Setup")}</h3>
+                  <EntrySectionHeader section="setup" title={t("Setup")} active={customizingSection === "setup"} onToggle={toggleCustomization} />
+                  {customizingSection === "setup" && <p className="mb-3 text-xs text-zinc-500">Edit names and choices, or remove fields from your entry.</p>}
                   <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-x-4 gap-y-4">
-                    <F label={t("Reference TF")} id="trade-reference_timeframe">
+                    {entryFields.visible("reference_timeframe") && (<F label={entryFields.label("reference_timeframe", t("Reference TF"))} id="trade-reference_timeframe" action={<EntryFieldActions active={customizingSection === "setup"} id="reference_timeframe" label={t("Reference TF")} settings={entryFields} onEditOptions={() => setManageOptions("timeframes")} />}>
                       <Controller
                         name="reference_timeframe"
                         control={control}
                         render={({ field }) => (
-                          <SelectField translateOptions
+                          <TimeframeField
                             id="trade-reference_timeframe"
-                            label={t("Reference TF")}
+                            label={entryFields.label("reference_timeframe", t("Reference TF"))}
                             value={field.value}
                             onValueChange={field.onChange}
                             onBlur={field.onBlur}
                             ref={field.ref}
-                            options={TF_OPTIONS}
-                            placeholder={t("Select timeframe")}
                           />
                         )}
                       />
-                    </F>
+                    </F>)}
 
-                    <F
-                      label={t("Trade score")}
+                    {entryFields.visible("trade_score") && (<F
+                      label={entryFields.label("trade_score", t("Trade score"))}
                       id="trade-trade_score"
                       error={errors.trade_score?.message}
                       action={
-                        <FieldModeToggle
+                        <EntryFieldActions active={customizingSection === "setup"} id="trade_score" label={t("Trade score")} settings={entryFields}><FieldModeToggle
                           label={t("Quality rating style")}
                           options={[
                             {
@@ -802,7 +903,7 @@ export default function TradePanel({
                           ]}
                           value={ratingStyle}
                           onChange={setRatingStyle}
-                        />
+                        /></EntryFieldActions>
                       }
                     >
                       <Controller
@@ -818,88 +919,84 @@ export default function TradePanel({
                           />
                         )}
                       />
-                    </F>
+                    </F>)}
 
-                    <F label={t("Opportunity TF")} id="trade-opportunity_timeframe">
+                    {entryFields.visible("opportunity_timeframe") && (<F label={entryFields.label("opportunity_timeframe", t("Opportunity TF"))} id="trade-opportunity_timeframe" action={<EntryFieldActions active={customizingSection === "setup"} id="opportunity_timeframe" label={t("Opportunity TF")} settings={entryFields} onEditOptions={() => setManageOptions("timeframes")} />}>
                       <Controller
                         name="opportunity_timeframe"
                         control={control}
                         render={({ field }) => (
-                          <SelectField translateOptions
+                          <TimeframeField
                             id="trade-opportunity_timeframe"
-                            label={t("Opportunity TF")}
+                            label={entryFields.label("opportunity_timeframe", t("Opportunity TF"))}
                             value={field.value}
                             onValueChange={field.onChange}
                             onBlur={field.onBlur}
                             ref={field.ref}
-                            options={TF_OPTIONS}
-                            placeholder={t("Select timeframe")}
                           />
                         )}
                       />
-                    </F>
+                    </F>)}
 
-                    <F label={t("Entry TF")} id="trade-entry_timeframe">
+                    {entryFields.visible("entry_timeframe") && (<F label={entryFields.label("entry_timeframe", t("Entry TF"))} id="trade-entry_timeframe" action={<EntryFieldActions active={customizingSection === "setup"} id="entry_timeframe" label={t("Entry TF")} settings={entryFields} onEditOptions={() => setManageOptions("timeframes")} />}>
                       <Controller
                         name="entry_timeframe"
                         control={control}
                         render={({ field }) => (
-                          <SelectField translateOptions
+                          <TimeframeField
                             id="trade-entry_timeframe"
-                            label={t("Entry TF")}
+                            label={entryFields.label("entry_timeframe", t("Entry TF"))}
                             value={field.value}
                             onValueChange={field.onChange}
                             onBlur={field.onBlur}
                             ref={field.ref}
-                            options={TF_OPTIONS}
-                            placeholder={t("Select timeframe")}
                           />
                         )}
                       />
-                    </F>
+                    </F>)}
 
-                    <F label={t("Trend")} id="trade-trend_direction">
+                    {entryFields.visible("trend_direction") && (<F label={entryFields.label("trend_direction", t("Trend"))} id="trade-trend_direction" action={<EntryFieldActions active={customizingSection === "setup"} id="trend_direction" label={t("Trend")} settings={entryFields} onEditOptions={() => setManageOptions("trends")} />}>
                       <Controller
                         name="trend_direction"
                         control={control}
                         render={({ field }) => (
                           <SelectField translateOptions
                             id="trade-trend_direction"
-                            label={t("Trend")}
+                            label={entryFields.label("trend_direction", t("Trend"))}
                             value={field.value}
                             onValueChange={field.onChange}
                             onBlur={field.onBlur}
                             ref={field.ref}
-                            options={TREND_OPTIONS}
+                            options={trendOptions}
                             placeholder={t("Select trend")}
                           />
                         )}
                       />
-                    </F>
+                    </F>)}
 
-                    <F label={t("Session")} id="trade-session">
+                    {entryFields.visible("session") && (<F label={entryFields.label("session", t("Session"))} id="trade-session" action={<EntryFieldActions active={customizingSection === "setup"} id="session" label={t("Session")} settings={entryFields} onEditOptions={() => setManageOptions("sessions")} />}>
                       <Controller
                         name="session"
                         control={control}
                         render={({ field }) => (
                           <SelectField translateOptions
                             id="trade-session"
-                            label={t("Session")}
+                            label={entryFields.label("session", t("Session"))}
                             value={field.value}
                             onValueChange={field.onChange}
                             onBlur={field.onBlur}
                             ref={field.ref}
-                            options={SESSION_OPTIONS}
+                            options={sessionOptions}
                             placeholder={t("Select session")}
                           />
                         )}
                       />
-                    </F>
+                    </F>)}
 
-                    <F
-                      label={t("Setup")}
+                    {entryFields.visible("setup") && (<F
+                      label={entryFields.label("setup", t("Setup"))}
                       span2
-                      action={<ManageBtn onClick={() => setManageSetupsOpen(true)} />}
+                      action={<EntryFieldActions active={customizingSection === "setup"} id="setup" label={t("Setup")} settings={entryFields} onEditOptions={() => setManageSetupsOpen(true)} />}
                     >
                       <Controller
                         name="setup"
@@ -915,7 +1012,7 @@ export default function TradePanel({
                           />
                         )}
                       />
-                    </F>
+                    </F>)}
                   </div>
                   <TradeCustomFields
                     section="setup"
@@ -927,17 +1024,19 @@ export default function TradePanel({
                     disabled={customFields.loading || !!customFields.error}
                     showAdd={false}
                   />
+                {customizingSection === "setup" && <EntryFieldPreferences section="setup" settings={entryFields} />}
                 </section>
 
                 {/* ── Psychology ── */}
                 <section>
-                  <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">{t("Psychology")}</h3>
+                  <EntrySectionHeader section="psychology" title={t("Psychology")} active={customizingSection === "psychology"} onToggle={toggleCustomization} />
+                  {customizingSection === "psychology" && <p className="mb-3 text-xs text-zinc-500">Edit names and choices, or remove fields from your entry.</p>}
                   <div className="space-y-3">
-                    <F
-                      label={t("Emotion *")}
+                    {entryFields.visible("emotions") && (<F
+                      label={entryFields.label("emotions", t("Emotion"))}
                       error={errors.emotions?.message}
                       span2
-                      action={<ManageBtn onClick={() => setManageEmotionsOpen(true)} />}
+                      action={<EntryFieldActions active={customizingSection === "psychology"} id="emotions" label={t("Emotion")} settings={entryFields} onEditOptions={() => setManageEmotionsOpen(true)} />}
                     >
                       <TagPicker
                         selected={watchedEmotions}
@@ -946,12 +1045,12 @@ export default function TradePanel({
                         onCreateTag={catalog.addEmotionTag}
                         placeholder={t("Select emotions…")}
                       />
-                    </F>
+                    </F>)}
 
-                    <F
-                      label={t("Mistake")}
+                    {entryFields.visible("mistakes") && (<F
+                      label={entryFields.label("mistakes", t("Mistake"))}
                       span2
-                      action={<ManageBtn onClick={() => setManageMistakesOpen(true)} />}
+                      action={<EntryFieldActions active={customizingSection === "psychology"} id="mistakes" label={t("Mistake")} settings={entryFields} onEditOptions={() => setManageMistakesOpen(true)} />}
                     >
                       <TagPicker
                         selected={watchedMistakes}
@@ -961,7 +1060,7 @@ export default function TradePanel({
                         placeholder={t("Select mistakes…")}
                         emptyText="No errors"
                       />
-                    </F>
+                    </F>)}
                   </div>
                   <TradeCustomFields
                     section="psychology"
@@ -973,17 +1072,15 @@ export default function TradePanel({
                     disabled={customFields.loading || !!customFields.error}
                     showAdd={false}
                   />
+                {customizingSection === "psychology" && <EntryFieldPreferences section="psychology" settings={entryFields} />}
                 </section>
 
                 {/* ── Notes ── */}
                 <section>
-                  <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">{t("Notes")}</h3>
-                  <textarea
-                    rows={3}
-                    placeholder={t("General trade notes…")}
-                    className="w-full resize-none rounded-md border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-zinc-400/40"
-                    {...register("notes")}
-                  />
+                  <EntrySectionHeader section="notes" title={t("Notes")} active={customizingSection === "notes"} onToggle={toggleCustomization} />
+                  <F label={entryFields.label("notes", t("General trade notes"))} action={<EntryFieldActions active={customizingSection === "notes"} id="notes" label={t("General trade notes")} settings={entryFields} />}>
+                  <RichNotesEditor label={entryFields.label("notes", t("General trade notes"))} value={generalDocument} onChange={(content,text) => {notesDirty.current=true;setGeneralDocument(content);setValue("notes",text,{shouldDirty:true});}} />
+                  </F>
                   <TradeCustomFields
                     section="notes"
                     fields={customFields.fields}
@@ -998,12 +1095,16 @@ export default function TradePanel({
 
                 {/* ── Trade Notes ── */}
                 <section>
-                  <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">{t("Trade Notes")}</h3>
+                  <EntrySectionHeader section="trade_notes" title={t("Trade Notes")} active={customizingSection === "trade_notes"} onToggle={toggleCustomization} />
+                  <F label={entryFields.label("trade_notes", t("Trade Notes"))} action={<EntryFieldActions active={customizingSection === "trade_notes"} id="trade_notes" label={t("Trade Notes")} settings={entryFields} />}>
                   <TradeNotesEditor
                     sections={notesSections}
-                    onChange={setNotesSections}
+                    onChange={sections => {notesDirty.current=true;setNotesSections(sections);}}
                     onDeleteImage={handleDeleteBackendImage}
+                    wide={panelWidth > 760}
+                    onToggleWide={() => setPanelWidth(width => width > 760 ? 560 : Math.min(window.innerWidth, 1100))}
                   />
+                  </F>
                   <TradeCustomFields
                     section="trade_notes"
                     fields={customFields.fields}
@@ -1031,7 +1132,7 @@ export default function TradePanel({
                 <Trash2 className="size-3.5" />{t("Delete")}</Button>
             )}
             <div className="ml-auto flex gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={onClose}>{t("Cancel")}</Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => requestExit()}>{t("Cancel")}</Button>
               <Button
                 type="submit"
                 form="trade-form"
@@ -1042,8 +1143,38 @@ export default function TradePanel({
               </Button>
             </div>
           </SheetFooter>
+          {/* Keep portaled options in the sheet's React tree so touch dismissal stays local. */}
+          {manageOptions && <SetupOptionManager key={manageOptions} kind={manageOptions} onClose={() => setManageOptions(null)} />}
         </SheetContent>
       </Sheet>
+
+      <Dialog open={saveConfigurationOpen} onOpenChange={value => {if (!value) dismissConfiguration();}}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{exitPending ? "Unsaved layout changes" : "Save entry configuration"}</DialogTitle>
+            <DialogDescription>{exitPending ? "Save your layout before leaving, or discard your layout changes. Trade values are kept separate." : entryFields.accountBacked ? "Save your field names and visibility to your account." : "Save your field names and visibility in this browser."}</DialogDescription>
+          </DialogHeader>
+          <fieldset disabled={entryFields.saving} className="space-y-3">
+            <legend className="sr-only">Apply configuration to</legend>
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3">
+              <input type="radio" name="configuration-scope" value="journal" checked={configurationScope === "journal"} onChange={() => setConfigurationScope("journal")} className="mt-1 accent-emerald-400" />
+              <span><span className="block text-sm font-medium">This journal only</span><span className="text-xs text-muted-foreground">Reuse this layout for every trade in this journal.</span></span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3">
+              <input type="radio" name="configuration-scope" value="future" checked={configurationScope === "future"} onChange={() => setConfigurationScope("future")} className="mt-1 accent-emerald-400" />
+              <span><span className="block text-sm font-medium">This journal and all future journals</span><span className="text-xs text-muted-foreground">Use as your default. Other existing journals keep their layouts.</span></span>
+            </label>
+          </fieldset>
+          {entryFields.error && <p role="alert" className="text-sm text-red-400">{entryFields.error}</p>}
+          <DialogFooter className="sm:flex-wrap">
+            <Button type="button" variant="outline" disabled={entryFields.saving} onClick={dismissConfiguration}>Keep editing</Button>
+            {exitPending && <Button type="button" variant="outline" disabled={entryFields.saving} onClick={discardConfiguration}>Discard layout changes</Button>}
+            <Button type="button" disabled={entryFields.saving} onClick={saveConfiguration}>{entryFields.saving ? "Saving…" : "Save configuration"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {!open && configurationNotification}
 
       {/* Delete confirmation */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
@@ -1054,7 +1185,7 @@ export default function TradePanel({
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>{t("Cancel")}</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+            <Button variant="destructive" onClick={() => {setDeleteOpen(false);requestExit(handleDelete);}} disabled={deleting}>
               {deleting ? t("Deleting…") : t("Delete")}
             </Button>
           </DialogFooter>

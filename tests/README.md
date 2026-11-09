@@ -51,3 +51,129 @@ For real local backend timings excluding network, run `DATABASE_URL=sqlite:////t
 ## Currency selection and scrolling
 
 Run `npm run test:currency-scroll` with `PLAYWRIGHT_MODULE` as needed. The dense synthetic fixture toggles R, dollars and percent while scrolling down and back up at widths 320, 390, 768, 1280 and 1920. Assertions check the selected unit and KPI output, exactly one KPI block with four main values, no filter/KPI intersections, no report-section intersections and no horizontal overflow. Screenshots are saved under `artifacts/currency-scroll/`. The filter toolbar stays in normal document flow so it cannot cover the KPI cards while scrolling.
+## Favorite timeframes
+
+`npm run test:timeframe-favorites` exercises the real trade form: star/unstar
+without selecting or submitting, independent Reference/Opportunity/Entry shortcuts,
+non-favorite selection, save payload, persistence, cross-tab synchronization,
+keyboard selection, actual touch scrolling and 320/390/1280px layout. It also
+checks malformed and blocked storage. Use `PLAYWRIGHT_MODULE` as for the other browser runners. Captures are
+saved in `artifacts/timeframe-favorites/`.
+
+Favorites are a browser preference scoped to the signed-in user (id, or email
+fallback) and field. Each field has its own favorites, ordered by the existing
+shortest-to-longest timeframe list. Legacy shared favorites provide an initial
+starting point; subsequent changes are stored independently for each field.
+No timeframes are preselected or added to the supported list. Preference writes do not modify any trade or backend record.
+
+## Setup options and rating stars
+
+`npm run test:setup-options` covers Manage actions on all Setup fields except
+Trade score, custom timeframes/trends/sessions, safe removal of choices without
+changing trade values, restoring defaults, persistence and yellow favorite
+stars. Mobile touch checks at 320/390px and desktop verify that fractional
+rating fills share exactly the same origin and bounds as the original icons.
+
+Timeframes share a choice list; trends and sessions have their own lists.
+Choices are saved per signed-in user in this browser. Removing a choice only
+hides it from future selection; saved trades keep their original values.
+Custom fields use the existing 10/20/50-character timeframe/trend/session limits.
+Backend migration `0014_custom_trend_options` removes the fixed trend-choice
+restriction so custom trend names round-trip through the API. Existing trend
+codes and all financial calculations remain unchanged. Deploy the updated
+backend with its migration before using custom trends in a deployed frontend.
+
+## Inline trade image review
+
+`npm run test:image-review` pastes two synthetic chart images into the real notes
+editor, checks full-width stacking, resized image wrapping and original aspect
+ratios at 320/390/1440px,
+and opens the real read-only and editing sheets in Wide review. It verifies
+touch and keyboard fullscreen dismissal without closing the underlying trade,
+and image removal. Captures live in `artifacts/image-review/`. No live storage is used.
+
+Notes use one section canvas: the embedded editor and screenshots have no
+separate card frames. Visible filenames and the duplicate Full screen buttons
+are removed; image click opens the viewer. Images keep their original aspect
+ratios; smaller saved widths can share a row, while full-width images stack.
+Width sliders and Reset size are in each image's options menu; corner dragging
+and keyboard resizing remain available. Saved review groups screenshots with
+their matching note section. Desktop Wide review remains available.
+The image-review layout preserves the original image files. Rich formatting
+and persisted size metadata are described in the following section.
+
+## Rich notes and saved image sizes
+
+`npm run test:rich-notes` exercises the actual TipTap toolbar, structured save and
+reload, plaintext compatibility, read-only formatted rendering, slider/keyboard/
+pointer image resizing, metadata-save failure/retry and mobile wrapping.
+Captures are in `artifacts/rich-notes/`. The existing image-review runner also
+continues to cover paste, fullscreen, aspect ratios and wide review.
+
+TipTap is loaded only when editing notes. General notes and each review section
+support headings 1–3, lists, bold/italic/underline/strike, quotes, colors and undo.
+The backend stores versioned JSON in `notes_document`; `notes` retains a plain
+text summary for search and older views. Legacy text loads without migration of
+its content, and formatted review uses React nodes rather than arbitrary HTML.
+
+Each screenshot stores `display_width` (25–100 percent), while the original
+image remains unchanged. Backend migration `0015_rich_notes_and_image_size` must
+be applied with the updated API before deploying this frontend. The screenshot
+PATCH endpoint is journal/trade scoped and accepts width/section metadata.
+No financial formula is changed.
+
+## Entry layout preferences
+
+`npm run test:entry-preferences` checks section customization, protected calculation
+fields, optional fee fields, account saving for one journal or future journals,
+save failure/retry, unchanged/reverted edits, exit Save/Discard/Keep editing, and
+accessible save confirmations. API data is stubbed; no live journals are changed.
+Set `PLAYWRIGHT_MODULE` to an installed Playwright entry point and `CHROMIUM_PATH`
+to a Chromium executable when needed. Screenshots are saved in
+`artifacts/entry-preferences/`. Deploy the backend's user entry configuration
+migration before the frontend to enable account-backed preferences.
+
+## Sidebar navigation and Overview
+
+`npm run test:navigation` starts the real application with synthetic HTTP responses
+at the API boundary. It covers Overview, Journal, Analytics (Performance / Breakdown),
+Settings (Account / Custom Fields), legacy deep links, reloads, account switching,
+retained filters, the collapsed sidebar and mobile drawer at 320/390/768/1440px.
+It checks that Edit dropdown options → Done leaves the trade open, and that an explicit trade
+edit refreshes both Overview and Analytics. No live accounts are used. Screenshots
+are saved under `artifacts/navigation/`.
+
+The existing `/journal/:id?tab=...` URLs remain supported. `/dashboard` retains
+account creation/selection/deletion; opening an account starts on Overview.
+Overview stays focused on four essential KPIs, a compact equity chart, trade
+status counts (including open positions) and the five most recent trades,
+including open trades. Detailed donut charts stay in Analytics, beside equity
+on wide layouts and before equity on narrow layouts. Analytics highlights
+Expectancy and Payoff Ratio; Overview shows Net Result, Win Rate, Max Drawdown
+and Closed Trades. Overview uses an equity-only chart; the full drawdown chart
+remains in Analytics.
+All trading calculations use the existing analytics helpers.
+No backend migration or new dependency is required.
+
+
+## Manual screenshot placement
+
+`npm run test:image-placement` verifies real mouse and touch dragging, explicit
+Above/Below/Left/Right drop targets, moves into other note sections, auto-scroll
+and Escape cancellation. The grip button also opens image options with labelled
+Move to / Placement controls for keyboard and touch use. Picking a destination
+is required before the Move image action is enabled.
+
+Manual rows stay separate even if smaller images could fit side by side. Placing
+images beside each other retains their widths when possible and fits oversized
+images evenly in the row, up to the existing four-image / 25%-minimum constraint.
+
+Order and row breaks are stored as optional `image_layout` arrays of screenshot
+IDs in `notes_document.sections`. Existing widths and section metadata continue
+to use the screenshot API. New uploads finalize their IDs before saving layout;
+a failed final save can be retried without duplicate uploads. Legacy documents
+and unknown/unreferenced screenshot IDs remain readable. The existing backend
+JSON validator accepts and preserves the metadata; no migration is needed.
+The browser test covers save/reload, shuffled API image order, read-only review,
+and layout-save failure/retry. `npm test` also covers the layout transformations.
+Captures are in `artifacts/image-placement/`.

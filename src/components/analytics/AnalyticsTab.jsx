@@ -78,6 +78,7 @@ function AnalyticsTab({
   syntheticBusy,
   syntheticError,
   onToggleSynthetic,
+  embedded = false,
 }) {
   useLanguage();
   const [selectedTrade, setSelectedTrade] = useState(null);
@@ -225,12 +226,12 @@ function AnalyticsTab({
 
   return (
     <div className="analytics-page space-y-5 min-[900px]:space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3 pb-1">
+      {!embedded && <div className="flex flex-wrap items-end justify-between gap-3 pb-1">
         <div>
           <h2 className="text-[22px] font-medium leading-8 tracking-tight text-ink">{t("Performance")}</h2>
           <p className="mt-1 text-[13px] leading-5 text-ink-secondary">{t("Returns, risk and the patterns behind your trades.")}</p>
         </div>
-      </div>
+      </div>}
       {header}
       <TradeDetailPanel
         trade={
@@ -262,11 +263,12 @@ function AnalyticsTab({
         />
       ) : (
         <>
-          <DonutSection analytics={analytics} />
-
-          <KpiRow summary={analytics.summary} unit={analytics.unit} />
-
-          <EquitySection analytics={analytics} />
+          <KpiRow summary={analytics.summary} unit={analytics.unit}>
+            <div className="analytics-featured-insights grid gap-5">
+              <DonutSection analytics={analytics} />
+              <div className="analytics-featured-equity"><EquitySection analytics={analytics} /></div>
+            </div>
+          </KpiRow>
 
           <SequenceCards analytics={analytics} onOpenTrade={setSelectedTrade} />
 

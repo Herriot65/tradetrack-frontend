@@ -7,7 +7,7 @@ const server=await preview({preview:{host:'127.0.0.1',port:4197,strictPort:true}
 let browser;
 const user={id:1,email:'session@example.test',first_name:'Session',last_name:'Test',timezone:'UTC'};
 try {
- browser=await chromium.launch({headless:true,channel:'chrome'});
+ browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{channel:'chrome'})});
  async function scenario(tokens,handler,check){
   const context=await browser.newContext();
   await context.addInitScript(tokens=>{for(const [key,value] of Object.entries(tokens))localStorage.setItem(key,value);},tokens);
@@ -44,24 +44,63 @@ try {
   assert.equal(refreshes,1);
   assert.equal(await page.evaluate(()=>localStorage.getItem('refresh')),'rotated');
  });
- let offline=true;
- await scenario({access:'saved',refresh:'saved-refresh'},async({route,path})=>{
-  if(path==='/api/auth/me/'&&offline){await route.abort('failed');return true;}
+ let attempts=0;
+ await scenario({access:'saved',refresh:'saved-refresh'},async({path,reply})=>{
+  if(path==='/api/auth/me/' && ++attempts < 3){await reply(503,{});return true;}
  },async page=>{
-  await page.getByRole('heading',{name:'Unable to restore your session'}).waitFor();
-  assert.equal(await page.evaluate(()=>localStorage.getItem('access')),'saved');
-  offline=false;await page.getByRole('button',{name:'Try again',exact:true}).click();
+  await page.getByRole('heading',{name:'Welcome, Session!'}).waitFor();
+  assert.equal(attempts,3);
+  assert.equal(await page.getByText('Reconnecting to your account…',{exact:true}).count(),0);
+  assert.equal(await page.evaluate(()=>localStorage.getItem('refresh')),'saved-refresh');
+  await page.reload();
   await page.getByRole('heading',{name:'Welcome, Session!'}).waitFor();
  });
- await scenario({access:'expired',refresh:'valid'},async({path,reply})=>{
-  if(path==='/api/auth/me/'){await reply(401,{});return true;}
-  if(path==='/api/auth/refresh/')return true; // Intentionally never reply: exercise the real timeout.
+ await scenario({},async({path,reply})=>{
+  if(path==='/api/auth/login/'){
+   attempts++;
+   await reply(attempts===1?503:200,attempts===1?{}:{access:'new',refresh:'new-refresh',user});return true;
+  }
  },async page=>{
-  await page.getByRole('heading',{name:'Unable to restore your session'}).waitFor();
+  attempts=0;
+  await page.getByLabel('Email',{exact:true}).fill('session@example.test');
+  await page.getByLabel('Password',{exact:true}).fill('Example123!');
+  await page.getByRole('button',{name:'Sign in',exact:true}).click();
+  await page.getByRole('heading',{name:'Welcome, Session!'}).waitFor();
+  assert.equal(attempts,2);
+ });
+ let offline=true, checks=0;
+ await scenario({access:'saved',refresh:'saved-refresh',nexora_session_user:JSON.stringify(user)},async({route,path,reply})=>{
+  if(path==='/api/auth/me/'){
+   checks++;
+   if(offline){await route.abort('failed');return true;}
+   await reply(200,{...user,first_name:'Restored'});return true;
+  }
+ },async page=>{
+  await page.getByRole('heading',{name:'Welcome, Session!'}).waitFor();
+  await page.waitForFunction(()=>localStorage.getItem('access')==='saved');
+  // Exhaust the short request retries while the saved account stays visible.
+  await new Promise(resolve=>setTimeout(resolve,2500));
+  assert.ok(checks>=3);
+  await page.getByRole('heading',{name:'Welcome, Session!'}).waitFor();
+  assert.equal(await page.getByRole('alert').count(),0);
+  offline=false;
+  // No button or user action is needed for background recovery.
+  await page.getByRole('heading',{name:'Welcome, Restored!'}).waitFor();
+  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('nexora_session_user'))).first_name,'Restored');
+ });
+ let refreshAttempts=0;
+ await scenario({access:'expired',refresh:'valid',nexora_session_user:JSON.stringify(user)},async({path,reply})=>{
+  if(path==='/api/auth/me/'){await reply(401,{});return true;}
+  if(path==='/api/auth/refresh/'){refreshAttempts++;return true;}
+ },async page=>{
+  await page.getByRole('heading',{name:'Welcome, Session!'}).waitFor();
+  // Verify timeout recovery remains invisible through a complete retry cycle.
+  const deadline=Date.now()+55000;
+  while(refreshAttempts<4 && Date.now()<deadline) await new Promise(resolve=>setTimeout(resolve,500));
+  assert.ok(refreshAttempts>=4);
+  await page.getByRole('heading',{name:'Welcome, Session!'}).waitFor();
   assert.equal(await page.evaluate(()=>localStorage.getItem('refresh')),'valid');
-  await page.getByRole('button',{name:'Back to sign in',exact:true}).click();
-  await page.getByRole('button',{name:'Sign in',exact:true}).waitFor();
-  assert.equal(await page.evaluate(()=>localStorage.getItem('refresh')),null);
+  assert.equal(await page.getByRole('alert').count(),0);
  });
  await scenario({access:'expired',refresh:'valid'},async({path,reply})=>{
   if(path==='/api/auth/me/'){await reply(401,{});return true;}
@@ -73,6 +112,7 @@ try {
   await page.getByRole('menuitem',{name:'Sign out',exact:true}).click();
   await page.getByRole('button',{name:'Sign in',exact:true}).waitFor();
   assert.equal(await page.evaluate(()=>localStorage.getItem('access')),null);
+  assert.equal(await page.evaluate(()=>localStorage.getItem('nexora_session_user')),null);
   await page.reload();
   await page.getByRole('button',{name:'Sign in',exact:true}).waitFor();
  });

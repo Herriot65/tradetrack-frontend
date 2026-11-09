@@ -1,5 +1,7 @@
+import { AuthContext } from "../src/auth/AuthContext";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
+import TradeDetailPanel from "../src/components/journal/TradeDetailPanel";
 import TradePanel from "../src/components/journal/TradePanel";
 import { createTrade, updateTrade } from "../src/api/trades.api";
 import api from "../src/api/axios";
@@ -52,11 +54,24 @@ let definitions = customMode
 if (customMode && localStorage.getItem("fixture-custom-trade"))
   stored = JSON.parse(localStorage.getItem("fixture-custom-trade"));
 window.__tradeSaves = 0;
+window.__imageUploads = 0;
+window.__uploadedImages = [];
 window.__definitionWrites = 0;
 api.defaults.adapter = async (config) => {
   const reply = (data) => ({ data, status: 200, statusText: "OK", headers: {}, config });
   if (config.url.endsWith("/custom-fields/")) {
-    if (config.method !== "get") {
+    if (config.url.includes('/screenshots/')) {
+    if (config.method === 'post') {
+      window.__imageUploads++;
+      const image={id:Date.now()+Math.random(),image_url:await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(config.data.get('file'));}),section:config.data.get('section'),display_width:Number(config.data.get('display_width')||100)};
+      window.__uploadedImages.push({name:config.data.get('file').name,id:image.id});stored.screenshots=[...(stored.screenshots??[]),image];if(customMode)localStorage.setItem("fixture-custom-trade",JSON.stringify(stored));return reply(image);
+    }
+    if(config.method==='patch') {
+      if(window.__failImageWidthOnce){window.__failImageWidthOnce=false;throw new Error('Synthetic image metadata failure');}
+      const changes=JSON.parse(config.data);const image=stored.screenshots.find(image=>config.url.includes('/'+image.id+'/'));Object.assign(image,changes);if(customMode)localStorage.setItem("fixture-custom-trade",JSON.stringify(stored));return reply(image);
+    }
+  }
+  if (config.method !== "get") {
       const definition = { ...JSON.parse(config.data), id: definitions.length + 1 };
       definitions.push(definition);
       window.__definitionWrites++;
@@ -66,8 +81,25 @@ api.defaults.adapter = async (config) => {
     }
     return reply(definitions);
   }
+  if (config.url.includes('/screenshots/')) {
+    if (config.method === 'post') {
+      window.__imageUploads++;
+      const image={id:Date.now()+Math.random(),image_url:await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(config.data.get('file'));}),section:config.data.get('section'),display_width:Number(config.data.get('display_width')||100)};
+      window.__uploadedImages.push({name:config.data.get('file').name,id:image.id});stored.screenshots=[...(stored.screenshots??[]),image];if(customMode)localStorage.setItem("fixture-custom-trade",JSON.stringify(stored));return reply(image);
+    }
+    if(config.method==='patch') {
+      if(window.__failImageWidthOnce){window.__failImageWidthOnce=false;throw new Error('Synthetic image metadata failure');}
+      const changes=JSON.parse(config.data);const image=stored.screenshots.find(image=>config.url.includes('/'+image.id+'/'));Object.assign(image,changes);if(customMode)localStorage.setItem("fixture-custom-trade",JSON.stringify(stored));return reply(image);
+    }
+  }
   if (config.method !== "get") {
     const payload = JSON.parse(config.data);
+    if (Object.keys(payload).length === 1 && payload.notes_document) {
+      if (window.__failImageLayoutOnce) {window.__failImageLayoutOnce=false;throw new Error('Synthetic image layout failure');}
+      stored={...stored,notes_document:payload.notes_document};
+      if(customMode)localStorage.setItem('fixture-custom-trade',JSON.stringify(stored));
+      return reply(stored);
+    }
     window.__tradePayload = payload;
     window.__tradeSaves++;
     stored = {
@@ -84,6 +116,7 @@ api.defaults.adapter = async (config) => {
 
 function App() {
   const [open, setOpen] = useState(true);
+  const [review, setReview] = useState(false);
   const [mode, setMode] = useState(
     new URLSearchParams(location.search).has("edit") ? "edit" : "new",
   );
@@ -109,27 +142,48 @@ function App() {
       <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }} data-testid="saved-trade">
         {JSON.stringify(trade)}
       </pre>
+      <button type="button" onClick={()=>setReview(true)}>Review saved details</button>
+      <TradeDetailPanel trade={trade} open={review} onClose={()=>setReview(false)}/>
       <TradePanel
         mode={mode}
         trade={mode === "edit" ? trade : null}
         open={open}
         onClose={() => setOpen(false)}
-        onSave={async (payload) => {
+        onSave={async (payload,savedDraftId) => {
           const result =
-            mode === "edit"
-              ? await updateTrade(1, trade.id, payload)
+            savedDraftId || mode === "edit"
+              ? await updateTrade(1, savedDraftId ?? trade.id, payload)
               : await createTrade(1, payload);
           setTrade(result);
           return result;
         }}
         catalog={catalog}
-        journalId={1}
+        journalId={Number(new URLSearchParams(location.search).get("journal") || 1)}
       />
     </>
   );
 }
+function AccountFixture({children}) {
+ const [user, setUser] = useState(() => ({id:42,entry_configuration:JSON.parse(localStorage.getItem('fixture-account-configuration') || '{}')}));
+ if (!new URLSearchParams(location.search).has('account')) return children;
+ return <AuthContext.Provider value={{user,updatePreferences:async payload => {
+  window.__configurationPayload = payload;
+  if (window.__failConfigurationSave) throw new Error('Synthetic save failure');
+  const change = payload.entry_configuration_update;
+  const config = structuredClone(user.entry_configuration);
+  config.journals ??= {};
+  if (change.scope === 'future') {
+   for (const id of [1,2]) config.journals[id] ??= structuredClone(config.defaults ?? {});
+   config.defaults = change.fields;
+  }
+  config.journals[change.journal_id] = change.fields;
+  localStorage.setItem('fixture-account-configuration',JSON.stringify(config));
+  setUser({...user,entry_configuration:config});
+  return {...user,entry_configuration:config};
+ }}}>{children}</AuthContext.Provider>;
+}
 createRoot(document.getElementById("root")).render(
   <JournalContext.Provider value={{ activeJournal: { id: 1, startingCapital: 10000 } }}>
-    <App />
+    <AccountFixture><App /></AccountFixture>
   </JournalContext.Provider>,
 );

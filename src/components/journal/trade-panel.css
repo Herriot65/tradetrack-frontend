@@ -24,3 +24,5 @@
 .trade-panel-body form > .mb-6 {
   flex-wrap: wrap;
 }
+
+[data-wide-review="true"] .trade-panel-body > form { max-width: none; }
