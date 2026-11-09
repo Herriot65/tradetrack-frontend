@@ -46,7 +46,7 @@ export default function Navbar() {
             </Button>
           )}
           <Button asChild>
-            <Link to="/register">{t("Get started")}<ArrowUpRight />
+            <Link to={user ? "/dashboard" : "/register"}>{user ? t("Dashboard") : t("Get started")}<ArrowUpRight />
             </Link>
           </Button>
         </div>
@@ -90,7 +90,7 @@ export default function Navbar() {
               </Button>
             )}
             <Button asChild className="flex-1">
-              <Link to="/register">{t("Get started")}</Link>
+              <Link to={user ? "/dashboard" : "/register"}>{user ? t("Dashboard") : t("Get started")}</Link>
             </Button>
           </div>
         </nav>
