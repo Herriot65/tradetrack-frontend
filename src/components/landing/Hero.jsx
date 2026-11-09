@@ -1,5 +1,6 @@
 import { translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
+import { useAuth } from "@/auth/useAuth";
 import { Link } from "react-router-dom";
 import { ArrowRight, ArrowDown, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import ProductPreview from "./ProductPreview";
 
 export default function Hero() {
   useLanguage();
+  const { isAuthenticated } = useAuth();
   return (
     <Section className="overflow-hidden !pb-16 !pt-32 md:!pb-24 md:!pt-44">
       <div
@@ -26,7 +28,7 @@ export default function Hero() {
           <p className="max-w-md text-[15px] leading-7 text-muted-foreground">{t("Your trade history has a story to tell. Nexora brings your journal, analytics, and trading process into one clear picture—so you can stop guessing and start improving.")}</p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <Button asChild size="lg">
-              <Link to="/register">{t("Get started")}<ArrowRight className="size-4" />
+              <Link to={isAuthenticated ? "/dashboard" : "/register"}>{isAuthenticated ? t("Dashboard") : t("Get started")}<ArrowRight className="size-4" />
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg">
