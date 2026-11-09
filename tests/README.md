@@ -50,7 +50,7 @@ For real local backend timings excluding network, run `DATABASE_URL=sqlite:////t
 
 ## Currency selection and scrolling
 
-Run `npm run test:currency-scroll` with `PLAYWRIGHT_MODULE` as needed. The dense synthetic fixture toggles R, dollars and percent while scrolling down and back up at widths 320, 390, 768, 1280 and 1920. Assertions check the selected unit and KPI output, exactly one KPI block with four main values, no filter/KPI intersections, no report-section intersections and no horizontal overflow. Screenshots are saved under `artifacts/currency-scroll/`. The filter toolbar stays in normal document flow so it cannot cover the KPI cards while scrolling.
+Run `npm run test:currency-scroll` with `PLAYWRIGHT_MODULE` as needed. The dense synthetic fixture tests $50, $100,000 and $100,000,000 capital and toggles R, dollars and percent while scrolling down and back up at widths 320, 390, 768, 1280 and 1920. Assertions check a bounded sequence-axis tick count independent of currency/account size, the selected unit and KPI output, exactly one KPI block with four main values, no filter/KPI intersections, no report-section intersections and no horizontal overflow. Screenshots are saved under `artifacts/currency-scroll/`. The filter toolbar stays in normal document flow so it cannot cover the KPI cards while scrolling.
 ## Favorite timeframes
 
 `npm run test:timeframe-favorites` exercises the real trade form: star/unstar

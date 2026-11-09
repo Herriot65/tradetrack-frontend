@@ -15,7 +15,9 @@ export default function SequenceCards({analytics, onOpenTrade}) {
   const sequence = view === "sequence";
   const data = sequence ? trades : distribution;
   const extent = Math.max(2, Math.ceil(Math.max(...trades.map(t => Math.abs(t.value)),0)/2)*2);
-  const ticks = sequence ? Array.from({length:extent+1},(_,i)=>-extent+i*2) : niceTicks(0,Math.max(1,...distribution.map(b=>b.count)),3);
+  // Tick density is a visual constraint, independent of the selected currency.
+  // A fixed two-unit step generates thousands of overlapping labels in dollars.
+  const ticks = sequence ? niceTicks(-extent,extent,5) : niceTicks(0,Math.max(1,...distribution.map(b=>b.count)),3);
   const low = ticks[0], high=ticks.at(-1);
   const y = v => 220 - (v-low)/(high-low)*200;
   const slot = (width - 70) / Math.max(1,data.length);

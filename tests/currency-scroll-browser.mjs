@@ -10,15 +10,16 @@ try{
  const page=await browser.newPage({viewport:{width:1280,height:900}});page.setDefaultTimeout(10000);
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await mkdir('artifacts/currency-scroll',{recursive:true});
- for(const width of [320,390,768,1280,1920]) {
+ for(const capital of [50,100000,100000000]) for(const width of [320,390,768,1280,1920]) {
   await page.setViewportSize({width,height:900});
-  await page.goto('http://127.0.0.1:4186/tests/analytics.html?dense');
+  await page.goto(`http://127.0.0.1:4186/tests/analytics.html?dense&capital=${capital}`);
   await page.getByRole('group',{name:'Date range',exact:true}).getByRole('button',{name:'All',exact:true}).click();
   for(const label of ['$', 'R', '%', '$']) {
    await page.evaluate(()=>scrollTo(0,0));
    const selector=page.getByRole('group',{name:'Display unit',exact:true});
    await selector.getByRole('button',{name:label,exact:true}).click();
    await page.waitForFunction(label=>document.querySelector('[aria-label="Display unit"] button[aria-pressed="true"]')?.textContent===label,label);
+   assert.ok(await page.locator('svg[aria-label="Trade results in sequence"] > g > line').count() <= 12, 'Sequence axis must have a bounded number of ticks in every currency');
    const kpis=page.getByTestId('analytics-kpis');
    assert.equal(await kpis.count(),1);
    const value=await kpis.locator('.analytics-kpi-value').first().textContent();
@@ -40,8 +41,8 @@ try{
    }
   }
   await page.evaluate(()=>scrollTo(0,600));
-  await page.screenshot({path:`artifacts/currency-scroll/scroll-${width}.png`});
+  await page.screenshot({path:`artifacts/currency-scroll/scroll-${capital}-${width}.png`});
  }
  assert.deepEqual(errors,[]);
- console.log('Passed: R/$/% toggles, one KPI block, no toolbar/card intersections or section overlap, no horizontal overflow, bidirectional scrolling at 5 viewport widths.');
+ console.log('Passed: R/$/% toggles, one KPI block, no toolbar/card intersections or section overlap, no horizontal overflow, bidirectional scrolling at 5 viewport widths with $50, $100k and $100m capital.');
 }finally{await browser?.close();await server.close();}

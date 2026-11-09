@@ -54,7 +54,7 @@ api.defaults.adapter = async (config) => {
 const journal = {
   id: 1,
   name: "Test journal",
-  startingCapital: 50,
+  startingCapital: Number(new URLSearchParams(location.search).get("capital")) || 50,
   currency: "USD",
   breakEvenMethod: "ratio",
   breakEvenValue: 0,
