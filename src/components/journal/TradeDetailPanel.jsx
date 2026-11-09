@@ -1,6 +1,6 @@
 import { translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
-import { useState, useContext } from "react";
+import { Fragment, useState, useContext } from "react";
 import { JournalContext } from "@/journals/JournalContext";
 import { tradeAmount, riskDisplayAmount, formatValue } from "@/lib/analytics";
 import { formatDate } from "@/lib/formatters";
@@ -13,6 +13,8 @@ import {
   SheetDescription,
   SheetBody,
 } from "@/components/ui/sheet";
+import { imageSectionOwners, restoreImageLayout } from "@/lib/imageLayout";
+import { documentText } from "@/lib/noteDocument";
 import RichNotesContent from "@/components/notes/RichNotesContent";
 import { Button } from "@/components/ui/button";
 import TradeImage from "./TradeImage";
@@ -62,6 +64,22 @@ export default function TradeDetailPanel({ trade, open, onClose }) {
   const [wide, setWide] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState(null);
   if (!trade) return null;
+  const screenshots = trade.screenshots ?? [];
+  const usedImages = new Set();
+  const owners = imageSectionOwners(trade.notes_document?.version===1 ? trade.notes_document.sections : []);
+  const noteSections = trade.notes_document?.version === 1 ? (trade.notes_document.sections ?? []).map(section => {
+    const images = screenshots.filter(image => (owners.has(String(image.id)) ? owners.get(String(image.id))===section.id : image.section === section.title) && !usedImages.has(image));
+    images.forEach(image => usedImages.add(image));
+    return {...section, images:restoreImageLayout(images,section.image_layout)};
+  }) : [];
+  const otherImages = screenshots.filter(image => !usedImages.has(image));
+  const widthToggle = screenshots.length > 0 && <Button type="button" variant="outline" size="sm" className="hidden md:flex" aria-pressed={wide} onClick={() => setWide(value => !value)}>{wide ? t("Standard width") : t("Wide review")}</Button>;
+  function renderImages(images) {
+    return <div className="trade-note-images">{images.map((image,index) => <Fragment key={image.id}>{index>0 && image.startRow && <span className="trade-image-break" aria-hidden="true"/>}<TradeImage key={image.id} src={image.image_url} width={image.display_width ?? 100}
+      label={image.section ? t("{section} · Screenshot {number}", {section:image.section,number:screenshots.indexOf(image)+1}) : t("Screenshot {number}",{number:screenshots.indexOf(image)+1})}
+      onOpen={() => setLightboxSrc(image.image_url)} /></Fragment>)}</div>;
+  }
+
 
   const statusColor = STATUS_COLORS[trade._derivedStatus] ?? STATUS_COLORS.BE;
   const sideColor = SIDE_COLORS[trade.side] ?? "";
@@ -136,38 +154,38 @@ export default function TradeDetailPanel({ trade, open, onClose }) {
               </section>
             )}
 
-            {/* Notes */}
+            {/* Keep each saved note and its screenshots together in one reading flow. */}
             {(trade.notes || trade.notes_document?.version === 1) && (
-              <section className="space-y-4">
-                <h3 className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{t("Notes")}</h3>
+              <section className="rich-notes-readonly space-y-4">
+                <div className="flex items-center justify-between gap-3"><h3 className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{t("Notes")}</h3>{widthToggle}</div>
                 {trade.notes_document?.version === 1 ? <>
-                  <RichNotesContent document={trade.notes_document.general}/>
-                  {trade.notes_document.sections?.map(section => <div key={section.id}><h4 className="text-sm font-medium">{section.title}</h4><RichNotesContent document={section.content}/></div>)}
-                </> : <p className="whitespace-pre-wrap rounded-md border border-border p-3 text-sm">{trade.notes}</p>}
+                  {documentText(trade.notes_document.general).trim() && <RichNotesContent document={trade.notes_document.general}/>}
+                  {noteSections.filter(section => documentText(section.content).trim() || section.images.length).map(section => <div key={section.id} className="space-y-3">
+                    <h4 className="text-sm font-medium">{section.title}</h4>
+                    {documentText(section.content).trim() && <RichNotesContent document={section.content}/>}
+                    {section.images.length > 0 && renderImages(section.images)}
+                  </div>)}
+                </> : <p className="whitespace-pre-wrap text-sm">{trade.notes}</p>}
               </section>
             )}
 
-            {/* Screenshots */}
-            {trade.screenshots?.length > 0 && (
+            {otherImages.length > 0 && (
               <section>
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h3 className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{t("Screenshots")}</h3>
-                  <Button type="button" variant="outline" size="sm" className="hidden md:flex" aria-pressed={wide} onClick={() => setWide(value => !value)}>{wide ? t("Standard width") : t("Wide review")}</Button>
+                  {!(trade.notes || trade.notes_document?.version === 1) && widthToggle}
                 </div>
-                <div className="space-y-4">
-                  {trade.screenshots.map((image,index) => <TradeImage key={image.id} src={image.image_url} width={image.display_width ?? 100}
-                    label={image.section ? t("{section} · Screenshot {number}", {section:image.section,number:index+1}) : t("Screenshot {number}",{number:index+1})}
-                    onOpen={() => setLightboxSrc(image.image_url)} />)}
-                </div>
+                {renderImages(otherImages)}
               </section>
             )}
 
           </div>
         </SheetBody>
+        {/* Keep viewer touch events inside the trade sheet's interaction tree. */}
+        {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
       </SheetContent>
     </Sheet>
 
-    {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
     </>
   );
 }

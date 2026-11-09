@@ -1,6 +1,7 @@
 import EntrySectionHeader from "./EntrySectionHeader";
 import EntryFieldActions from "./EntryFieldActions";
 import EntryFieldPreferences from "./EntryFieldPreferences";
+import { imageSectionOwners, restoreImageLayout, serializeImageLayout } from "@/lib/imageLayout";
 import { useEntryFieldPreferences } from "@/hooks/useEntryFieldPreferences";
 import { getLanguage, translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
@@ -132,13 +133,17 @@ function tradeToDefaults(trade, timezone = "UTC") {
 // the first default section.
 function buildSections(screenshots = [], document = {}) {
   const sections = document.version === 1 && document.sections?.length ? document.sections : DEFAULT_SECTIONS;
-  const map = new Map(sections.map(s => [s.title, {...s, text: documentText(s.content) || s.text || "", images: []}]));
+  const restored = sections.map(s => ({...s, text: documentText(s.content) || s.text || "", images: []}));
+  const owners = imageSectionOwners(sections);
   for (const sc of screenshots) {
-    const title = sc.section ?? DEFAULT_SECTIONS[0].title;
-    if (!map.has(title)) {
-      map.set(title, { id: `section-${title}`, title, text: "", images: [] });
+    const owner = sections.find(section => section.id === owners.get(String(sc.id)));
+    const title = owner?.title ?? sc.section ?? DEFAULT_SECTIONS[0].title;
+    let section = owner ? restored.find(item => item.id === owner.id) : restored.find(item => item.title === title);
+    if (!section) {
+      section = {id:`section-${title}`,title,text:"",images:[]};
+      restored.push(section);
     }
-    map.get(title).images.push({
+    section.images.push({
       id: sc.id,
       name: `screenshot-${sc.id}`,
       preview: sc.image_url,
@@ -146,10 +151,10 @@ function buildSections(screenshots = [], document = {}) {
       screenshotId: sc.id,
       width: sc.display_width ?? 100,
       savedWidth: sc.display_width ?? 100,
-      savedSection: title,
+      savedSection: sc.section ?? DEFAULT_SECTIONS[0].title,
     });
   }
-  return Array.from(map.values());
+  return restored.map(section => ({...section,images:restoreImageLayout(section.images,section.image_layout)}));
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -451,7 +456,7 @@ export default function TradePanel({
       session: values.session || null,
       status: values.status,
       notes: [values.notes, ...notesSections.map(section => section.text)].filter(Boolean).join("\n\n") || null,
-      notes_document: { version: 1, general: generalDocument, sections: notesSections.map(section => ({id:String(section.id).slice(0,100),title:section.title.slice(0,100),content:section.content ?? documentFromText(section.text)})) },
+      notes_document: { version: 1, general: generalDocument, sections: notesSections.map(section => ({id:String(section.id).slice(0,100),title:section.title.slice(0,100),content:section.content ?? documentFromText(section.text),image_layout:serializeImageLayout(section.images)})) },
       custom_fields: values.custom_fields ?? {},
       // Catalog ID fields — replace raw strings with backend IDs
       asset_id: catalog.assetMap.get(values.asset) ?? null,
@@ -482,6 +487,16 @@ export default function TradePanel({
           requestAnimationFrame(() => document.getElementById("trade-save-error")?.scrollIntoView({block:"center"}));
           return;
         }
+        const completedDocument = {...payload.notes_document,sections:payload.notes_document.sections.map((section,index)=>({...section,image_layout:serializeImageLayout(notesSections[index].images.map(image=>updates.get(image.id)??image))}))};
+        if (JSON.stringify(completedDocument) !== JSON.stringify(payload.notes_document)) {
+          try { await onSave({notes_document:completedDocument},tradeId); }
+          catch {
+            setError("root", {message:"Trade notes and images were saved, but their layout could not be saved. Save again to retry."});
+            requestAnimationFrame(() => document.getElementById("trade-save-error")?.scrollIntoView({block:"center"}));
+            return;
+          }
+        }
+
       }
       onClose();
     } catch (err) {
