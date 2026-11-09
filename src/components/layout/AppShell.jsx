@@ -11,6 +11,7 @@ import {
   LogOut,
   Menu,
   Settings,
+  Sparkles,
   X,
   ChevronDown,
 } from "lucide-react";
@@ -99,7 +100,7 @@ export default function AppShell({ children }) {
   const journalRoute = location.pathname.startsWith("/journal/");
   const journal = journals.find(item => String(item.id) === location.pathname.split('/')[2]) ?? activeJournal;
   const tab = new URLSearchParams(location.search).get('tab') ?? 'trades';
-  const section = !journalRoute ? 'accounts' : ['analytics','breakdown'].includes(tab) ? 'analytics' : ['settings','custom-fields'].includes(tab) ? 'settings' : tab === 'overview' ? 'overview' : 'journal';
+  const section = location.pathname === '/coach' ? 'coach' : !journalRoute ? 'accounts' : ['analytics','breakdown'].includes(tab) ? 'analytics' : ['settings','custom-fields'].includes(tab) ? 'settings' : tab === 'overview' ? 'overview' : 'journal';
   function sectionLink(next) {
     const params = new URLSearchParams(journalRoute ? location.search : '');
     params.set('tab', next);
@@ -109,6 +110,7 @@ export default function AppShell({ children }) {
     {id:'overview', label:'Overview', icon:LayoutDashboard, tab:'overview'},
     {id:'journal', label:'Journal', icon:BookOpen, tab:'trades'},
     {id:'analytics', label:'Analytics', icon:ChartNoAxesCombined, tab:'analytics'},
+    {id:'coach', label:'AI Coach', icon:Sparkles, href:'/coach'},
   ];
   function toggleCollapsed() {
     setCollapsed((value) => {
@@ -169,9 +171,9 @@ export default function AppShell({ children }) {
         </div>
         <nav className="flex-1 space-y-2 overflow-y-auto px-3 py-6" aria-label={t('Main sections')}>
           {destinations.map(item=><Hint key={item.id} label={t(item.label)}>
-            <Link to={sectionLink(item.tab)} className="nx-nav-item" data-active={section===item.id}
+            <Link to={item.href ?? sectionLink(item.tab)} className="nx-nav-item" data-active={section===item.id}
               aria-label={t(item.label)} aria-current={section===item.id?'page':undefined}
-              aria-disabled={!journal || undefined} onClick={event=>{if(!journal)event.preventDefault();else setMobileOpen(false);}}>
+              aria-disabled={(!journal && !item.href) || undefined} onClick={event=>{if(!journal && !item.href)event.preventDefault();else setMobileOpen(false);}}>
               <item.icon aria-hidden="true" className="size-[18px] shrink-0"/>
               <span className="nx-nav-label">{t(item.label)}</span>
             </Link>

@@ -4,6 +4,7 @@ import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import Coach from "./pages/Coach";
 import Journal from "./pages/Journal";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./auth/ProtectedRoute";
@@ -33,6 +34,7 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="/coach" element={<ProtectedRoute><Coach /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

@@ -106,7 +106,7 @@ export default function JournalSwitcher({ compact = false }) {
               key={j.id}
               onClick={() => {
                 selectJournal(j);
-                navigate(`/journal/${j.id}${location.pathname.startsWith("/journal/") ? location.search : "?tab=overview"}`);
+                navigate(location.pathname === "/coach" ? "/coach" : `/journal/${j.id}${location.pathname.startsWith("/journal/") ? location.search : "?tab=overview"}`);
               }}
               className="gap-2"
             >

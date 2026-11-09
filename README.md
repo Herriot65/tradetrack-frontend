@@ -235,3 +235,16 @@ Google authentication: set `VITE_GOOGLE_CLIENT_ID` to your Google OAuth web clie
 ID, matching backend `GOOGLE_CLIENT_ID`. Register the frontend origin in Google
 Cloud's authorized JavaScript origins. Rebuild after changing Vite environment
 variables. See the backend readme for setup and migration instructions.
+
+
+## AI Coach
+
+Open **AI Coach** in the sidebar (`/coach`) for conversation, output controls,
+and arbitrary scheduled coaching tasks scoped to the selected journal.
+The feature uses the Django backend; it does not simulate AI responses.
+See [backend setup](https://github.com/Herriot65/tradetrack-backend/blob/main/docs/ai-coach.md) for the server API
+key, migration, scheduler, data access, and usage limits.
+
+Run `npm run test:coach` for the mocked browser flow. Set `PLAYWRIGHT_MODULE`
+if Playwright is installed outside this project. No paid AI calls are made
+by this test.
