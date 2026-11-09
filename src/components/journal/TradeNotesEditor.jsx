@@ -1,9 +1,11 @@
 import { translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
-import { useRef, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import { ImagePlus, Plus, X, Maximize2, Minimize2 } from "lucide-react";
 import RichNotesEditor from "@/components/notes/RichNotesEditor";
 import { documentFromText } from "@/lib/noteDocument";
+import { flattenImageRows, imageRows, placeImage } from "@/lib/imageLayout";
+import { useImagePlacement } from "@/hooks/useImagePlacement";
 import TradeImage from "./TradeImage";
 import ImageLightbox from "./ImageLightbox";
 
@@ -12,6 +14,15 @@ export const DEFAULT_SECTIONS = [
   { id: "during", title: "During",                text: "", images: [] },
   { id: "after",  title: "After",                 text: "", images: [] },
 ];
+
+function placementTargets(sections, sourceSectionId, sourceImageId) {
+  return sections.flatMap((section,index) => {
+    const title = DEFAULT_SECTIONS.some(item=>item.id===section.id&&item.title===section.title) ? t(section.title) : section.title;
+    const label = sections.filter(item=>item.title===section.title).length>1 ? `${title} · ${t('Section {number}',{number:index+1})}` : title;
+    const images = section.images.flatMap((image,i)=>section.id===sourceSectionId && image.id===sourceImageId ? [] : [{value:JSON.stringify([section.id,image.id]),sectionId:section.id,imageId:image.id,label:`${label} · ${t('Image {number}',{number:i+1})}`}]);
+    return [...images,{value:JSON.stringify([section.id,null]),sectionId:section.id,imageId:null,label:`${label} · ${t('End of section')}`}];
+  });
+}
 
 // ─── Single section ───────────────────────────────────────────────────────────
 
@@ -27,6 +38,9 @@ function NoteSection({
   onAddImages,
   onRemoveImage,
   onImageClick,
+  sections,
+  placement,
+  onPlaceImage,
 }) {
   useLanguage();
   const fileInputRef  = useRef(null);
@@ -47,7 +61,8 @@ function NoteSection({
 
   return (
     <div
-      className="overflow-hidden rounded-md border border-zinc-800 bg-zinc-900/20"
+      data-note-section={section.id}
+      className="overflow-hidden rounded-lg border border-border bg-card"
       onPaste={handlePaste}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => { e.preventDefault(); readFiles(e.dataTransfer.files); }}
@@ -89,13 +104,27 @@ function NoteSection({
       </div>
 
       {/* Text */}
-      <RichNotesEditor label={t("Notes for {section}", {section: section.title})} value={section.content ?? documentFromText(section.text)} onChange={(content,text) => onTextChange(text,content)} />
+      <RichNotesEditor embedded hasImages={section.images.length > 0} label={t("Notes for {section}", {section: section.title})} value={section.content ?? documentFromText(section.text)} onChange={(content,text) => onTextChange(text,content)} />
 
-      {/* Full-width, uncropped chart documents */}
-      {section.images.length > 0 && <div className="space-y-4 px-3 pb-3">
-        {section.images.map(img => <TradeImage key={img.id} src={img.preview} label={img.name}
-          width={img.width ?? 100} onResize={width => onResizeImage(img.id,width)}
-          onOpen={() => onImageClick(img.preview)} onRemove={() => onRemoveImage(img.id)} />)}
+      {/* Row breaks keep manual placements independent of image width. */}
+      {(section.images.length > 0 || placement.drag) && <div className="trade-note-images px-3 pb-3">
+        {section.images.map((img,index) => <Fragment key={img.id}>
+          {index>0 && img.startRow && <span className="trade-image-break" aria-hidden="true"/>}
+          <TradeImage src={img.preview} label={img.name} width={img.width ?? 100} onResize={width => onResizeImage(img.id,width)}
+            onOpen={() => onImageClick(img.preview)} onRemove={() => onRemoveImage(img.id)}
+            arrangement={{imageId:String(img.id),dragging:placement.drag?.source.sectionId===section.id && String(placement.drag.source.imageId)===String(img.id),
+              onPointerDown:event=>placement.start(event,{sectionId:section.id,imageId:img.id}),onPointerMove:placement.move,onPointerUp:placement.end,onLostPointerCapture:placement.cancel,
+              consumeClick:placement.consumeClick,allowKeyboard:placement.allowKeyboard,
+              targets:placementTargets(sections,section.id,img.id),
+              onPlace:target=>onPlaceImage({sectionId:section.id,imageId:img.id},target)}}>
+            {placement.drag && !(placement.drag.source.sectionId===section.id && String(placement.drag.source.imageId)===String(img.id)) && <div className="trade-image-dropzones" aria-hidden="true">
+              {['above','left','right','below'].map(mode=><div key={mode} data-image-drop data-section-id={section.id} data-image-id={String(img.id)} data-placement={mode}
+                data-active={placement.drag.over?.sectionId===section.id && String(placement.drag.over.imageId)===String(img.id) && placement.drag.over.placement===mode}
+                className={`trade-image-dropzone trade-image-dropzone-${mode}`}>{t({above:'Above',below:'Below',left:'Left',right:'Right'}[mode])}</div>)}
+            </div>}
+          </TradeImage>
+        </Fragment>)}
+        {placement.drag && <div data-image-drop data-section-id={section.id} data-image-id="" data-placement="below" className="trade-image-drop-end" data-active={placement.drag.over?.sectionId===section.id && placement.drag.over.imageId==null}>{t(section.images.length?'Place at end of section':'Place image here')}</div>}
       </div>}
 
       {/* Upload */}
@@ -125,6 +154,23 @@ export default function TradeNotesEditor({ sections, onChange, onDeleteImage, on
   useLanguage();
   const [editingId,   setEditingId]   = useState(null);
   const [lightboxSrc, setLightboxSrc] = useState(null);
+  const editorRef = useRef(null);
+  const [announcement,setAnnouncement] = useState('');
+  const [placementError,setPlacementError] = useState('');
+  function arrange(source,target) {
+    const result=placeImage(sections,source,target);
+    setPlacementError(result.full?t('A row can contain up to four images. Place this image above or below instead.'):'');
+    if(!result.changed)return false;
+    onChange(result.sections);setAnnouncement('');
+    requestAnimationFrame(()=>{
+      setAnnouncement(t('Image moved.'));
+      const control=editorRef.current?.querySelector(`[data-note-image-id="${CSS.escape(String(source.imageId))}"] [data-image-arrange]`);
+      control?.focus({preventScroll:true});control?.scrollIntoView({block:'nearest'});
+    });
+    return true;
+  }
+  const placement=useImagePlacement(arrange);
+
 
   function update(id, patch) {
     onChange(sections.map((s) => (s.id === id ? { ...s, ...patch } : s)));
@@ -152,7 +198,7 @@ export default function TradeNotesEditor({ sections, onChange, onDeleteImage, on
     const img = s.images.find((i) => i.id === imgId);
     if (img?.file) URL.revokeObjectURL(img.preview);
     if (img?.screenshotId && onDeleteImage) onDeleteImage(img.screenshotId);
-    update(sectionId, { images: s.images.filter((i) => i.id !== imgId) });
+    update(sectionId, { images: flattenImageRows(imageRows(s.images).map(row=>row.filter(image=>image.id!==imgId))) });
   }
 
   function removeSection(id) {
@@ -164,17 +210,20 @@ export default function TradeNotesEditor({ sections, onChange, onDeleteImage, on
   return (
     <>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs leading-5 text-muted-foreground">{t("Paste, drop or upload screenshots. Each image shows the complete chart.")}</p>
+        <p className="text-xs leading-5 text-muted-foreground">{t("Paste or upload screenshots. Drag the grip to arrange; tap it for options.")}</p>
         {onToggleWide && <button type="button" aria-pressed={wide} onClick={onToggleWide} className="hidden min-h-10 shrink-0 items-center gap-2 rounded-md border border-border px-3 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground md:flex">
           {wide ? <Minimize2 aria-hidden="true" className="size-3.5"/> : <Maximize2 aria-hidden="true" className="size-3.5"/>}
           {wide ? t("Standard width") : t("Wide review")}
         </button>}
       </div>
-      <div className="space-y-4">
+      <div ref={editorRef} className="space-y-4">
         {sections.map((s) => (
           <NoteSection
             key={s.id}
             section={s}
+            sections={sections}
+            placement={placement}
+            onPlaceImage={arrange}
             canRemove={sections.length > 1}
             isEditingTitle={editingId === s.id}
             onStartRename={() => setEditingId(s.id)}
@@ -196,6 +245,9 @@ export default function TradeNotesEditor({ sections, onChange, onDeleteImage, on
           <Plus className="size-3.5" />{t("Add section")}</button>
       </div>
 
+      <p role="status" className="sr-only">{announcement}</p>
+      {placementError && <p role="alert" className="mt-2 text-xs text-muted-foreground">{placementError}</p>}
+      {placement.drag && <div aria-hidden="true" className="pointer-events-none fixed z-[90] rounded-md border border-primary/50 bg-popover px-3 py-2 text-xs shadow-lg" style={{left:Math.min(placement.drag.x+12,innerWidth-160),top:Math.max(8,placement.drag.y-44)}}>{t('Move screenshot')}</div>}
       {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
     </>
   );

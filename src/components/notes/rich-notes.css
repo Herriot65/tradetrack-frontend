@@ -11,3 +11,8 @@
 .rich-notes-content :is(strong,b) { font-weight: 700; }
 .rich-notes-content [style*="color"] { color: inherit; }
 @media(pointer:coarse) { .rich-notes-editor button { min-width: 40px; min-height: 40px; } }
+
+/* Section notes use the section's single canvas, including its screenshots. */
+.rich-notes-editor[data-embedded="true"] .rich-notes-content { min-height: 88px; }
+.rich-notes-editor[data-embedded="true"][data-has-images="true"] .rich-notes-content { min-height: 56px; }
+.rich-notes-readonly .rich-notes-content { min-height: 0; padding: 0; }
