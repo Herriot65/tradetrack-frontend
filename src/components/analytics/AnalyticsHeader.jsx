@@ -87,7 +87,7 @@ export default function AnalyticsHeader({
           </button>
         </div>
       )}
-      <div className="analytics-filters sticky top-16 z-20 rounded-xl border border-hairline bg-surface-card p-4 min-[900px]:px-5">
+      <div className="analytics-filters rounded-xl border border-hairline bg-surface-card p-4 min-[900px]:px-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <SegmentedControl

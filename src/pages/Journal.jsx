@@ -1,6 +1,6 @@
 import { getLanguage, translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   FileUp,
@@ -260,7 +260,7 @@ export default function Journal() {
 
   const syntheticEnabled = !!activeJournal?.synthetic_data_enabled;
 
-  const handleToggleSynthetic = async (enabled) => {
+  const handleToggleSynthetic = useCallback(async (enabled) => {
     if (!activeJournal) return;
     setSyntheticBusy(true);
     setSyntheticError(null);
@@ -277,7 +277,7 @@ export default function Journal() {
     } finally {
       setSyntheticBusy(false);
     }
-  };
+  }, [activeJournal, setSyntheticData, setTradesRefreshKey, setSyntheticBusy, setSyntheticError]);
 
   const handleDelete = async () => {
     if (!activeJournal) return;
@@ -306,6 +306,10 @@ export default function Journal() {
       navigate("/dashboard", { replace: true });
     }
   }, [journalId, journals, jLoading, authLoading, navigate, selectJournal]);
+
+  if (authLoading || jLoading || !activeJournal || String(activeJournal.id) !== journalId) {
+    return <AppShell><p role="status">{t("Loading…")}</p></AppShell>;
+  }
 
   const typeLabel = activeJournal
     ? (JOURNAL_TYPE_LABEL[activeJournal.journalType] ?? "Journal")

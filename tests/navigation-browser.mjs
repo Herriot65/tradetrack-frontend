@@ -73,6 +73,12 @@ try{
  await go('Analytics');await main.getByRole('navigation',{name:'Analytics sections'}).waitFor();
  await main.getByRole('group',{name:'Date range',exact:true}).getByRole('button',{name:'All',exact:true}).click();
  await main.getByRole('group',{name:'Display unit',exact:true}).getByRole('button',{name:'$',exact:true}).click();
+ const dollarSequence = main.locator('svg[aria-label="Trade results in sequence"]:visible');
+ assert.ok(await dollarSequence.locator(':scope > g > line').count() <= 12, 'Dollar sequence must keep axis label count bounded in the full app');
+ for(const scrollPosition of [600,1200,2400,800,0]) {
+  await page.evaluate(async y=>{scrollTo(0,y);await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));},scrollPosition);
+  assert.equal(await main.locator('[data-testid="analytics-kpis"]:visible').count(),1);
+ }
  await main.getByRole('button',{name:'Breakdown',exact:true}).click();await page.waitForURL(/tab=breakdown/);await main.getByRole('heading',{name:'Breakdown',exact:true}).waitFor();
  assert.match(page.url(),/tab=breakdown/);
  await main.getByRole('button',{name:'Performance',exact:true}).click();

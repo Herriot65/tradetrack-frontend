@@ -48,12 +48,6 @@
   }
 }
 
-/* Leave the content visible when a landscape phone has little vertical space. */
-@media (max-height: 500px) {
-  .analytics-page .analytics-filters {
-    position: static;
-  }
-}
 
 /* Keep both outcome charts in the primary reading path. On narrow screens,
    their DOM order puts them before the taller equity chart. */

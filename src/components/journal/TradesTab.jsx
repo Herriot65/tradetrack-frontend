@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
 import { useCallback, useMemo, useState } from "react";
@@ -67,7 +68,7 @@ function EmptyTrades({ hasFilters }) {
   );
 }
 
-export default function TradesTab({ breakEvenMethod, journalId }) {
+function TradesTab({ breakEvenMethod, journalId }) {
   useLanguage();
   const { activeJournal, updateJournal, refreshAnalytics } = useJournal();
   const [displayUnit, setDisplayUnit] = useState(activeJournal?.display_unit || "R");
@@ -260,3 +261,5 @@ export default function TradesTab({ breakEvenMethod, journalId }) {
     </div>
   );
 }
+
+export default memo(TradesTab);

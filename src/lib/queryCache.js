@@ -1,8 +1,11 @@
 // Session-local, bounded cache. Pending reads are shared across analytics tabs.
 const entries = new Map();
 const TTL = 30_000;
+let version = 0;
+export const getQueryCacheVersion = () => version;
 export function clearQueryCache() {
   entries.clear();
+  version++;
 }
 export function cachedQuery(key, fetcher, now = Date.now()) {
   const existing = entries.get(key);
