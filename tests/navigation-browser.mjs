@@ -60,6 +60,9 @@ try{
  const capture=async name=>{await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:`${output}/${name}.png`,fullPage:false});};
  await page.goto(`${base}/journal/1?tab=overview`);await main.getByText('Trade status',{exact:true}).waitFor();
  assert.equal(await nav.getByRole('link').count(),3);
+ assert.equal(await page.locator('#app-navigation').getByRole('button',{name:'Switch journal',exact:true}).count(),0);
+ assert.equal(await page.locator('#app-navigation').getByRole('link',{name:'Manage accounts',exact:true}).count(),0);
+ assert.equal(await page.locator('header').getByRole('button',{name:'Switch journal',exact:true}).count(),1,'Account switching stays in the top navigation');
  assert.equal(await main.getByRole('navigation').count(),0,'Overview has no unrelated local tabs');
  assert.equal(await main.getByRole('heading',{name:'Win / loss',exact:true}).count(),0,'Overview stays compact without detailed donut charts');
  const overviewCards=main.locator('.analytics-hero-grid:visible > div');
@@ -111,6 +114,7 @@ try{
  await touch.goto(`${base}/journal/1?tab=overview`);await touch.getByText('Trade status',{exact:true}).waitFor();await touch.screenshot({path:`${output}/overview-mobile.png`,fullPage:true});
  for(const width of [320,390,768]){
   await touch.setViewportSize({width,height:844});
+  await touch.locator('header').getByRole('button',{name:'Switch journal',exact:true}).waitFor();
   for(const name of ['Overview','Journal','Analytics','Settings']){
    if(width<768){await touch.getByRole('button',{name:'Open navigation',exact:true}).tap();await touch.waitForFunction(()=>document.getElementById('app-navigation').getBoundingClientRect().left>=-1);}
    if(name==='Overview'&&width===390)await touch.screenshot({path:`${output}/drawer-mobile.png`});
