@@ -71,14 +71,19 @@ backend with its migration before using custom trends in a deployed frontend.
 ## Inline trade image review
 
 `npm run test:image-review` pastes two synthetic chart images into the real notes
-editor, checks full-width stacking and original aspect ratios at 320/390/1440px,
+editor, checks full-width stacking, resized image wrapping and original aspect
+ratios at 320/390/1440px,
 and opens the real read-only and editing sheets in Wide review. It verifies
-fullscreen keyboard dismissal without closing the underlying trade, and image
-removal. Captures live in `artifacts/image-review/`. No live storage is used.
+touch and keyboard fullscreen dismissal without closing the underlying trade,
+and image removal. Captures live in `artifacts/image-review/`. No live storage is used.
 
-Images now retain their full aspect ratio in notes and read-only trade details;
-there is no fixed-height crop or two-column thumbnail grid. Desktop Wide review
-expands the existing sheet, while Full screen remains available for inspection.
+Notes use one section canvas: the embedded editor and screenshots have no
+separate card frames. Visible filenames and the duplicate Full screen buttons
+are removed; image click opens the viewer. Images keep their original aspect
+ratios; smaller saved widths can share a row, while full-width images stack.
+Width sliders and Reset size are in each image's resize menu; corner dragging
+and keyboard resizing remain available. Saved review groups screenshots with
+their matching note section. Desktop Wide review remains available.
 The image-review layout preserves the original image files. Rich formatting
 and persisted size metadata are described in the following section.
 

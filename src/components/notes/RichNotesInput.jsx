@@ -7,7 +7,7 @@ import {documentFromText,documentText} from '@/lib/noteDocument';
 import {translate as t} from '@/i18n/language';
 import {useLanguage} from '@/i18n/useLanguage';
 import './rich-notes.css';
-export default function RichNotesEditor({value,onChange,label}) {
+export default function RichNotesEditor({value,onChange,label,embedded=false,hasImages=false}) {
   useLanguage();
   const editor=useEditor({extensions:[StarterKit.configure({heading:{levels:[1,2,3]},link:false,codeBlock:false,horizontalRule:false}),TextStyle,Color],
     content:value ?? documentFromText(),
@@ -18,7 +18,7 @@ export default function RichNotesEditor({value,onChange,label}) {
   const state=useEditorState({editor,selector:({editor})=>editor?{bold:editor.isActive('bold'),italic:editor.isActive('italic'),underline:editor.isActive('underline'),strike:editor.isActive('strike'),bulletList:editor.isActive('bulletList'),orderedList:editor.isActive('orderedList'),blockquote:editor.isActive('blockquote'),heading:editor.isActive('heading')?String(editor.getAttributes('heading').level):'paragraph',color:editor.getAttributes('textStyle').color??'#f4f4f5'}:{}});
   if(!editor)return null;
   const actions=[['Bold',Bold,'toggleBold','bold'],['Italic',Italic,'toggleItalic','italic'],['Underline',Underline,'toggleUnderline','underline'],['Strikethrough',Strikethrough,'toggleStrike','strike'],['Bulleted list',List,'toggleBulletList','bulletList'],['Numbered list',ListOrdered,'toggleOrderedList','orderedList'],['Quote',Quote,'toggleBlockquote','blockquote']];
-  return <div className="rich-notes-editor min-w-0 rounded-md border border-border bg-card">
+  return <div data-embedded={embedded || undefined} data-has-images={hasImages || undefined} className={`rich-notes-editor min-w-0 ${embedded ? '' : 'rounded-md border border-border bg-card'}`}>
     <div role="group" aria-label={t('{field} formatting',{field:label})} className="flex flex-wrap items-center gap-1 border-b border-border p-1.5">
       <select aria-label={t('Text style')} value={state.heading} onChange={e=>e.target.value==='paragraph'?editor.chain().focus().setParagraph().run():editor.chain().focus().setHeading({level:Number(e.target.value)}).run()} className="h-9 max-w-full rounded-md border border-border bg-background px-2 text-xs"><option value="paragraph">{t('Paragraph')}</option>{[1,2,3].map(n=><option key={n} value={n}>{t('Heading {number}',{number:n})}</option>)}</select>
       {actions.map(([name,Icon,command,active])=><button key={name} type="button" title={t(name)} aria-label={t(name)} aria-pressed={!!state[active]} onMouseDown={e=>e.preventDefault()} onClick={()=>editor.chain().focus()[command]().run()} className={`flex size-9 shrink-0 items-center justify-center rounded-md hover:bg-secondary ${state[active]?'bg-primary/10 text-primary':'text-muted-foreground'}`}><Icon className="size-4"/></button>)}

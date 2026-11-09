@@ -47,7 +47,8 @@ function NoteSection({
 
   return (
     <div
-      className="overflow-hidden rounded-md border border-zinc-800 bg-zinc-900/20"
+      data-note-section={section.id}
+      className="overflow-hidden rounded-lg border border-border bg-card"
       onPaste={handlePaste}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => { e.preventDefault(); readFiles(e.dataTransfer.files); }}
@@ -89,10 +90,10 @@ function NoteSection({
       </div>
 
       {/* Text */}
-      <RichNotesEditor label={t("Notes for {section}", {section: section.title})} value={section.content ?? documentFromText(section.text)} onChange={(content,text) => onTextChange(text,content)} />
+      <RichNotesEditor embedded hasImages={section.images.length > 0} label={t("Notes for {section}", {section: section.title})} value={section.content ?? documentFromText(section.text)} onChange={(content,text) => onTextChange(text,content)} />
 
       {/* Full-width, uncropped chart documents */}
-      {section.images.length > 0 && <div className="space-y-4 px-3 pb-3">
+      {section.images.length > 0 && <div className="trade-note-images px-3 pb-3">
         {section.images.map(img => <TradeImage key={img.id} src={img.preview} label={img.name}
           width={img.width ?? 100} onResize={width => onResizeImage(img.id,width)}
           onOpen={() => onImageClick(img.preview)} onRemove={() => onRemoveImage(img.id)} />)}

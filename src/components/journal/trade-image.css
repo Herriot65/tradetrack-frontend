@@ -1,0 +1,8 @@
+.trade-note-images {
+  --trade-image-gap: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--trade-image-gap);
+  min-width: 0;
+}

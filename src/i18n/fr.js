@@ -1,5 +1,6 @@
 // English source strings are stable keys; API values and user content stay unchanged.
 export default {
+  "Resize {image}": "Redimensionner {image}",
   "Equity curve": "Courbe de performance",
   "Recent trades": "Trades récents",
   "From closed trades": "Trades clôturés",
