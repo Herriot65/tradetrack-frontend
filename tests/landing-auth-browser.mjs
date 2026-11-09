@@ -18,6 +18,7 @@ try {
     await page.goto('http://127.0.0.1:4198/');
     const heroLink = page.locator('main').getByRole('link', { name: 'Dashboard', exact: true });
     await heroLink.waitFor();
+    assert.equal(await page.getByRole("navigation", { name: "Main navigation", exact: true }).getByRole("link", { name: "Dashboard", exact: true }).count(), 1);
     await heroLink.click();
     await page.waitForURL('**/dashboard');
     for (const path of ['/register', '/login']) {
@@ -28,6 +29,7 @@ try {
     await page.goto('http://127.0.0.1:4198/');
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole('button', { name: 'Open menu', exact: true }).click();
+    assert.equal(await page.locator('#landing-mobile-menu').getByRole('link', { name: 'Dashboard', exact: true }).count(), 1);
     await page.locator('#landing-mobile-menu').getByRole('link', { name: 'Dashboard', exact: true }).last().click();
     await page.waitForURL('**/dashboard');
     await context.close();

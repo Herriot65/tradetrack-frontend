@@ -40,9 +40,9 @@ export default function Navbar() {
           <LanguageSelector />
         </div>
         <div className="hidden items-center gap-3 xl:flex">
-          {!loading && (
+          {!loading && !user && (
             <Button asChild variant="ghost">
-              <Link to={user ? "/dashboard" : "/login"}>{user ? t("Dashboard") : t("Log in")}</Link>
+              <Link to="/login">{t("Log in")}</Link>
             </Button>
           )}
           <Button asChild>
@@ -82,10 +82,10 @@ export default function Navbar() {
             </a>
           ))}
           <div className="flex gap-3 pt-3">
-            {!loading && (
+            {!loading && !user && (
               <Button asChild variant="outline" className="flex-1">
-                <Link to={user ? "/dashboard" : "/login"}>
-                  {user ? t("Dashboard") : t("Log in")}
+                <Link to="/login">
+                  {t("Log in")}
                 </Link>
               </Button>
             )}
