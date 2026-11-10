@@ -765,6 +765,8 @@ export default {
   "Product": "Produit",
   "Company": "Entreprise",
   "Legal": "Mentions légales",
+  "Longest consecutive run of winning trades. Break-even trades neither extend nor break a streak.": "Plus longue série de trades gagnants consécutifs. Les trades à l’équilibre ne prolongent ni n’interrompent une série.",
+  "Longest consecutive run of losing trades. Break-even trades neither extend nor break a streak.": "Plus longue série de trades perdants consécutifs. Les trades à l’équilibre ne prolongent ni n’interrompent une série.",
   "About": "À propos",
   "Careers": "Carrières",
   "Changelog": "Historique des versions",

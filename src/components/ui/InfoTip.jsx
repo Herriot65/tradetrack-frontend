@@ -1,35 +1,30 @@
 import { translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
-import { useState } from "react";
 import { Info } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 
-export default function InfoTip({ text }) {
+export default function InfoTip({ text, label }) {
   useLanguage();
-  const [open, setOpen] = useState(false);
   if (!text) return null;
 
   return (
-    <Tooltip open={open} onOpenChange={setOpen} delayDuration={300}>
-      <TooltipTrigger asChild>
-        <span
-          className="cursor-default"
-          onPointerDown={(e) => {
-            // Touch tap: toggle the tooltip; mouse click is handled via hover
-            if (e.pointerType !== "mouse") {
-              e.preventDefault();
-              setOpen((v) => !v);
-            }
-          }}
-          onMouseEnter={() => setOpen(true)}
-          onMouseLeave={() => setOpen(false)}
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={label ? `${t("About")} ${t(label)}` : t("About")}
+          className="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <Info className="size-3 text-zinc-600 hover:text-zinc-400 transition-colors" />
-        </span>
-      </TooltipTrigger>
-      <TooltipContent onPointerDownOutside={() => setOpen(false)}>
-        {t(text)}
-      </TooltipContent>
-    </Tooltip>
+          <Info aria-hidden="true" className="size-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        className="max-w-[calc(100vw-2rem)] w-72 border-hairline bg-surface-card text-ink shadow-lg"
+      >
+        {label && <p className="mb-1 text-xs font-semibold">{t(label)}</p>}
+        <p className="text-xs leading-relaxed">{t(text)}</p>
+      </PopoverContent>
+    </Popover>
   );
 }

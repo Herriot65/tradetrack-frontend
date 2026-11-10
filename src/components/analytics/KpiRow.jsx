@@ -1,6 +1,7 @@
 import { translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
 import { formatPercent, formatRatio, formatValue } from "@/lib/analytics";
+import InfoTip from "@/components/ui/InfoTip";
 import { cn } from "@/lib/utils";
 
 function valueTone(value) {
@@ -9,6 +10,10 @@ function valueTone(value) {
 }
 
 const DEFINITIONS = {
+  "Avg win": "Gross profit divided by winning trades.",
+  "Avg loss": "Gross loss divided by losing trades.",
+  "Win streak": "Longest consecutive run of winning trades. Break-even trades neither extend nor break a streak.",
+  "Loss streak": "Longest consecutive run of losing trades. Break-even trades neither extend nor break a streak.",
   "Net result": "Sum of all closed trade results in the active filters.",
   "Closed trades": "Number of completed trades in the selected period.",
   "Win rate": "Percentage of closed trades that closed in profit.",
@@ -21,17 +26,10 @@ function KpiCard({ label, value, detail, tone = "text-ink" }) {
   useLanguage();
   return (
     <div className="analytics-card relative min-w-0 overflow-hidden rounded-xl border border-hairline bg-surface-card px-4 py-5 min-[900px]:px-5 min-[900px]:py-6">
-      <span
-        aria-hidden="true"
-        className="absolute right-4 top-5 size-1 rounded-full bg-current opacity-50"
-      />
-      <p
-        tabIndex={0}
-        title={t(DEFINITIONS[label])}
-        className="text-[12px] leading-4 text-ink-secondary"
-      >
-        {t(label)}
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[12px] leading-4 text-ink-secondary">{t(label)}</p>
+        <InfoTip label={label} text={DEFINITIONS[label]} />
+      </div>
       <p
         className={cn(
           "analytics-kpi-value mt-4 font-medium leading-9 tracking-[-0.045em] tabular-nums",
@@ -49,19 +47,10 @@ function StripCell({ label, value, detail, tone = "text-ink" }) {
   useLanguage();
   return (
     <div className="min-w-0 bg-surface-card px-4 py-3.5 min-[900px]:px-5">
-      <p
-        tabIndex={0}
-        title={
-          (DEFINITIONS[label] ? t(DEFINITIONS[label]) : null) ?? (label.includes("streak")
-            ? t("Break-even trades neither extend nor break a streak.")
-            : label === "Avg win"
-              ? t("Gross profit divided by winning trades.")
-              : t("Gross loss divided by losing trades."))
-        }
-        className="text-[12px] leading-4 text-ink-secondary"
-      >
-        {t(label)}
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[12px] leading-4 text-ink-secondary">{t(label)}</p>
+        <InfoTip label={label} text={DEFINITIONS[label]} />
+      </div>
       <p className={cn("mt-1.5 text-[15px] font-medium leading-5 tabular-nums", tone)}>
         <span>{value}</span>{" "}
         {detail && <span className="ml-1 text-[12px] font-normal text-ink-muted">{t(detail)}</span>}

@@ -59,7 +59,7 @@ export default function KpiCard({ label, icon: Icon, value, loading, color = "zi
             {t(label)}
           </span>
         </div>
-        <InfoTip text={info} />
+        <InfoTip label={label} text={info} />
       </div>
 
       {/* Value */}

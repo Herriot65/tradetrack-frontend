@@ -20,7 +20,18 @@ import { useDashboardSummary } from "@/hooks/useDashboardSummary";
 import { formatNumber, formatPercent, formatR } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 
+import InfoTip from "@/components/ui/InfoTip";
+
 import ErrorMessage from "./ErrorMessage";
+
+const DEFINITIONS = {
+  total_trades: "Total number of trades recorded in this journal.",
+  win_rate: "Percentage of closed trades that closed in profit.",
+  total_r: "Net R-multiple across all closed trades. Each unit of R equals your initial risk per trade.",
+  profit_factor: "Gross profit divided by the absolute gross loss.",
+  max_drawdown_r: "Deepest peak-to-trough decline in cumulative R. Measures worst-case loss from an equity high.",
+  average_r: "Average R-multiple per closed trade (Total R ÷ closed trades).",
+};
 
 const KPI_CONFIG = [
   {
@@ -118,7 +129,10 @@ export default function KpiCards() {
               <CardTitle className="text-xs font-medium text-muted-foreground">
                 {t(label)}
               </CardTitle>
-              <Icon className="size-4 text-muted-foreground/60" />
+              <div className="flex items-center gap-1">
+                <Icon aria-hidden="true" className="size-4 text-muted-foreground/60" />
+                <InfoTip label={label} text={DEFINITIONS[key]} />
+              </div>
             </CardHeader>
             <CardContent>
               <p
