@@ -309,11 +309,13 @@ function summarizeBucket(bucket) {
 }
 
 function sortedTrades(trades) {
-  return [...trades].sort((a, b) => {
-    const aDate = parseTradeDate(a.entry_datetime)?.getTime() ?? 0;
-    const bDate = parseTradeDate(b.entry_datetime)?.getTime() ?? 0;
+  // Timezone-aware date construction is expensive. Parse once per trade,
+  // then reuse the date for sorting and all downstream analytics.
+  return trades.map(trade => ({ trade, date: parseTradeDate(trade.entry_datetime) })).sort((a, b) => {
+    const aDate = a.date?.getTime() ?? 0;
+    const bDate = b.date?.getTime() ?? 0;
     if (aDate !== bDate) return aDate - bDate;
-    return Number(a.id ?? 0) - Number(b.id ?? 0);
+    return Number(a.trade.id ?? 0) - Number(b.trade.id ?? 0);
   });
 }
 
@@ -329,9 +331,8 @@ export function computeAnalytics(
     trades.filter((trade) => trade?.pnl_r != null && effectiveStatus(trade, breakEvenThreshold) !== "OPEN"),
   );
 
-  const rows = closed.map((trade, index) => {
+  const rows = closed.map(({ trade, date }, index) => {
     const pnlR = Number(trade.pnl_r) || 0;
-    const date = parseTradeDate(trade.entry_datetime);
     return {
       ...trade,
       seq: index + 1,

@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node --test tests/queryCache.test.js tests/analytics.test.js tests/tradeForm.test.js tests/breakdown.test.js tests/language.test.js tests/imageLayout.test.js",
+    "test": "node --test tests/queryCache.test.js tests/analytics.test.js tests/tradeForm.test.js tests/breakdown.test.js tests/language.test.js tests/imageLayout.test.js tests/mapConcurrent.test.js",
     "test:coach": "npm run build && node tests/coach-browser.mjs",
     "test:session": "npm run build && node tests/session-browser.mjs",
     "test:redesign": "node tests/redesign-qa.mjs",
@@ -28,7 +28,8 @@
     "test:trades-list": "node tests/trades-list-browser.mjs",
     "test:language": "npm run build && node tests/language-browser.mjs",
     "test:dropdown-options": "node tests/dropdown-options-browser.mjs",
-    "test:dropdown-layout": "node tests/dropdown-layout-browser.mjs"
+    "test:dropdown-layout": "node tests/dropdown-layout-browser.mjs",
+    "test:response-time": "npm run build && node tests/response-time-browser.mjs"
   },
   "dependencies": {
     "@date-fns/tz": "^1.4.1",

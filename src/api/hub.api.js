@@ -1,3 +1,4 @@
+import { mapConcurrent } from "../lib/mapConcurrent.js";
 import { cachedQuery } from "../lib/queryCache.js";
 import api from "./axios";
 import { USE_MOCK, mockFetchHubTrades, mockFetchCareerData } from "@/mocks/mockData";
@@ -18,10 +19,10 @@ const loadHubTrades = async (workspaceId, { years = [] } = {}) => {
 
   if (totalCount > allResults.length && allResults.length > 0) {
     const totalPages = Math.ceil(totalCount / allResults.length);
-    const pages = await Promise.all(
-      Array.from({ length: totalPages - 1 }, (_, i) =>
-        api.get(`/journals/${workspaceId}/trades/`, { params: { ...params, page: i + 2 } })
-      )
+    const pages = await mapConcurrent(
+      Array.from({ length: totalPages - 1 }, (_, i) => i + 2),
+      4,
+      page => api.get(`/journals/${workspaceId}/trades/`, { params: { ...params, page } }),
     );
     pages.forEach(response => allResults.push(...(response.data.results ?? [])));
   }

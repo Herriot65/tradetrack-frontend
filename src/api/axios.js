@@ -26,7 +26,8 @@ api.interceptors.request.use(
   (config) => {
     const token = getAccessToken();
 
-    if (token) {
+    const isPublicAuth = ["/auth/login/", "/auth/google/", "/auth/register/"].includes(config.url);
+    if (token && !isPublicAuth) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 

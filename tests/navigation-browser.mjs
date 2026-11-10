@@ -67,7 +67,7 @@ try{
  assert.equal(await main.getByRole('navigation').count(),0,'Overview has no unrelated local tabs');
  assert.equal(await main.getByRole('heading',{name:'Win / loss',exact:true}).count(),0,'Overview stays compact without detailed donut charts');
  const overviewCards=main.locator('.analytics-hero-grid:visible > div');
- assert.deepEqual(await overviewCards.locator('p:first-of-type').allTextContents(),['Net result','Win rate','Max drawdown','Closed trades']);
+ assert.deepEqual(await overviewCards.locator(':scope > div:first-child > p').allTextContents(),['Net result','Win rate','Max drawdown','Closed trades']);
  assert.equal(await main.getByRole('table',{name:'Recent trades in the selected period',exact:true}).getByRole('row').count(),6,'Only five recent trades should be shown');
  assert.equal(await main.getByRole('table',{name:'Recent trades in the selected period',exact:true}).getByRole('row').filter({hasText:'Open'}).getByText('—',{exact:true}).count(),1,'Open trades must not show a realized zero result');
  await main.getByRole('button',{name:'Review trade 49',exact:true}).click();await page.getByRole('dialog').waitFor();await page.keyboard.press('Escape');
