@@ -59,7 +59,8 @@ try{
  const go=async name=>{await page.locator('#app-navigation').getByRole('link',{name,exact:true}).click();await main.getByRole('heading',{name,exact:true,level:1}).waitFor();};
  const capture=async name=>{await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:`${output}/${name}.png`,fullPage:false});};
  await page.goto(`${base}/journal/1?tab=overview`);await main.getByText('Trade status',{exact:true}).waitFor();
- assert.equal(await nav.getByRole('link').count(),3);
+ assert.equal(await nav.getByRole('link').count(),4);
+ assert.equal(await nav.getByRole('link',{name:'AI Coach',exact:true}).count(),1);
  assert.equal(await page.locator('#app-navigation').getByRole('button',{name:'Switch journal',exact:true}).count(),0);
  assert.equal(await page.locator('#app-navigation').getByRole('link',{name:'Manage accounts',exact:true}).count(),0);
  assert.equal(await page.locator('header').getByRole('button',{name:'Switch journal',exact:true}).count(),1,'Account switching stays in the top navigation');
