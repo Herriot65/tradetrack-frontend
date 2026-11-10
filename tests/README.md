@@ -177,3 +177,31 @@ JSON validator accepts and preserves the metadata; no migration is needed.
 The browser test covers save/reload, shuffled API image order, read-only review,
 and layout-save failure/retry. `npm test` also covers the layout transformations.
 Captures are in `artifacts/image-placement/`.
+
+## Response-time regression checks
+
+`npm run test:response-time` builds the production app and runs the real sign-in
+flow with synthetic API responses. It holds the journal request open and verifies
+that the dashboard renders as soon as login succeeds, with no extra `/auth/me/`
+request and no journal/coach/editor bundles on the sign-in path. Set
+`PLAYWRIGHT_MODULE` to an installed Playwright module as for other browser tests.
+This isolates browser overhead; it does not measure production authentication.
+
+Route splitting reduced the initial sign-in/dashboard JavaScript from 972.75 kB
+(293.27 kB gzip) to approximately 628.70 kB (201.80 kB gzip), including shared
+preloaded chunks. Landing, registration, journal and coach pages load on demand;
+the dashboard remains available immediately after authentication. Full history
+pagination is limited to four simultaneous page requests, preserving result
+order and rejecting partial failures. `npm test` checks this concurrency bound.
+
+The backend adds a `Server-Timing` header to distinguish application processing
+from browser/network delay; see the backend's `docs/performance.md` for deployment
+diagnosis. The reported five-second deployed login needs a real network trace to
+attribute it to a specific server or network cause.
+
+Analytics now parses each trade timestamp once, reusing the timezone-aware date
+for ordering and grouping rather than reconstructing it inside every comparison.
+`node tests/analytics-benchmark.mjs` measures a shuffled synthetic 2,000-trade
+history in America/New_York. Five-sample local medians were 335 ms before and
+43 ms after this change; these are CPU-only Node timings, not network or browser
+response times. Formula, timezone and DST-overlap ordering checks run in `npm test`.

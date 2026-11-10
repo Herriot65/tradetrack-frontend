@@ -154,3 +154,21 @@ test("averages retain precision until the final result and saved profit enables 
  assert.equal(result.avgR,0);
  assert.deepEqual(availableUnits([{pnl_r:.2,capital_basis:10000,risk_amount:null,pnl_amount:20}]).map(o=>o.value),["R","USD","PCT"]);
 });
+
+test("analytics sorts equal instants by ID across a DST overlap without mutating inputs", () => {
+ const previous = getUserTimezone();
+ try {
+  setUserTimezone("America/New_York");
+  const input = Object.freeze([
+   Object.freeze(trade(1, 3, {entry_datetime:"2026-11-01T01:30:00-05:00"})),
+   Object.freeze(trade(-1, 1, {entry_datetime:"2026-11-01T05:30:00Z"})),
+   Object.freeze(trade(2, 2, {entry_datetime:"2026-11-01T06:30:00Z"})),
+  ]);
+  const result = computeAnalytics(input);
+  assert.deepEqual(result.rows.map(row => row.id), [1, 2, 3]);
+  assert.deepEqual(input.map(row => row.id), [3, 1, 2]);
+  assert.equal(result.rows[0].date.getHours(), 1);
+  assert.equal(result.rows[1].date.getHours(), 1);
+  assert.equal(result.rows[1].date.getTime() - result.rows[0].date.getTime(), 3600000);
+ } finally { setUserTimezone(previous); }
+});

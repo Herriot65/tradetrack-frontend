@@ -10,7 +10,13 @@ try {
  browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{channel:'chrome'})});
  async function scenario(tokens,handler,check){
   const context=await browser.newContext();
-  await context.addInitScript(tokens=>{for(const [key,value] of Object.entries(tokens))localStorage.setItem(key,value);},tokens);
+  await context.addInitScript(tokens=>{
+   // Seed once per context so reloads exercise the application's persisted
+   // session rather than silently restoring credentials after sign-out.
+   if(localStorage.getItem('__session_test_seeded'))return;
+   for(const [key,value] of Object.entries(tokens))localStorage.setItem(key,value);
+   localStorage.setItem('__session_test_seeded','1');
+  },tokens);
   const page=await context.newPage();page.setDefaultTimeout(60000);page.on('pageerror',e=>console.log('PAGE ERROR:',e.message));
   await page.route('**/api/**',async route=>{
    const req=route.request(),path=new URL(req.url()).pathname;

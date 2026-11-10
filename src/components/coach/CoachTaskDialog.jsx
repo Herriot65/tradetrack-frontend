@@ -3,15 +3,9 @@ import { useState } from "react";
 import { CalendarClock, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import CoachConfiguration, { defaultConfiguration, fieldClass, localDate } from "./CoachConfiguration";
+import CoachConfiguration from "./CoachConfiguration";
+import { defaultConfiguration, fieldClass, localDate, apiError } from "./coachConfiguration.js";
 import { saveCoachTask } from "@/api/coach.api";
-
-export const apiError = (error) => {
-  const data = error?.response?.data;
-  if (!data) return error.message || "Something went wrong. Please try again.";
-  if (typeof data.detail === "string") return data.detail;
-  return Object.entries(data).map(([key, value]) => `${key}: ${typeof value === "string" ? value : JSON.stringify(value)}`).join(" · ");
-};
 
 export default function CoachTaskDialog({ journalId, task, seed, onClose, onSaved }) {
   const [value, setValue] = useState(() => task || { title: "", instructions: seed?.instructions || "", configuration: { ...defaultConfiguration(), ...seed?.configuration, period: seed?.configuration?.period === "custom" ? "week" : seed?.configuration?.period || "week", trade_id: undefined }, frequency: "weekly", start_date: localDate(seed?.configuration?.timezone || getUserTimezone()), local_time: "18:00", timezone: seed?.configuration?.timezone || getUserTimezone(), enabled: true });
