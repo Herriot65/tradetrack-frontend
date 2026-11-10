@@ -25,3 +25,14 @@ export async function createTradeCustomField(journalId,payload) {
   }
   const {data}=await api.post(`/journals/${journalId}/custom-fields/`,payload);return data;
 }
+
+export async function updateTradeCustomFieldOptions(journalId,id,options) {
+  if(USE_MOCK) {
+    const fields=read(journalId), field=fields.find(field=>String(field.id)===String(id));
+    if(!field) throw new Error('Field no longer exists.');
+    const updated={...field,options};
+    localStorage.setItem(key(journalId),JSON.stringify(fields.map(field=>String(field.id)===String(id)?updated:field)));
+    return updated;
+  }
+  const {data}=await api.patch(`/journals/${journalId}/custom-fields/${id}/`,{options});return data;
+}

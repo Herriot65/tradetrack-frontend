@@ -26,7 +26,9 @@
     "test:rich-notes": "node tests/rich-notes-browser.mjs",
     "test:custom-fields": "node tests/custom-fields-browser.mjs",
     "test:trades-list": "node tests/trades-list-browser.mjs",
-    "test:language": "npm run build && node tests/language-browser.mjs"
+    "test:language": "npm run build && node tests/language-browser.mjs",
+    "test:dropdown-options": "node tests/dropdown-options-browser.mjs",
+    "test:dropdown-layout": "node tests/dropdown-layout-browser.mjs"
   },
   "dependencies": {
     "@date-fns/tz": "^1.4.1",

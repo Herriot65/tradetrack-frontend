@@ -37,5 +37,14 @@ export function useSetupOptions(kind) {
     memory.set(key,next); try { localStorage.setItem(key,next); } catch { /* Keep usable without storage. */ }
     notify();
   },[key,kind]);
-  return { options, add: value => change(current => [...current,value]), remove: value => change(current => current.filter(item => item.value !== value)), reset: () => change(() => SETUP_OPTIONS[kind].defaults) };
+  return { options, add: value => change(current => {
+    if (!value.label.trim() || value.value === '__not_set__' || value.label.length > SETUP_OPTIONS[kind].maxLength) throw new Error('Enter a valid option name.');
+    if (current.some(item => [item.value,item.label].some(label => label.toLowerCase() === value.label.toLowerCase()))) throw new Error('This option already exists.');
+    if (current.length >= 100) throw new Error('Use up to 100 options.');
+    return [...current,value];
+  }), update: (oldValue, label) => change(current => {
+    if (!label.trim() || label === '__not_set__' || label.length > SETUP_OPTIONS[kind].maxLength) throw new Error('Enter a valid option name.');
+    if (current.some(item => item.value !== oldValue && [item.value,item.label].some(value => value.toLowerCase() === label.toLowerCase()))) throw new Error('This option already exists.');
+    return current.map(item => item.value === oldValue ? {value:label,label} : item);
+  }), remove: value => change(current => current.filter(item => item.value !== value)), reset: () => change(() => SETUP_OPTIONS[kind].defaults) };
 }

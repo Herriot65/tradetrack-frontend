@@ -155,46 +155,29 @@ export function useJournalCatalog(journalId) {
     }
   }, [journalId]);
 
-  const removeAsset = useCallback((symbol) => {
-    if (USE_MOCK) {
-      setAssetObjects((prev) => {
-        const next = prev.filter((a) => a.symbol !== symbol);
-        writeList(assetsKey(journalId), next);
-        return next;
-      });
-    } else {
-      setAssetObjects((prev) => {
-        const item = prev.find((a) => a.symbol === symbol);
-        if (!item) return prev;
-        deleteCatalogItem(journalId, "assets", item.id).catch(console.error);
-        return prev.filter((a) => a.id !== item.id);
-      });
-    }
-  }, [journalId]);
+  const removeAsset = useCallback(async (value) => {
+    const item = assetObjects.find(item => item.symbol === value);
+    if (!item) return;
+    if (!USE_MOCK) await deleteCatalogItem(journalId, "assets", item.id);
+    setAssetObjects(prev => {
+      const next = prev.filter(entry => entry.id !== item.id);
+      if (USE_MOCK) writeList(assetsKey(journalId), next);
+      return next;
+    });
+  }, [journalId, assetObjects]);
 
-  const updateAsset = useCallback((oldSymbol, newSymbol) => {
-    const n = newSymbol.trim().toUpperCase();
-    if (!n || n === oldSymbol) return;
-    if (USE_MOCK) {
-      setAssetObjects((prev) => {
-        if (prev.some((a) => a.symbol === n)) return prev;
-        const next = prev
-          .map((a) => (a.symbol === oldSymbol ? { ...a, symbol: n } : a))
-          .sort((a, b) => a.symbol.localeCompare(b.symbol));
-        writeList(assetsKey(journalId), next);
-        return next;
-      });
-    } else {
-      setAssetObjects((prev) => {
-        const item = prev.find((a) => a.symbol === oldSymbol);
-        if (!item || prev.some((a) => a.symbol === n && a.id !== item.id)) return prev;
-        updateCatalogItem(journalId, "assets", item.id, { symbol: n }).catch(console.error);
-        return prev
-          .map((a) => (a.id === item.id ? { ...a, symbol: n } : a))
-          .sort((a, b) => a.symbol.localeCompare(b.symbol));
-      });
-    }
-  }, [journalId]);
+  const updateAsset = useCallback(async (oldValue, newValue) => {
+    const n = newValue.trim().toUpperCase();
+    const item = assetObjects.find(item => item.symbol === oldValue);
+    if (!n || !item || n === oldValue) return;
+    if (assetObjects.some(entry => entry.id !== item.id && entry.symbol.toLowerCase() === n.toLowerCase())) throw new Error("This option already exists.");
+    const updated = USE_MOCK ? {...item, symbol: n} : await updateCatalogItem(journalId, "assets", item.id, {symbol:n});
+    setAssetObjects(prev => {
+      const next = prev.map(entry => entry.id === item.id ? updated : entry).sort((a,b) => a.symbol.localeCompare(b.symbol));
+      if (USE_MOCK) writeList(assetsKey(journalId), next);
+      return next;
+    });
+  }, [journalId, assetObjects]);
 
   // ── Emotion tag CRUD ──────────────────────────────────────────────────────────
 
@@ -217,46 +200,29 @@ export function useJournalCatalog(journalId) {
     }
   }, [journalId]);
 
-  const removeEmotionTag = useCallback((label) => {
-    if (USE_MOCK) {
-      setEmotionObjects((prev) => {
-        const next = prev.filter((t) => t.label !== label);
-        writeList(emotionKey(journalId), next);
-        return next;
-      });
-    } else {
-      setEmotionObjects((prev) => {
-        const item = prev.find((t) => t.label === label);
-        if (!item) return prev;
-        deleteCatalogItem(journalId, "emotion-tags", item.id).catch(console.error);
-        return prev.filter((t) => t.id !== item.id);
-      });
-    }
-  }, [journalId]);
+  const removeEmotionTag = useCallback(async (value) => {
+    const item = emotionObjects.find(item => item.label === value);
+    if (!item) return;
+    if (!USE_MOCK) await deleteCatalogItem(journalId, "emotion-tags", item.id);
+    setEmotionObjects(prev => {
+      const next = prev.filter(entry => entry.id !== item.id);
+      if (USE_MOCK) writeList(emotionKey(journalId), next);
+      return next;
+    });
+  }, [journalId, emotionObjects]);
 
-  const updateEmotionTag = useCallback((oldLabel, newLabel) => {
-    const n = newLabel.trim();
-    if (!n || n === oldLabel) return;
-    if (USE_MOCK) {
-      setEmotionObjects((prev) => {
-        if (prev.some((t) => t.label === n)) return prev;
-        const next = prev
-          .map((t) => (t.label === oldLabel ? { ...t, label: n } : t))
-          .sort((a, b) => a.label.localeCompare(b.label));
-        writeList(emotionKey(journalId), next);
-        return next;
-      });
-    } else {
-      setEmotionObjects((prev) => {
-        const item = prev.find((t) => t.label === oldLabel);
-        if (!item || prev.some((t) => t.label === n && t.id !== item.id)) return prev;
-        updateCatalogItem(journalId, "emotion-tags", item.id, { label: n }).catch(console.error);
-        return prev
-          .map((t) => (t.id === item.id ? { ...t, label: n } : t))
-          .sort((a, b) => a.label.localeCompare(b.label));
-      });
-    }
-  }, [journalId]);
+  const updateEmotionTag = useCallback(async (oldValue, newValue) => {
+    const n = newValue.trim();
+    const item = emotionObjects.find(item => item.label === oldValue);
+    if (!n || !item || n === oldValue) return;
+    if (emotionObjects.some(entry => entry.id !== item.id && entry.label.toLowerCase() === n.toLowerCase())) throw new Error("This option already exists.");
+    const updated = USE_MOCK ? {...item, label: n} : await updateCatalogItem(journalId, "emotion-tags", item.id, {label:n});
+    setEmotionObjects(prev => {
+      const next = prev.map(entry => entry.id === item.id ? updated : entry).sort((a,b) => a.label.localeCompare(b.label));
+      if (USE_MOCK) writeList(emotionKey(journalId), next);
+      return next;
+    });
+  }, [journalId, emotionObjects]);
 
   // ── Mistake tag CRUD ──────────────────────────────────────────────────────────
 
@@ -279,46 +245,29 @@ export function useJournalCatalog(journalId) {
     }
   }, [journalId]);
 
-  const removeMistakeTag = useCallback((label) => {
-    if (USE_MOCK) {
-      setMistakeObjects((prev) => {
-        const next = prev.filter((t) => t.label !== label);
-        writeList(mistakeKey(journalId), next);
-        return next;
-      });
-    } else {
-      setMistakeObjects((prev) => {
-        const item = prev.find((t) => t.label === label);
-        if (!item) return prev;
-        deleteCatalogItem(journalId, "mistake-tags", item.id).catch(console.error);
-        return prev.filter((t) => t.id !== item.id);
-      });
-    }
-  }, [journalId]);
+  const removeMistakeTag = useCallback(async (value) => {
+    const item = mistakeObjects.find(item => item.label === value);
+    if (!item) return;
+    if (!USE_MOCK) await deleteCatalogItem(journalId, "mistake-tags", item.id);
+    setMistakeObjects(prev => {
+      const next = prev.filter(entry => entry.id !== item.id);
+      if (USE_MOCK) writeList(mistakeKey(journalId), next);
+      return next;
+    });
+  }, [journalId, mistakeObjects]);
 
-  const updateMistakeTag = useCallback((oldLabel, newLabel) => {
-    const n = newLabel.trim();
-    if (!n || n === oldLabel) return;
-    if (USE_MOCK) {
-      setMistakeObjects((prev) => {
-        if (prev.some((t) => t.label === n)) return prev;
-        const next = prev
-          .map((t) => (t.label === oldLabel ? { ...t, label: n } : t))
-          .sort((a, b) => a.label.localeCompare(b.label));
-        writeList(mistakeKey(journalId), next);
-        return next;
-      });
-    } else {
-      setMistakeObjects((prev) => {
-        const item = prev.find((t) => t.label === oldLabel);
-        if (!item || prev.some((t) => t.label === n && t.id !== item.id)) return prev;
-        updateCatalogItem(journalId, "mistake-tags", item.id, { label: n }).catch(console.error);
-        return prev
-          .map((t) => (t.id === item.id ? { ...t, label: n } : t))
-          .sort((a, b) => a.label.localeCompare(b.label));
-      });
-    }
-  }, [journalId]);
+  const updateMistakeTag = useCallback(async (oldValue, newValue) => {
+    const n = newValue.trim();
+    const item = mistakeObjects.find(item => item.label === oldValue);
+    if (!n || !item || n === oldValue) return;
+    if (mistakeObjects.some(entry => entry.id !== item.id && entry.label.toLowerCase() === n.toLowerCase())) throw new Error("This option already exists.");
+    const updated = USE_MOCK ? {...item, label: n} : await updateCatalogItem(journalId, "mistake-tags", item.id, {label:n});
+    setMistakeObjects(prev => {
+      const next = prev.map(entry => entry.id === item.id ? updated : entry).sort((a,b) => a.label.localeCompare(b.label));
+      if (USE_MOCK) writeList(mistakeKey(journalId), next);
+      return next;
+    });
+  }, [journalId, mistakeObjects]);
 
   // ── Setup tag CRUD ────────────────────────────────────────────────────────────
 
@@ -341,46 +290,29 @@ export function useJournalCatalog(journalId) {
     }
   }, [journalId]);
 
-  const removeSetup = useCallback((label) => {
-    if (USE_MOCK) {
-      setSetupObjects((prev) => {
-        const next = prev.filter((t) => t.label !== label);
-        writeList(setupKey(journalId), next);
-        return next;
-      });
-    } else {
-      setSetupObjects((prev) => {
-        const item = prev.find((t) => t.label === label);
-        if (!item) return prev;
-        deleteCatalogItem(journalId, "setup-tags", item.id).catch(console.error);
-        return prev.filter((t) => t.id !== item.id);
-      });
-    }
-  }, [journalId]);
+  const removeSetup = useCallback(async (value) => {
+    const item = setupObjects.find(item => item.label === value);
+    if (!item) return;
+    if (!USE_MOCK) await deleteCatalogItem(journalId, "setup-tags", item.id);
+    setSetupObjects(prev => {
+      const next = prev.filter(entry => entry.id !== item.id);
+      if (USE_MOCK) writeList(setupKey(journalId), next);
+      return next;
+    });
+  }, [journalId, setupObjects]);
 
-  const updateSetup = useCallback((oldLabel, newLabel) => {
-    const n = newLabel.trim();
-    if (!n || n === oldLabel) return;
-    if (USE_MOCK) {
-      setSetupObjects((prev) => {
-        if (prev.some((t) => t.label === n)) return prev;
-        const next = prev
-          .map((t) => (t.label === oldLabel ? { ...t, label: n } : t))
-          .sort((a, b) => a.label.localeCompare(b.label));
-        writeList(setupKey(journalId), next);
-        return next;
-      });
-    } else {
-      setSetupObjects((prev) => {
-        const item = prev.find((t) => t.label === oldLabel);
-        if (!item || prev.some((t) => t.label === n && t.id !== item.id)) return prev;
-        updateCatalogItem(journalId, "setup-tags", item.id, { label: n }).catch(console.error);
-        return prev
-          .map((t) => (t.id === item.id ? { ...t, label: n } : t))
-          .sort((a, b) => a.label.localeCompare(b.label));
-      });
-    }
-  }, [journalId]);
+  const updateSetup = useCallback(async (oldValue, newValue) => {
+    const n = newValue.trim();
+    const item = setupObjects.find(item => item.label === oldValue);
+    if (!n || !item || n === oldValue) return;
+    if (setupObjects.some(entry => entry.id !== item.id && entry.label.toLowerCase() === n.toLowerCase())) throw new Error("This option already exists.");
+    const updated = USE_MOCK ? {...item, label: n} : await updateCatalogItem(journalId, "setup-tags", item.id, {label:n});
+    setSetupObjects(prev => {
+      const next = prev.map(entry => entry.id === item.id ? updated : entry).sort((a,b) => a.label.localeCompare(b.label));
+      if (USE_MOCK) writeList(setupKey(journalId), next);
+      return next;
+    });
+  }, [journalId, setupObjects]);
 
   // ── Public API ────────────────────────────────────────────────────────────────
 

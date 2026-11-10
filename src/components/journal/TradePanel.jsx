@@ -25,7 +25,7 @@ import { Input } from "@/components/ui/input";
 import SetupOptionManager from "./SetupOptionManager";
 import { useSetupOptions } from "@/hooks/useSetupOptions";
 import TimeframeField from "./TimeframeField";
-import SelectField from "@/components/ui/select-field";
+import OptionCombobox from "./OptionCombobox";
 import DateTimePicker from "@/components/ui/date-time-picker";
 import {
   toTradeDateTimeInput as toInputDt,
@@ -271,8 +271,8 @@ export default function TradePanel({
   }
   const isEdit = mode === "edit";
   const [manageOptions, setManageOptions] = useState(null);
-  const { options: trendOptions } = useSetupOptions("trends");
-  const { options: sessionOptions } = useSetupOptions("sessions");
+  const { options: trendOptions, add: addTrend, update: updateTrend, remove: removeTrend } = useSetupOptions("trends");
+  const { options: sessionOptions, add: addSession, update: updateSession, remove: removeSession } = useSetupOptions("sessions");
   const auth = useAuth();
   const timezone = auth?.user?.timezone || getUserTimezone();
   const journalContext = useJournal();
@@ -541,6 +541,10 @@ export default function TradePanel({
     <>
       <Sheet open={open} onOpenChange={(v) => !v && requestExit()}>
         <SheetContent
+          onEscapeKeyDown={event => {
+            // An expanded field handles Escape before the enclosing trade sheet.
+            if (document.querySelector('[data-slot="sheet-content"] [data-option-panel]')) event.preventDefault();
+          }}
           className={`flex flex-col ${resizing ? "select-none" : ""}`}
           style={{ maxWidth: `${panelWidth}px`, transition: "none" }}
           data-wide-review={panelWidth > 760}
@@ -625,6 +629,7 @@ export default function TradePanel({
                             onChange={field.onChange}
                             options={catalog.assets}
                             onCreateAsset={catalog.addAsset}
+                            onUpdateAsset={catalog.updateAsset} onDeleteAsset={catalog.removeAsset}
                           />
                         )}
                       />
@@ -740,6 +745,7 @@ export default function TradePanel({
                     errors={errors}
                     onCreate={customFields.create}
                     onRemove={removeCustomField}
+                    onUpdateOptions={customFields.updateOptions}
                     disabled={customFields.loading || !!customFields.error}
                     showAdd={false}
                   />
@@ -852,6 +858,7 @@ export default function TradePanel({
                     errors={errors}
                     onCreate={customFields.create}
                     onRemove={removeCustomField}
+                    onUpdateOptions={customFields.updateOptions}
                     disabled={customFields.loading || !!customFields.error}
                     showAdd={false}
                   />
@@ -960,14 +967,15 @@ export default function TradePanel({
                         name="trend_direction"
                         control={control}
                         render={({ field }) => (
-                          <SelectField translateOptions
+                          <OptionCombobox translateOptions
                             id="trade-trend_direction"
                             label={entryFields.label("trend_direction", t("Trend"))}
                             value={field.value}
-                            onValueChange={field.onChange}
+                            onChange={field.onChange}
                             onBlur={field.onBlur}
                             ref={field.ref}
                             options={trendOptions}
+                            onCreate={label => addTrend({value:label,label})} onUpdate={updateTrend} onDelete={removeTrend} maxLength={20}
                             placeholder={t("Select trend")}
                           />
                         )}
@@ -979,14 +987,15 @@ export default function TradePanel({
                         name="session"
                         control={control}
                         render={({ field }) => (
-                          <SelectField translateOptions
+                          <OptionCombobox translateOptions
                             id="trade-session"
                             label={entryFields.label("session", t("Session"))}
                             value={field.value}
-                            onValueChange={field.onChange}
+                            onChange={field.onChange}
                             onBlur={field.onBlur}
                             ref={field.ref}
                             options={sessionOptions}
+                            onCreate={label => addSession({value:label,label})} onUpdate={updateSession} onDelete={removeSession} maxLength={50}
                             placeholder={t("Select session")}
                           />
                         )}
@@ -1006,9 +1015,9 @@ export default function TradePanel({
                             value={field.value ?? ""}
                             onChange={field.onChange}
                             options={catalog.setups}
-                            onCreateOption={catalog.addSetup}
+                            label="Setup" onCreateOption={catalog.addSetup}
+                            onUpdateOption={catalog.updateSetup} onDeleteOption={catalog.removeSetup}
                             placeholder={t("Select or type a setup…")}
-                            createLabel={(v) => `Add "${v}" to setups`}
                           />
                         )}
                       />
@@ -1021,6 +1030,7 @@ export default function TradePanel({
                     errors={errors}
                     onCreate={customFields.create}
                     onRemove={removeCustomField}
+                    onUpdateOptions={customFields.updateOptions}
                     disabled={customFields.loading || !!customFields.error}
                     showAdd={false}
                   />
@@ -1042,7 +1052,8 @@ export default function TradePanel({
                         selected={watchedEmotions}
                         onChange={(v) => setValue("emotions", v, { shouldValidate: true })}
                         options={catalog.emotionTags}
-                        onCreateTag={catalog.addEmotionTag}
+                        maxLength={50} label="Emotion" onCreateTag={catalog.addEmotionTag}
+                        onUpdateTag={catalog.updateEmotionTag} onDeleteTag={catalog.removeEmotionTag}
                         placeholder={t("Select emotions…")}
                       />
                     </F>)}
@@ -1056,7 +1067,8 @@ export default function TradePanel({
                         selected={watchedMistakes}
                         onChange={(v) => setValue("mistakes", v)}
                         options={catalog.mistakeTags}
-                        onCreateTag={catalog.addMistakeTag}
+                        maxLength={50} label="Mistake" onCreateTag={catalog.addMistakeTag}
+                        onUpdateTag={catalog.updateMistakeTag} onDeleteTag={catalog.removeMistakeTag}
                         placeholder={t("Select mistakes…")}
                         emptyText="No errors"
                       />
@@ -1069,6 +1081,7 @@ export default function TradePanel({
                     errors={errors}
                     onCreate={customFields.create}
                     onRemove={removeCustomField}
+                    onUpdateOptions={customFields.updateOptions}
                     disabled={customFields.loading || !!customFields.error}
                     showAdd={false}
                   />
@@ -1088,6 +1101,7 @@ export default function TradePanel({
                     errors={errors}
                     onCreate={customFields.create}
                     onRemove={removeCustomField}
+                    onUpdateOptions={customFields.updateOptions}
                     disabled={customFields.loading || !!customFields.error}
                     showAdd={false}
                   />
@@ -1112,6 +1126,7 @@ export default function TradePanel({
                     errors={errors}
                     onCreate={customFields.create}
                     onRemove={removeCustomField}
+                    onUpdateOptions={customFields.updateOptions}
                     disabled={customFields.loading || !!customFields.error}
                     showAdd={false}
                   />

@@ -1,5 +1,10 @@
 // English source strings are stable keys; API values and user content stay unchanged.
 export default {
+  "Search or create…": "Rechercher ou créer…",
+  "Select or type an asset…": "Sélectionner ou saisir un actif…",
+  "Edit option": "Modifier l’option",
+  "No options found": "Aucune option trouvée",
+  "Unable to save option. Please try again.": "Impossible d’enregistrer l’option. Réessayez.",
   "Paste or upload screenshots. Drag the grip to arrange; tap it for options.": "Collez ou importez des captures. Déplacez-les avec la poignée ; touchez-la pour les options.",
   "Section {number}": "Section {number}",
   "Choose a destination": "Choisir une destination",

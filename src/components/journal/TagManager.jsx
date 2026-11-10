@@ -30,18 +30,24 @@ export default function TagManager({
     setEditing({ name, value: name });
   }
 
-  function commitEdit() {
-    if (!editing) return;
-    const trimmed = editing.value.trim();
-    if (trimmed && trimmed !== editing.name) onUpdate(editing.name, trimmed);
-    setEditing(null);
+  const [busy,setBusy] = useState(false), [error,setError] = useState("");
+  async function run(action) {
+    if (busy) return;
+    setBusy(true);setError("");
+    try {await action();} catch (err) {setError(err.message || "Unable to save option. Please try again.");}
+    finally {setBusy(false);}
   }
 
-  function handleAdd() {
+  async function commitEdit() {
+    if (!editing) return;
+    const trimmed = editing.value.trim();
+    await run(async()=>{if (trimmed && trimmed !== editing.name) await onUpdate(editing.name, trimmed);setEditing(null);});
+  }
+
+  async function handleAdd() {
     const trimmed = newTag.trim();
     if (!trimmed) return;
-    onAdd(trimmed);
-    setNewTag("");
+    await run(async()=>{await onAdd(trimmed);setNewTag("");});
   }
 
   return (
@@ -52,6 +58,8 @@ export default function TagManager({
           <DialogDescription className="sr-only">{t("Add, rename, or delete tags.")}</DialogDescription>
         </DialogHeader>
 
+        {error&&<p role="alert" className="text-xs text-red-400">{t(error)}</p>}
+        <fieldset disabled={busy} className="min-w-0 space-y-3">
         {/* Tag list */}
         <div className="max-h-64 space-y-1 overflow-y-auto py-1">
           {tags.length === 0 && (
@@ -92,7 +100,7 @@ export default function TagManager({
                   <span className="text-xs text-zinc-500">{t("Remove?")}</span>
                   <button
                     type="button"
-                    onClick={() => { onRemove(tag); setConfirmDel(null); }}
+                    onClick={() => run(async()=>{ await onRemove(tag); setConfirmDel(null); })}
                     className="rounded p-1 text-red-400 hover:bg-red-500/10"
                   >
                     <Check className="size-3.5" />
@@ -140,6 +148,7 @@ export default function TagManager({
           <Button type="button" size="sm" onClick={handleAdd} disabled={!newTag.trim()}>
             <Plus className="size-3.5" />{t("Add")}</Button>
         </div>
+        </fieldset>
       </DialogContent>
     </Dialog>
   );

@@ -5,6 +5,7 @@ import { Controller } from "react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import OptionCombobox from "./OptionCombobox";
 import SelectField from "@/components/ui/select-field";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { TRADE_SECTIONS, CUSTOM_FIELD_TYPES, customFieldOptions } from "@/lib/tradeCustomFields";
@@ -51,7 +52,7 @@ export function AddCustomFieldButton({onCreate,disabled}) {
   </>;
 }
 
-export default function TradeCustomFields({section,fields,control,errors,onCreate,onRemove,disabled,showAdd=true}) {
+export default function TradeCustomFields({section,fields,control,errors,onCreate,onRemove,onUpdateOptions,disabled,showAdd=true}) {
   useLanguage();
   const [adding,setAdding]=useState(false);
   const [removing,setRemoving]=useState(null);
@@ -73,8 +74,11 @@ export default function TradeCustomFields({section,fields,control,errors,onCreat
         </div>
         <Controller name={`custom_fields.${definition.id}`} control={control} defaultValue="" render={({field})=>{
           const props={id:`custom-${definition.id}`,"aria-label":definition.label,onBlur:field.onBlur,ref:field.ref};
-          if(definition.field_type==="select") return <SelectField {...props} label={definition.label} value={field.value} onValueChange={field.onChange} options={definition.options} placeholder={t("Select an option")}/>;
-          if(definition.field_type==="boolean") return <SelectField {...props} label={definition.label} value={field.value===""||field.value==null?"":String(field.value)} onValueChange={value=>field.onChange(value===""?null:value==="true")} translateOptions options={[{value:"true",label:"Yes"},{value:"false",label:"No"}]} placeholder={t("Select yes or no")}/>;
+          if(definition.field_type==="select") return <OptionCombobox {...props} label={definition.label} value={field.value} onChange={field.onChange} options={definition.options}
+            onCreate={onUpdateOptions ? next=>onUpdateOptions(definition.id,[...definition.options,next]) : undefined}
+            onUpdate={onUpdateOptions ? (old,next)=>onUpdateOptions(definition.id,definition.options.map(option=>option===old?next:option)) : undefined}
+            onDelete={onUpdateOptions ? next=>onUpdateOptions(definition.id,definition.options.filter(option=>option!==next)) : undefined} placeholder={t("Select an option")}/>;
+          if(definition.field_type==="boolean") return <OptionCombobox {...props} label={definition.label} value={field.value===""||field.value==null?"":String(field.value)} onChange={value=>field.onChange(value===""?null:value==="true")} translateOptions options={[{value:"true",label:"Yes"},{value:"false",label:"No"}]} placeholder={t("Select yes or no")}/>;
           return <Input {...props} type={definition.field_type==="number"?"number":"text"} step={definition.field_type==="number"?"any":undefined} maxLength={definition.field_type==="text"?2000:undefined} value={field.value??""} onChange={event=>field.onChange(definition.field_type==="number"?(event.target.value===""?null:Number(event.target.value)):event.target.value)} className="h-10 border-zinc-800 bg-zinc-900/60 text-sm focus-visible:ring-zinc-400/40"/>;
         }}/>
         {errors?.custom_fields?.[definition.id]?.message&&<p className="text-xs text-red-400">{errors.custom_fields[definition.id].message}</p>}

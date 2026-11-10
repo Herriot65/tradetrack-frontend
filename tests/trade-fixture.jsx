@@ -59,6 +59,13 @@ window.__uploadedImages = [];
 window.__definitionWrites = 0;
 api.defaults.adapter = async (config) => {
   const reply = (data) => ({ data, status: 200, statusText: "OK", headers: {}, config });
+  const customDetail=config.url.match(/\/custom-fields\/(\d+)\/$/);
+  if (customDetail && config.method==='patch') {
+    const id=Number(customDetail[1]);const field=definitions.find(field=>field.id===id);
+    Object.assign(field,JSON.parse(config.data));
+    localStorage.setItem('fixture-custom-definitions',JSON.stringify(definitions));
+    return reply(field);
+  }
   if (config.url.endsWith("/custom-fields/")) {
     if (config.url.includes('/screenshots/')) {
     if (config.method === 'post') {
@@ -116,6 +123,17 @@ api.defaults.adapter = async (config) => {
 
 function App() {
   const [open, setOpen] = useState(true);
+  const [optionLists,setOptionLists] = useState(() => JSON.parse(localStorage.getItem('fixture-option-lists') || 'null') || {assets:catalog.assets,setups:catalog.setups,emotionTags:catalog.emotionTags,mistakeTags:catalog.mistakeTags});
+  const liveCatalog={...catalog,...optionLists};
+  for (const [kind,list] of [['Asset','assets'],['Setup','setups'],['EmotionTag','emotionTags'],['MistakeTag','mistakeTags']]) {
+    const change=transform=>{
+      if(window.__failOptionSave) {window.__failOptionSave=false;throw new Error('Synthetic option save failure');}
+      setOptionLists(previous=>{const next={...previous,[list]:transform(previous[list])};localStorage.setItem('fixture-option-lists',JSON.stringify(next));return next;});
+    };
+    liveCatalog[`add${kind}`]=async value=>change(previous=>[...previous,value]);
+    liveCatalog[`update${kind}`]=async (old,value)=>change(previous=>previous.map(item=>item===old?value:item));
+    liveCatalog[`remove${kind}`]=async value=>change(previous=>previous.filter(item=>item!==value));
+  }
   const [review, setReview] = useState(false);
   const [mode, setMode] = useState(
     new URLSearchParams(location.search).has("edit") ? "edit" : "new",
@@ -157,7 +175,7 @@ function App() {
           setTrade(result);
           return result;
         }}
-        catalog={catalog}
+        catalog={new URLSearchParams(location.search).has("options")?liveCatalog:catalog}
         journalId={Number(new URLSearchParams(location.search).get("journal") || 1)}
       />
     </>
