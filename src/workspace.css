@@ -1,0 +1,145 @@
+/* Shared workspace language: graphite planes, quiet borders, emerald light. */
+.nx-shell {
+  --background: 225 22% 5%;
+  --card: 225 18% 8%;
+  --secondary: 225 15% 12%;
+  --border: 225 13% 16%;
+  --input: 225 13% 21%;
+  --border-hairline: #252a34;
+  --border-control: #343c49;
+  --bg-ground: #0a0d14;
+  --surface-card: hsl(var(--card));
+  --surface-page: hsl(var(--background));
+  --surface-raised: hsl(var(--secondary));
+  --hairline: var(--border-hairline);
+  --chart-grid: #202630;
+  --shadow-panel: 0 8px 24px rgb(0 0 0 / .14), inset 0 1px 0 rgb(255 255 255 / .035);
+  background: radial-gradient(ellipse at 65% 0%, rgb(40 89 78 / .11), transparent 48%), hsl(var(--background));
+}
+.light .nx-shell {
+  --background: 210 25% 97%;
+  --card: 0 0% 100%;
+  --secondary: 210 20% 94%;
+  --border: 210 18% 87%;
+  --input: 210 17% 79%;
+  --border-hairline: #dce3eb;
+  --border-control: #c3ced9;
+  --bg-ground: #f5f7fa;
+  --chart-grid: #e8edf2;
+  --shadow-panel: 0 8px 24px rgb(25 40 60 / .045), inset 0 1px 0 white;
+}
+.nx-shell .nx-sidebar {
+  background: linear-gradient(180deg, rgb(var(--gain-rgb) / .025), transparent 35%), hsl(var(--card));
+  border-right-color: var(--border-hairline);
+}
+.nx-shell .nx-header { background: color-mix(in srgb, var(--bg-ground) 86%, transparent); }
+.nx-header-location { display: flex; align-items: center; gap: 20px; color: var(--text-secondary); font-size: 12px; white-space: nowrap; }
+.nx-header-location > span { color: var(--text-tertiary); opacity: .6; }
+.nx-workspace-label { display: flex; align-items: center; gap: 9px; margin: 0 2px 26px; padding: 11px; border: 1px solid var(--border-hairline); border-radius: 8px; font-size: 11px; color: var(--text-primary); background: rgb(var(--gain-rgb) / .025); }
+.nx-workspace-label svg { color: var(--gain); }
+.nx-nav-caption { margin: 0 12px 12px !important; font-size: 9px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--text-tertiary); }
+.nx-shell .nx-nav-item { position: relative; border: 1px solid transparent; }
+.nx-shell .nx-nav-item[data-active="true"] { border-color: rgb(var(--gain-rgb) / .12); background: linear-gradient(100deg, rgb(var(--gain-rgb) / .13), rgb(var(--gain-rgb) / .025)); box-shadow: inset 0 1px 0 rgb(var(--gain-rgb) / .06); }
+.nx-shell .nx-nav-item[data-active="true"]::after { content: ''; position: absolute; width: 4px; height: 4px; border-radius: 50%; background: var(--gain); right: 12px; }
+.nx-shell[data-collapsed="true"] .nx-nav-item::after { display: none; }
+.nx-coach-invite { margin: 12px 16px 20px; padding: 16px; border: 1px solid rgb(var(--gain-rgb) / .16); border-radius: 12px; background: radial-gradient(ellipse at 0 0, rgb(var(--gain-rgb) / .08), transparent 85%); }
+.nx-invite-icon { display: inline-flex; padding: 7px; border-radius: 8px; color: var(--gain); background: rgb(var(--gain-rgb) / .08); border: 1px solid rgb(var(--gain-rgb) / .12); }
+.nx-coach-invite p { margin: 12px 0 5px; font-weight: 500; font-size: 12px; }
+.nx-coach-invite > span:not(.nx-invite-icon) { display: block; font-size: 11px; line-height: 1.7; color: var(--text-secondary); }
+.nx-coach-invite a { display: flex; align-items: center; gap: 10px; color: var(--gain); font-size: 11px; font-weight: 500; margin-top: 16px; }
+.nx-shell .nx-page { padding-top: 32px; }
+.nx-shell .nx-accounts-hero {
+  display: block;
+  min-height: 325px;
+  padding: 36px 44px;
+  background: radial-gradient(ellipse at 82% 38%, rgb(var(--gain-rgb) / .13), transparent 52%), linear-gradient(115deg, hsl(var(--card)), hsl(var(--background)));
+  border-radius: 18px;
+  overflow: hidden;
+}
+.nx-accounts-hero::after { content: ''; pointer-events: none; position: absolute; inset: 0; z-index: -1; background-image: linear-gradient(rgb(var(--gain-rgb) / .04) 1px, transparent 1px), linear-gradient(90deg, rgb(var(--gain-rgb) / .04) 1px, transparent 1px); background-size: 44px 44px; mask-image: linear-gradient(90deg, transparent 35%, black); }
+.nx-accounts-hero > div:first-child { position: relative; width: 52%; }
+.nx-hero-tag { display: inline-flex; align-items: center; gap: 8px; border-radius: 20px; padding: 5px 10px; color: var(--gain); border: 1px solid rgb(var(--gain-rgb) / .2); background: rgb(var(--gain-rgb) / .045); font-size: 9px; letter-spacing: .09em; text-transform: uppercase; }
+.nx-hero-tag > span, .nx-account-context > span:first-child { width: 5px; height: 5px; background: var(--gain); box-shadow: 0 0 8px rgb(var(--gain-rgb) / .4); border-radius: 50%; flex-shrink: 0; }
+.nx-welcome { margin-top: 24px; font-size: 12px; color: var(--text-secondary); }
+.nx-accounts-hero .nx-page-title { margin-top: 7px; font-size: clamp(28px, 3vw, 42px); font-weight: 500; letter-spacing: -.055em; }
+.nx-accounts-hero .nx-subtitle { margin-top: 10px; max-width: 390px; font-size: 12px; line-height: 1.9; }
+.nx-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 24px; }
+.nx-hero-actions [data-variant="default"] { box-shadow: inset 0 1px 0 rgb(255 255 255 / .3), 0 4px 16px rgb(var(--gain-rgb) / .1); }
+.nx-accounts-hero .nx-depth-scene { right: 7%; top: 65px; scale: 1.35; opacity: 1; }
+.nx-depth-orbit { position: absolute; inset: -20px -25px; border: 1px solid rgb(var(--gain-rgb) / .11); border-radius: 50%; transform: rotate(-25deg); }
+.nx-depth-orbit::after { content: ''; position: absolute; left: 20%; top: 7%; width: 5px; height: 5px; border-radius: 50%; background: var(--gain); box-shadow: 0 0 12px rgb(var(--gain-rgb) / .6); }
+.nx-depth-orbit-outer { inset: -40px -55px; border-style: dashed; opacity: .45; transform: rotate(20deg); }
+.nx-workspace-stats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; margin-bottom: 38px; }
+.nx-workspace-stats > div { display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px solid var(--border-hairline); border-radius: 12px; background: hsl(var(--card)); box-shadow: inset 0 1px 0 rgb(255 255 255 / .025); }
+.nx-stat-icon { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; flex-shrink: 0; border: 1px solid var(--border-hairline); border-radius: 10px; color: var(--text-secondary); background: hsl(var(--secondary)); }
+.nx-workspace-stats p { font-size: 11px; color: var(--text-secondary); }
+.nx-workspace-stats strong { display: block; margin-top: 5px; font-size: 23px; font-weight: 500; line-height: 1.15; letter-spacing: -.04em; }
+.nx-section-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.nx-section-title h2 { font-size: 17px; font-weight: 500; letter-spacing: -.03em; }
+.nx-section-title p { font-size: 12px; color: var(--text-secondary); margin-top: 5px; }
+.nx-section-title > span { font-size: 10px; color: var(--text-tertiary); border: 1px solid var(--border-hairline); padding: 5px 9px; border-radius: 6px; }
+.nx-account-card { padding: 24px; border-radius: 14px; }
+.nx-account-card > div:first-child { margin-bottom: 24px; }
+.nx-account-card .nx-eyebrow { font-size: 8px; letter-spacing: .13em; }
+.nx-account-card dl { border-top: 0; padding-top: 0; margin-top: 22px; margin-bottom: 22px; }
+.nx-account-card dd { font-size: 19px; letter-spacing: -.025em; margin-top: 7px; }
+.nx-account-card dl > div:last-child dd { font-size: 11px; border: 1px solid var(--border-hairline); border-radius: 5px; padding: 3px 7px; }
+.nx-open-account { display: flex; align-items: center; justify-content: space-between; width: 100%; padding-top: 17px; border-top: 1px solid var(--border-hairline); color: var(--text-secondary); font-size: 11px; transition: color 180ms; }
+.nx-open-account:hover, .nx-open-account:focus-visible { color: var(--gain); }
+.nx-new-account { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 13px; padding: 30px; min-height: 290px; border: 1px dashed var(--border-control); border-radius: 14px; background: rgb(var(--gain-rgb) / .015); transition: background 180ms, border-color 180ms; }
+.nx-new-account:hover { background: rgb(var(--gain-rgb) / .05); border-color: rgb(var(--gain-rgb) / .4); }
+.nx-new-account > span { display: flex; padding: 12px; border: 1px solid var(--border-hairline); border-radius: 12px; background: hsl(var(--card)); color: var(--gain); }
+.nx-new-account strong { font-weight: 500; font-size: 13px; }
+.nx-new-account p { color: var(--text-tertiary); font-size: 11px; line-height: 1.8; max-width: 220px; }
+.nx-account-context { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 10px; margin-bottom: 16px; }
+.nx-context-slash { color: var(--text-tertiary); margin: 0 3px; }
+.nx-shell .analytics-card { box-shadow: var(--shadow-panel); border-radius: 14px; }
+.nx-shell .analytics-hero-grid > .analytics-card:first-child { background: radial-gradient(ellipse at 0 0, rgb(var(--gain-rgb) / .12), transparent 90%), var(--surface-card); }
+.nx-kpi-tools { display: flex; align-items: center; gap: 12px; color: var(--text-tertiary); }
+.nx-kpi-tools > svg { opacity: .8; }
+.nx-shell .analytics-kpi-value { font-size: clamp(25px, 3cqi, 38px); margin-top: 24px; }
+.nx-status-distribution { display: flex; gap: 4px; height: 7px; margin: 22px 24px 0; overflow: hidden; border-radius: 3px; }
+.nx-status-distribution > span { flex-basis: 0; border-radius: 2px; }
+.nx-status-distribution [data-tone="win"] { background: var(--gain); }
+.nx-status-distribution [data-tone="loss"] { background: var(--loss); }
+.nx-status-distribution [data-tone="neutral"] { background: var(--neutral); }
+.nx-status-distribution [data-tone="open"] { background: var(--open); }
+.nx-status-list > div { font-size: 12px; }
+.nx-status-list dt::before { content: ''; display: inline-block; width: 5px; height: 5px; margin-right: 10px; border-radius: 50%; background: var(--open); vertical-align: 2px; }
+.nx-status-list > div:nth-child(2) dt::before { background: var(--gain); }
+.nx-status-list > div:nth-child(3) dt::before { background: var(--loss); }
+.nx-status-list > div:nth-child(4) dt::before { background: var(--neutral); }
+.nx-trade-status { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 5px; background: hsl(var(--secondary)); color: var(--text-secondary); font-size: 10px; }
+.nx-trade-status::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+.nx-trade-status[data-status="WIN"] { color: var(--gain); background: rgb(var(--gain-rgb) / .08); }
+.nx-trade-status[data-status="LOSS"] { color: var(--loss); background: rgb(var(--loss-rgb) / .08); }
+.nx-trade-status[data-status="OPEN"] { color: var(--open); background: rgb(var(--open-rgb) / .08); }
+.nx-shell button:focus-visible, .nx-shell a:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 4px; }
+@media (max-width: 1200px) and (min-width: 601px) {
+  .nx-shell .nx-accounts-hero { padding: 32px; }
+  .nx-accounts-hero > div:first-child { width: 55%; }
+  .nx-accounts-hero .nx-depth-scene { right: -15px; top: 80px; scale: .9; }
+  .nx-workspace-stats > div { padding: 16px; gap: 12px; }
+  .nx-stat-icon { display: none; }
+}
+@media (max-width: 900px) { .nx-header-location { display: none; } }
+@media (max-width: 767px) {
+  .nx-shell .nx-page { padding-top: 24px; }
+  .nx-coach-invite { margin-bottom: 12px; }
+}
+@media (max-width: 600px) {
+  .nx-shell .nx-accounts-hero { padding: 200px 24px 28px; min-height: 0; }
+  .nx-accounts-hero > div:first-child { width: 100%; }
+  .nx-accounts-hero .nx-depth-scene { right: calc(50% - 120px); top: 12px; scale: .78; transform-origin: center; }
+  .nx-accounts-hero .nx-page-title { font-size: 30px; }
+  .nx-welcome { margin-top: 18px; }
+  .nx-hero-tag { font-size: 8px; }
+  .nx-hero-actions { gap: 6px; }
+  .nx-workspace-stats { gap: 8px; margin-bottom: 28px; }
+  .nx-workspace-stats > div { padding: 14px 10px; gap: 0; }
+  .nx-stat-icon { display: none; }
+  .nx-workspace-stats p { font-size: 9px; line-height: 1.5; }
+  .nx-workspace-stats strong { font-size: 22px; }
+  .nx-section-title > span { display: none; }
+}
+@media (max-height: 740px) { .nx-coach-invite { display: none; } }

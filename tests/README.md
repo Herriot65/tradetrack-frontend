@@ -205,3 +205,22 @@ for ordering and grouping rather than reconstructing it inside every comparison.
 history in America/New_York. Five-sample local medians were 335 ms before and
 43 ms after this change; these are CPU-only Node timings, not network or browser
 response times. Formula, timezone and DST-overlap ordering checks run in `npm test`.
+
+## Motion and depth experiment
+
+`npm run test:motion` runs the real app with synthetic API responses and captures
+accounts, Overview and Analytics under `artifacts/motion/`. It verifies desktop
+card tilt, touch layouts at 320/390/600/768/1024px, light/dark themes, retained
+filters, reduced-motion behavior and zero API writes. Use `PLAYWRIGHT_MODULE`
+as for the other browser runners. The account-header sculpture is decorative
+CSS geometry, unrelated to journal results. No new dependencies are required.
+
+## Landing motion
+
+`npm run test:landing-motion` captures the real landing page and verifies continuous
+orbit motion, pointer response, pause/resume, scroll reveals, registration links,
+320–1440px layouts in both themes and reduced-motion behavior. Set
+`PLAYWRIGHT_MODULE` as above. Captures live in `artifacts/landing-motion/`; set
+`CAPTURE_MOTION_FRAMES=0` to skip the 48 frames used for the animation preview.
+The hero is decorative CSS 3D geometry; its chart illustrates the product and
+is not live market data. Animation pauses offscreen and in background tabs.

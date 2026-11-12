@@ -1,0 +1,155 @@
+/* Motion and depth experiment. Data remains on flat, stable reading planes. */
+:root {
+  --motion-ease: cubic-bezier(.22, 1, .36, 1);
+}
+.nx-accounts-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 220px;
+  padding: 32px;
+  align-items: center;
+  border: 1px solid var(--border-hairline);
+  border-radius: 20px;
+  background: radial-gradient(ellipse at 75% 0%, rgb(var(--gain-rgb) / .09), transparent 65%), hsl(var(--card));
+  box-shadow: inset 0 1px 0 rgb(var(--gain-rgb) / .12), 0 16px 50px rgb(0 0 0 / .08);
+}
+.nx-accounts-hero > div:first-child { z-index: 1; }
+.nx-accounts-hero .nx-subtitle { max-width: 370px; }
+.nx-accounts-hero > [data-slot="button"] { align-self: flex-end; z-index: 1; }
+.nx-account-card {
+  background: linear-gradient(145deg, rgb(var(--gain-rgb) / .035), transparent 55%), hsl(var(--card));
+  box-shadow: inset 0 1px 0 rgb(var(--gain-rgb) / .1), 0 8px 24px rgb(0 0 0 / .1);
+  transition: transform 280ms var(--motion-ease), border-color 200ms, box-shadow 280ms;
+}
+.nx-account-icon {
+  box-shadow: inset 0 1px 0 rgb(var(--gain-rgb) / .2), 0 4px 12px rgb(0 0 0 / .12);
+  transition: transform 280ms var(--motion-ease);
+}
+.nx-account-card:focus-within {
+  border-color: rgb(var(--gain-rgb) / .4);
+}
+/* These are real extruded CSS shapes, kept outside all data visualizations. */
+.nx-depth-scene {
+  position: absolute;
+  width: 240px;
+  height: 190px;
+  right: 100px;
+  top: 4px;
+  pointer-events: none;
+  perspective: 700px;
+}
+.nx-depth-halo {
+  position: absolute;
+  inset: 15px -30px -10px;
+  background: radial-gradient(ellipse, rgb(var(--gain-rgb) / .12), transparent 68%);
+}
+.nx-depth-stage {
+  position: absolute;
+  left: 20px;
+  top: 75px;
+  width: 190px;
+  height: 100px;
+  transform-style: preserve-3d;
+  transform: rotateX(58deg) rotateZ(-32deg);
+}
+.nx-depth-platform {
+  position: absolute;
+  inset: -12px;
+  border: 1px solid rgb(var(--gain-rgb) / .25);
+  border-radius: 16px;
+  background: repeating-linear-gradient(0deg, transparent 0 23px, rgb(var(--gain-rgb) / .07) 24px 25px), repeating-linear-gradient(90deg, transparent 0 23px, rgb(var(--gain-rgb) / .07) 24px 25px), hsl(var(--card));
+  box-shadow: 8px 12px 0 rgb(var(--gain-rgb) / .045), 20px 32px 28px rgb(0 0 0 / .25);
+}
+.nx-depth-bar {
+  position: absolute;
+  left: calc(8px + var(--bar) * 45px);
+  top: 28px;
+  width: 26px;
+  height: 40px;
+  --height: calc(22px + var(--bar) * 20px);
+  transform-style: preserve-3d;
+}
+.nx-depth-bar span { position: absolute; border: 1px solid rgb(var(--gain-rgb) / .55); }
+.nx-depth-top {
+  width: 26px;
+  height: 40px;
+  transform: translateZ(var(--height));
+  background: linear-gradient(135deg, #c5ffe6, var(--gain));
+  box-shadow: 0 0 18px rgb(var(--gain-rgb) / .15);
+}
+.nx-depth-front {
+  width: 26px;
+  height: var(--height);
+  top: 40px;
+  transform-origin: top;
+  transform: rotateX(90deg);
+  background: linear-gradient(180deg, #3bbd8e, #10392d);
+}
+.nx-depth-side {
+  width: var(--height);
+  height: 40px;
+  left: 26px;
+  transform-origin: left;
+  transform: rotateY(-90deg);
+  background: linear-gradient(90deg, #134c3a, #299c73);
+}
+.analytics-hero-grid > .analytics-card {
+  background: linear-gradient(140deg, rgb(var(--gain-rgb) / .035), transparent 65%), var(--surface-card);
+  box-shadow: inset 0 1px 0 rgb(var(--gain-rgb) / .1), 0 6px 18px rgb(0 0 0 / .08);
+}
+.analytics-hero-grid > .analytics-card:first-child {
+  border-color: rgb(var(--gain-rgb) / .22);
+  background: radial-gradient(ellipse at 0 0, rgb(var(--gain-rgb) / .08), transparent 80%), var(--surface-card);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nx-motion-page > *, .nx-panel-enter { animation: nx-arrive 320ms var(--motion-ease) both; }
+  .nx-account-grid > div { animation: nx-arrive 460ms var(--motion-ease) both; }
+  .nx-account-grid > div:nth-child(2) { animation-delay: 55ms; }
+  .nx-account-grid > div:nth-child(3) { animation-delay: 110ms; }
+  .nx-depth-stage { animation: nx-sculpture-arrive 850ms var(--motion-ease) both; }
+  [data-slot="button"] {
+    transition: transform 180ms var(--motion-ease), box-shadow 180ms, background-color 150ms, border-color 150ms, color 150ms;
+  }
+  [data-slot="button"]:active:not(:disabled) { transform: translateY(1px) scale(.98); }
+  .nx-nav-item svg { transition: transform 220ms var(--motion-ease); }
+  .nx-nav-item[data-active="true"] svg { filter: drop-shadow(0 0 5px rgb(var(--gain-rgb) / .25)); }
+  .nx-nav-item:not([aria-disabled="true"]):hover svg { transform: translateY(-1px); }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .nx-account-card:hover {
+    transform: perspective(1000px) translateY(-4px) rotateX(1.5deg) rotateY(-1.5deg);
+    border-color: rgb(var(--gain-rgb) / .35);
+    box-shadow: inset 0 1px 0 rgb(var(--gain-rgb) / .18), 0 18px 32px rgb(0 0 0 / .18);
+  }
+  .nx-account-card:hover .nx-account-icon { transform: translateY(-2px) rotate(-5deg); }
+  [data-slot="button"][data-variant="default"]:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgb(var(--gain-rgb) / .18);
+  }
+}
+@keyframes nx-arrive {
+  from { opacity: 0; translate: 0 6px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes nx-sculpture-arrive {
+  from { transform: rotateX(58deg) rotateZ(-38deg) translateZ(-12px); }
+  to { transform: rotateX(58deg) rotateZ(-32deg) translateZ(0); }
+}
+@media (max-width: 1100px) {
+  .nx-depth-scene { right: 20px; opacity: .65; }
+  .nx-accounts-hero { padding-right: 260px; }
+  .nx-accounts-hero > [data-slot="button"] { align-self: auto; }
+}
+@media (max-width: 600px) {
+  .nx-accounts-hero { padding: 24px; padding-top: 150px; flex-direction: column; align-items: flex-start; gap: 20px; }
+  .nx-accounts-hero > div:first-child { width: 100%; }
+  .nx-depth-scene { top: -12px; right: 12px; scale: .8; transform-origin: top right; opacity: 1; }
+}
+/* Radix entrances/exits also respect the operating system preference. */
+@media (prefers-reduced-motion: reduce) {
+  .nx-motion-page *, [data-slot="dialog-content"], [data-slot="sheet-content"],
+  [data-slot="dropdown-menu-content"], [data-slot="popover-content"] {
+    animation: none !important;
+    transition: none !important;
+  }
+}

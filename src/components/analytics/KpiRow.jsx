@@ -1,6 +1,7 @@
 import { translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
 import { formatPercent, formatRatio, formatValue } from "@/lib/analytics";
+import { TrendingUp, Target, ArrowDownRight, Layers3, Scale } from "lucide-react";
 import InfoTip from "@/components/ui/InfoTip";
 import { cn } from "@/lib/utils";
 
@@ -22,13 +23,15 @@ const DEFINITIONS = {
   "Payoff ratio": "Average win divided by the absolute average loss.",
   "Max drawdown": "Largest decline from an equity peak, including the initial zero baseline.",
 };
+const KPI_ICONS = {'Net result': TrendingUp, 'Win rate': Target, 'Expectancy': Target, 'Max drawdown': ArrowDownRight, 'Closed trades': Layers3};
 function KpiCard({ label, value, detail, tone = "text-ink" }) {
   useLanguage();
+  const Icon = KPI_ICONS[label] ?? Scale;
   return (
-    <div className="analytics-card relative min-w-0 overflow-hidden rounded-xl border border-hairline bg-surface-card px-4 py-5 min-[900px]:px-5 min-[900px]:py-6">
+    <div className="analytics-card nx-kpi-card relative min-w-0 overflow-hidden rounded-xl border border-hairline bg-surface-card px-4 py-5 min-[900px]:px-5 min-[900px]:py-6">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[12px] leading-4 text-ink-secondary">{t(label)}</p>
-        <InfoTip label={label} text={DEFINITIONS[label]} />
+        <span className="nx-kpi-tools"><Icon aria-hidden="true" className="size-4" /><InfoTip label={label} text={DEFINITIONS[label]} /></span>
       </div>
       <p
         className={cn(

@@ -14,6 +14,8 @@ import {
   Sparkles,
   X,
   ChevronDown,
+  ArrowUpRight,
+  Layers3,
 } from "lucide-react";
 import { useJournal } from "@/journals/useJournal";
 import { useAuth } from "@/auth/useAuth";
@@ -170,6 +172,8 @@ export default function AppShell({ children }) {
           </Button>
         </div>
         <nav className="flex-1 space-y-2 overflow-y-auto px-3 py-6" aria-label={t('Main sections')}>
+          {!compact && <div className="nx-workspace-label"><Layers3 className="size-3.5" /><span>{t('Personal workspace')}</span></div>}
+          {!compact && <p className="nx-nav-caption">{t('Workspace')}</p>}
           {destinations.map(item=><Hint key={item.id} label={t(item.label)}>
             <Link to={item.href ?? sectionLink(item.tab)} className="nx-nav-item" data-active={section===item.id}
               aria-label={t(item.label)} aria-current={section===item.id?'page':undefined}
@@ -179,6 +183,7 @@ export default function AppShell({ children }) {
             </Link>
           </Hint>)}
         </nav>
+        {!compact && <div className="nx-coach-invite"><span className="nx-invite-icon"><Sparkles className="size-4" /></span><p>{t('Build your edge.')}</p><span>{t('Turn your trading history into a clearer next move.')}</span><Link to="/coach" onClick={() => setMobileOpen(false)}>{t('Explore AI Coach')}<ArrowUpRight className="size-3.5" /></Link></div>}
         <div className="space-y-2 border-t border-border/60 p-3">
           <Hint label={t('Settings')}>
             {journal ? <Link to={sectionLink('settings')} className="nx-nav-item" data-active={section==='settings'} aria-label={t('Settings')} aria-current={section==='settings'?'page':undefined} onClick={()=>setMobileOpen(false)}>
@@ -205,6 +210,7 @@ export default function AppShell({ children }) {
       </aside>
       <div className="nx-shell-body" inert={mobile && mobileOpen ? true : undefined}>
         <header className="nx-header">
+
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
             <Button
               id="mobile-navigation-trigger"
@@ -220,6 +226,7 @@ export default function AppShell({ children }) {
               <Menu />
             </Button>
             <div className="w-full min-w-0 max-w-[220px]"><JournalSwitcher /></div>
+            <div className="nx-header-location"><span>/</span>{t(section === 'accounts' ? 'Workspace' : section === 'journal' ? 'Journal' : section === 'analytics' ? 'Analytics' : section === 'settings' ? 'Settings' : section === 'coach' ? 'AI Coach' : 'Overview')}</div>
           </div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-4">
             <LanguageSelector />
@@ -255,7 +262,7 @@ export default function AppShell({ children }) {
             </DropdownMenu>
           </div>
         </header>
-        <main id="main-content" className="nx-page">
+        <main id="main-content" className="nx-page nx-motion-page">
           {children}
         </main>
       </div>

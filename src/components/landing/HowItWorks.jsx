@@ -17,7 +17,7 @@ export default function HowItWorks() {
       />
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
         {steps.map((step) => (
-          <article key={step.step} className="relative border-t border-border pt-6">
+          <article data-reveal key={step.step} className="relative border-t border-border pt-6">
             <div className="mb-6 flex items-center justify-between">
               <span className="font-mono text-[12px] text-primary">{step.step} /</span>
               <step.icon className="size-4 text-zinc-500" />

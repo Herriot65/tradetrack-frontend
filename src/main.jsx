@@ -1,6 +1,8 @@
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
+import "./motion.css";
+import "./workspace.css";
 import "./lib/theme";
 
 import { BrowserRouter } from "react-router-dom";

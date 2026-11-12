@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 export default function FeatureCard({ icon: Icon, title, description, className }) {
   useLanguage();
   return (
-    <article
+    <article data-reveal
       className={cn(
         "group relative rounded-xl border border-border/60 bg-card/70 p-6 transition-colors hover:border-primary/25 sm:p-8",
         className,

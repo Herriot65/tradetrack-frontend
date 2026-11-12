@@ -74,7 +74,10 @@ export default function OverviewTab({
         {summary.closedCount > 0 ? <EquitySection analytics={analytics} compact equityOnly /> : <AnalyticsCard><div className="px-6 py-16 text-center"><h2 className="text-sm font-medium">{t('No closed trades yet')}</h2><p className="mt-2 text-sm text-muted-foreground">{t('Close a trade to see your equity curve. Open trades appear in recent activity below.')}</p></div></AnalyticsCard>}
         <AnalyticsCard>
           <CardHeading title={t('Trade status')} detail={t('In the selected period')} />
-          <dl className="divide-y divide-border px-5 pb-3 pt-3">
+          <div className="nx-status-distribution" aria-hidden="true">
+            {[[summary.wins,'win'],[summary.losses,'loss'],[summary.breakEven,'neutral'],[summary.openPositions,'open']].map(([count,tone]) => <span key={tone} data-tone={tone} style={{flexGrow: count}} />)}
+          </div>
+          <dl className="nx-status-list divide-y divide-border px-5 pb-3 pt-3">
             {[[t('Open positions'), summary.openPositions], [t('Winning trades'), summary.wins], [t('Losing trades'), summary.losses], [t('Break-even trades'), summary.breakEven]].map(([label, value]) => <div key={label} className="flex items-center justify-between gap-4 py-4 text-sm"><dt className="text-muted-foreground">{label}</dt><dd className="font-medium tabular-nums">{value}</dd></div>)}
           </dl>
           <div className="border-t border-border p-4"><Button className="w-full" variant="ghost" onClick={() => onNavigate('analytics')}>{t('Explore analytics')}<ArrowRight className="size-4" /></Button></div>
@@ -87,7 +90,7 @@ export default function OverviewTab({
             <thead className="border-y border-border text-xs text-muted-foreground"><tr>{['Date', 'Symbol', 'Direction', 'Result', 'Net result'].map(label => <th scope="col" key={label} className="whitespace-nowrap px-5 py-3 font-medium">{t(label)}</th>)}</tr></thead>
             <tbody className="divide-y divide-border">{recentTrades.map(trade => <tr key={trade.id} className="hover:bg-secondary/40"><td className="whitespace-nowrap px-5 py-4 text-muted-foreground">{formatDateLabel(trade.date)}</td><td className="px-5 py-4"><button type="button" className="rounded font-medium hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" aria-label={t('Review trade {id}', {
                     id: trade.id
-                  })} onClick={() => setSelectedTrade(trade)}>{trade.assetLabel}</button></td><td className="px-5 py-4 text-muted-foreground">{t(trade.sideLabel === 'BUY' ? 'Long' : 'Short')}</td><td className="px-5 py-4">{t(trade.status === 'WIN' ? 'Win' : trade.status === 'LOSS' ? 'Loss' : trade.status === 'OPEN' ? 'Open' : 'Break even')}</td><td className={`whitespace-nowrap px-5 py-4 font-medium tabular-nums ${trade.value > 0 ? 'text-profit' : trade.value < 0 ? 'text-loss' : 'text-muted-foreground'}`}>{formatValue(trade.value, analytics.unit)}</td></tr>)}</tbody>
+                  })} onClick={() => setSelectedTrade(trade)}>{trade.assetLabel}</button></td><td className="px-5 py-4 text-muted-foreground">{t(trade.sideLabel === 'BUY' ? 'Long' : 'Short')}</td><td className="px-5 py-4"><span className="nx-trade-status" data-status={trade.status}>{t(trade.status === 'WIN' ? 'Win' : trade.status === 'LOSS' ? 'Loss' : trade.status === 'OPEN' ? 'Open' : 'Break even')}</span></td><td className={`whitespace-nowrap px-5 py-4 font-medium tabular-nums ${trade.value > 0 ? 'text-profit' : trade.value < 0 ? 'text-loss' : 'text-muted-foreground'}`}>{formatValue(trade.value, analytics.unit)}</td></tr>)}</tbody>
           </table>
         </div>
       </AnalyticsCard>

@@ -323,6 +323,7 @@ export default function Journal() {
         {/* ── Journal header ── */}
         <div className="nx-page-header">
           <div className="min-w-0">
+            <p className="nx-account-context"><span />{activeJournal.name}<span className="nx-context-slash">/</span>{t('Workspace')}</p>
             <div className="flex items-center gap-2.5">
               <h1 className="nx-page-title truncate">{t(sectionTitle)}</h1>
               {typeLabel && section === 'settings' && (
@@ -398,16 +399,16 @@ export default function Journal() {
         <div className={SECTION_TABS[section] ? 'pt-6' : ''}>
           {!accountReady && <div className="nx-surface p-8 text-sm text-muted-foreground" role="status">{t('Loading account…')}</div>}
           {accountReady && <>
-          <div hidden={activeTab !== 'overview'}>
+          <div className="nx-panel-enter" hidden={activeTab !== 'overview'}>
             <OverviewTab key={activeJournal?.id} journal={activeJournal} jLoading={jLoading} onNavigate={setActiveTab} syntheticEnabled={syntheticEnabled}/>
           </div>
-          <div hidden={activeTab !== 'settings'} className="grid gap-5 lg:grid-cols-2">
+          <div hidden={activeTab !== 'settings'} className="nx-panel-enter grid gap-5 lg:grid-cols-2">
             <section className="nx-surface p-6"><h2 className="text-lg font-medium">{t('Journal Settings')}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{t('Configure the name, currency, starting capital and break-even rules for this account.')}</p><Button className="mt-5" variant="outline" onClick={()=>setSettingsOpen(true)}>{t('Edit account settings')}</Button></section>
             <section className="nx-surface p-6"><h2 className="text-lg font-medium">{t('Preferences')}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{t('Choose your appearance and the timezone used for trades.')}</p><Button className="mt-5" variant="outline" onClick={()=>setPreferencesOpen(true)}>{t('Edit preferences')}</Button></section>
             <section className="nx-surface p-6"><h2 className="text-lg font-medium">{t('Import MT5 Report')}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{t('Import an existing MetaTrader 5 report into this journal.')}</p><Button className="mt-5" variant="outline" onClick={()=>setImportOpen(true)}><FileUp className="size-4"/>{t('Import MT5 Report')}</Button></section>
             <section className="nx-surface p-6"><h2 className="text-lg font-medium">{t('Delete Journal')}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{t('All trades, analytics, and catalog data will be permanently deleted. This action cannot be undone.')}</p><Button className="mt-5" variant="outline" onClick={()=>{setDeleteError(null);setDeleteOpen(true);}}>{t('Delete Journal')}</Button></section>
           </div>
-          <div className={activeTab !== "trades" ? "hidden" : ""}>
+          <div className={activeTab !== "trades" ? "hidden" : "nx-panel-enter"}>
             <TradesTab
               key={`${activeJournal?.id}-${tradesRefreshKey}`}
               breakEvenMethod={breakEvenMethod}
@@ -415,7 +416,7 @@ export default function Journal() {
               refreshKey={tradesRefreshKey}
             />
           </div>
-          <div className={activeTab !== "analytics" ? "hidden" : ""}>
+          <div className={activeTab !== "analytics" ? "hidden" : "nx-panel-enter"}>
             <JournalAnalyticsTab
               embedded
               journal={activeJournal}
@@ -426,10 +427,10 @@ export default function Journal() {
               onToggleSynthetic={handleToggleSynthetic}
             />
           </div>
-          <div className={activeTab !== "breakdown" ? "hidden" : ""}>
+          <div className={activeTab !== "breakdown" ? "hidden" : "nx-panel-enter"}>
             <BreakdownTab key={activeJournal?.id} journal={activeJournal} active={activeTab === "breakdown"} syntheticEnabled={syntheticEnabled} />
           </div>
-          <div className={activeTab !== "custom-fields" ? "hidden" : ""}>
+          <div className={activeTab !== "custom-fields" ? "hidden" : "nx-panel-enter"}>
             <CustomFieldsTab journalId={activeJournal?.id} active={activeTab === "custom-fields"} />
           </div>
           </>}

@@ -6,11 +6,11 @@ export default function ProductPreview() {
   return (
     <figure className="nx-product-preview overflow-hidden rounded-2xl border border-zinc-700/70 bg-card shadow-2xl shadow-black/30">
       <img
-        src="/screenshots/journal-analytics.jpg"
-        alt={t("Nexora journal analytics showing trade performance, an equity curve, and a drawdown chart using sample trades.")}
-        width={2160}
-        height={2520}
-        fetchPriority="high"
+        src="/screenshots/workspace-overview.png"
+        alt={t("Nexora overview showing an equity curve, key metrics, and recent trades using sample data.")}
+        width={1440}
+        height={1368}
+        loading="lazy"
         decoding="async"
         className="block h-auto w-full"
       />
