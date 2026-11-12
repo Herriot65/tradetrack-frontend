@@ -1,11 +1,13 @@
 import { translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
-import { Fragment, useRef, useState } from "react";
-import { ImagePlus, Plus, X, Maximize2, Minimize2 } from "lucide-react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { ImagePlus, Plus, X, Maximize2, Minimize2, Undo2, Redo2 } from "lucide-react";
+import { RichNotesScope } from "@/components/notes/richNotesScope";
 import RichNotesEditor from "@/components/notes/RichNotesEditor";
 import { documentFromText } from "@/lib/noteDocument";
 import { flattenImageRows, imageRows, placeImage } from "@/lib/imageLayout";
 import { useImagePlacement } from "@/hooks/useImagePlacement";
+import ImageAnnotationDialog from "./ImageAnnotationDialog";
 import TradeImage from "./TradeImage";
 import ImageLightbox from "./ImageLightbox";
 
@@ -34,6 +36,8 @@ function NoteSection({
   onFinishRename,
   onRemove,
   onTextChange,
+  onImageTextChange,
+  onImageDetailsChange,
   onResizeImage,
   onAddImages,
   onRemoveImage,
@@ -43,11 +47,19 @@ function NoteSection({
   onPlaceImage,
 }) {
   useLanguage();
+  const [annotating,setAnnotating]=useState(null);
   const fileInputRef  = useRef(null);
+  const [focusNote,setFocusNote] = useState(null);
+  const [activeEditor,setActiveEditor] = useState(null);
+  const rowEnds = new Set(imageRows(section.images).map(row=>row.at(-1).id));
 
-  function readFiles(files) {
+  function readFiles(files,afterId) {
     const images = Array.from(files).filter(file => file?.type.startsWith("image/"));
-    if (images.length) onAddImages(images.map(file => ({ id: crypto.randomUUID(), name: file.name || "pasted-image.png", preview: URL.createObjectURL(file), file })));
+    if (images.length) {
+      const added=images.map(file => ({ id: crypto.randomUUID(), name: file.name || "pasted-image.png", preview: URL.createObjectURL(file), file }));
+      onAddImages(added,afterId);
+      setFocusNote({id:added.at(-1).id,request:Date.now()});
+    }
   }
 
   function handlePaste(event) {
@@ -56,16 +68,17 @@ function NoteSection({
       .map(item => item.getAsFile()).filter(Boolean);
     if (!files.length) return;
     event.preventDefault();
-    readFiles(files);
+    readFiles(files,event.target.closest?.('[data-image-note-id]')?.dataset.imageNoteId);
   }
 
   return (
+    <RichNotesScope.Provider value={{activeEditor,setActiveEditor}}>
     <div
       data-note-section={section.id}
       className="overflow-hidden rounded-lg border border-border bg-card"
       onPaste={handlePaste}
       onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => { e.preventDefault(); readFiles(e.dataTransfer.files); }}
+      onDrop={(e) => { e.preventDefault(); readFiles(e.dataTransfer.files,e.target.closest?.('[data-image-note-id]')?.dataset.imageNoteId); }}
     >
       {/* Header */}
       <div className="flex items-center gap-2 border-b border-zinc-800/60 bg-zinc-900/60 px-3 py-2">
@@ -111,7 +124,8 @@ function NoteSection({
         {section.images.map((img,index) => <Fragment key={img.id}>
           {index>0 && img.startRow && <span className="trade-image-break" aria-hidden="true"/>}
           <TradeImage src={img.preview} label={img.name} width={img.width ?? 100} onResize={width => onResizeImage(img.id,width)}
-            onOpen={() => onImageClick(img.preview)} onRemove={() => onRemoveImage(img.id)}
+            annotations={img.annotations} caption={img.caption} onAnnotate={()=>setAnnotating(img.id)}
+            onOpen={() => onImageClick({src:img.preview,annotations:img.annotations,caption:img.caption})} onRemove={() => onRemoveImage(img.id)}
             arrangement={{imageId:String(img.id),dragging:placement.drag?.source.sectionId===section.id && String(placement.drag.source.imageId)===String(img.id),
               onPointerDown:event=>placement.start(event,{sectionId:section.id,imageId:img.id}),onPointerMove:placement.move,onPointerUp:placement.end,onLostPointerCapture:placement.cancel,
               consumeClick:placement.consumeClick,allowKeyboard:placement.allowKeyboard,
@@ -123,6 +137,10 @@ function NoteSection({
                 className={`trade-image-dropzone trade-image-dropzone-${mode}`}>{t({above:'Above',below:'Below',left:'Left',right:'Right'}[mode])}</div>)}
             </div>}
           </TradeImage>
+          {(img.afterContent || rowEnds.has(img.id)) && <div data-image-note-id={String(img.id)} className="w-full min-w-0 basis-full">
+            <RichNotesEditor embedded continuation onFocusRequestHandled={()=>setFocusNote(null)} focusRequest={focusNote?.id===img.id?focusNote.request:undefined} label={t('Notes after {image}',{image:img.name})} value={img.afterContent ?? documentFromText()} onChange={content=>onImageTextChange(img.id,content)}/>
+
+          </div>}
         </Fragment>)}
         {placement.drag && <div data-image-drop data-section-id={section.id} data-image-id="" data-placement="below" className="trade-image-drop-end" data-active={placement.drag.over?.sectionId===section.id && placement.drag.over.imageId==null}>{t(section.images.length?'Place at end of section':'Place image here')}</div>}
       </div>}
@@ -145,6 +163,8 @@ function NoteSection({
         />
       </div>
     </div>
+    {annotating!=null && <ImageAnnotationDialog key={annotating} image={section.images.find(image=>image.id===annotating)} onClose={()=>setAnnotating(null)} onSave={details=>{onImageDetailsChange(annotating,details);setAnnotating(null);}}/>}
+    </RichNotesScope.Provider>
   );
 }
 
@@ -155,13 +175,46 @@ export default function TradeNotesEditor({ sections, onChange, onDeleteImage, on
   const [editingId,   setEditingId]   = useState(null);
   const [lightboxSrc, setLightboxSrc] = useState(null);
   const editorRef = useRef(null);
+  const objectUrls=useRef(new Set());
+  useEffect(()=>{for(const section of sections)for(const image of section.images)if(image.file&&image.preview?.startsWith('blob:'))objectUrls.current.add(image.preview);},[sections]);
+  useEffect(()=>{const urls=objectUrls.current;return()=>urls.forEach(url=>URL.revokeObjectURL(url));},[]);
+  const typingGroup=useRef(false),typingTimer=useRef(null);
+  useEffect(()=>()=>clearTimeout(typingTimer.current),[]);
   const [announcement,setAnnouncement] = useState('');
+  const [undoStack,setUndoStack]=useState([]),[redoStack,setRedoStack]=useState([]);
+  function commit(next) {typingGroup.current=false;setUndoStack(history=>[...history.slice(-19),sections]);setRedoStack([]);onChange(next);}
   const [placementError,setPlacementError] = useState('');
+  const undo=useCallback(()=>{
+    if(!undoStack.length)return;
+    typingGroup.current=false;setRedoStack(history=>[...history,sections]);onChange(undoStack.at(-1));setUndoStack(history=>history.slice(0,-1));
+  },[undoStack,sections,onChange]);
+  const redo=useCallback(()=>{
+    if(!redoStack.length)return;
+    typingGroup.current=false;setUndoStack(history=>[...history,sections]);onChange(redoStack.at(-1));setRedoStack(history=>history.slice(0,-1));
+  },[redoStack,sections,onChange]);
+  const handleShortcut=useCallback(event=>{
+    // TipTap and native inputs retain their own text-editing history.
+    if(event.target.closest('input,textarea,select,[contenteditable="true"],[data-slot="dialog-content"]'))return;
+    if(!(event.ctrlKey||event.metaKey)||event.altKey)return;
+    const key=event.key.toLowerCase();
+    if(key==='z'||key==='y') {event.preventDefault();event.stopPropagation();if(key==='y'||event.shiftKey)redo();else undo();}
+  },[undo,redo]);
+  const shortcutScope=useRef(false);
+  useEffect(()=>{
+    function focus(event) {
+      const root=editorRef.current?.closest('[data-notes-editor]');
+      if(event.type==='focusin' && event.target.matches('[data-slot="sheet-content"]'))return;
+      if(event.target!==document.body)shortcutScope.current=!!root?.contains(event.target);
+    }
+    function key(event) {if(shortcutScope.current&&!event.defaultPrevented)handleShortcut(event);}
+    document.addEventListener('focusin',focus);document.addEventListener('pointerdown',focus);document.addEventListener('keydown',key);
+    return()=>{document.removeEventListener('focusin',focus);document.removeEventListener('pointerdown',focus);document.removeEventListener('keydown',key);};
+  },[handleShortcut]);
   function arrange(source,target) {
     const result=placeImage(sections,source,target);
     setPlacementError(result.full?t('A row can contain up to four images. Place this image above or below instead.'):'');
     if(!result.changed)return false;
-    onChange(result.sections);setAnnouncement('');
+    commit(result.sections);setAnnouncement('');
     requestAnimationFrame(()=>{
       setAnnouncement(t('Image moved.'));
       const control=editorRef.current?.querySelector(`[data-note-image-id="${CSS.escape(String(source.imageId))}"] [data-image-arrange]`);
@@ -172,8 +225,11 @@ export default function TradeNotesEditor({ sections, onChange, onDeleteImage, on
   const placement=useImagePlacement(arrange);
 
 
-  function update(id, patch) {
-    onChange(sections.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+  function update(id, patch, record=true) {
+    const next=sections.map((s) => (s.id === id ? { ...s, ...patch } : s));
+    if(record||!typingGroup.current)commit(next);else {setRedoStack([]);onChange(next);}
+    clearTimeout(typingTimer.current);
+    if(!record){typingGroup.current=true;typingTimer.current=setTimeout(()=>{typingGroup.current=false;},700);}
   }
 
   function finishRename(id, value) {
@@ -183,32 +239,38 @@ export default function TradeNotesEditor({ sections, onChange, onDeleteImage, on
 
   function addSection() {
     const id = `section-${Date.now()}`;
-    onChange([...sections, { id, title: "New Section", text: "", images: [] }]);
+    commit([...sections, { id, title: "New Section", text: "", images: [] }]);
     setEditingId(id);
   }
 
-  function addImages(id, newImgs) {
+  function addImages(id, newImgs, afterId) {
     const s = sections.find((s) => s.id === id);
-    if (s) update(id, { images: [...s.images, ...newImgs] });
+    if (s) {
+      const at=afterId ? s.images.findIndex(image=>String(image.id)===String(afterId))+1 : s.images.length;
+      update(id,{images:[...s.images.slice(0,at),...newImgs,...s.images.slice(at)]});
+    }
   }
 
   function removeImage(sectionId, imgId) {
     const s = sections.find((s) => s.id === sectionId);
     if (!s) return;
     const img = s.images.find((i) => i.id === imgId);
-    if (img?.file) URL.revokeObjectURL(img.preview);
     if (img?.screenshotId && onDeleteImage) onDeleteImage(img.screenshotId);
     update(sectionId, { images: flattenImageRows(imageRows(s.images).map(row=>row.filter(image=>image.id!==imgId))) });
   }
 
   function removeSection(id) {
     const s = sections.find((sec) => sec.id === id);
-    if (s) s.images.forEach((img) => { if (img.file) URL.revokeObjectURL(img.preview); });
-    onChange(sections.filter((sec) => sec.id !== id));
+    if (s) s.images.forEach(img=>{if(img.screenshotId)onDeleteImage?.(img.screenshotId);});
+    commit(sections.filter((sec) => sec.id !== id));
   }
 
   return (
-    <>
+    <div data-notes-editor>
+      <div className="mb-2 flex flex-wrap gap-2">
+        <button type="button" aria-label={t('Undo notes change')} title={`${t('Undo notes change')} (Ctrl/⌘ Z)`} aria-keyshortcuts="Control+Z Meta+Z" disabled={!undoStack.length} onClick={undo} className="flex size-11 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary disabled:opacity-40"><Undo2 aria-hidden="true" className="size-4"/></button>
+        <button type="button" aria-label={t('Redo notes change')} title={`${t('Redo notes change')} (Ctrl/⌘ Shift+Z)`} aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z Control+Y" disabled={!redoStack.length} onClick={redo} className="flex size-11 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary disabled:opacity-40"><Redo2 aria-hidden="true" className="size-4"/></button>
+      </div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs leading-5 text-muted-foreground">{t("Paste or upload screenshots. Drag the grip to arrange; tap it for options.")}</p>
         {onToggleWide && <button type="button" aria-pressed={wide} onClick={onToggleWide} className="hidden min-h-10 shrink-0 items-center gap-2 rounded-md border border-border px-3 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground md:flex">
@@ -229,9 +291,11 @@ export default function TradeNotesEditor({ sections, onChange, onDeleteImage, on
             onStartRename={() => setEditingId(s.id)}
             onFinishRename={(v) => finishRename(s.id, v)}
             onRemove={() => removeSection(s.id)}
-            onTextChange={(text,content) => update(s.id, { text, content })}
+            onTextChange={(text,content) => update(s.id, { text, content },false)}
+            onImageDetailsChange={(id,details)=>update(s.id,{images:s.images.map(image=>image.id===id?{...image,...details}:image)})}
+            onImageTextChange={(id,content,record=false)=>update(s.id,{images:s.images.map(image=>image.id===id?{...image,afterContent:content}:image)},record)}
             onResizeImage={(id,width) => update(s.id,{images:s.images.map(image => image.id===id?{...image,width}:image)})}
-            onAddImages={(imgs) => addImages(s.id, imgs)}
+            onAddImages={(imgs,afterId) => addImages(s.id, imgs,afterId)}
             onRemoveImage={(imgId) => removeImage(s.id, imgId)}
             onImageClick={setLightboxSrc}
           />
@@ -249,6 +313,6 @@ export default function TradeNotesEditor({ sections, onChange, onDeleteImage, on
       {placementError && <p role="alert" className="mt-2 text-xs text-muted-foreground">{placementError}</p>}
       {placement.drag && <div aria-hidden="true" className="pointer-events-none fixed z-[90] rounded-md border border-primary/50 bg-popover px-3 py-2 text-xs shadow-lg" style={{left:Math.min(placement.drag.x+12,innerWidth-160),top:Math.max(8,placement.drag.y-44)}}>{t('Move screenshot')}</div>}
       {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
-    </>
+    </div>
   );
 }

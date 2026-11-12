@@ -15,6 +15,7 @@ export function imageRows(images = []) {
     }
     rows.at(-1).push(image);
     total += size;
+    if (image.afterContent) total = 100;
   }
   return rows;
 }
@@ -78,4 +79,13 @@ export function placeImage(sections, source, target) {
     } else return {sections,changed:false};
   }
   return {sections:sections.map(section => section === from || section === to ? {...section,images:flattenImageRows(layouts.get(section.id))} : section),changed:true};
+}
+
+// Text follows its image, including when screenshots move between sections.
+export function serializeImageNotes(images = []) {
+  return Object.fromEntries(images.filter(image=>image.screenshotId != null && image.afterContent).map(image=>[key(image),image.afterContent]));
+}
+
+export function serializeImageDetails(images = []) {
+  return Object.fromEntries(images.filter(image=>image.screenshotId!=null && (image.annotations?.length || image.caption)).map(image=>[key(image),{annotations:image.annotations??[],caption:image.caption??''}]));
 }

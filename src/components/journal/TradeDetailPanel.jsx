@@ -80,14 +80,16 @@ export default function TradeDetailPanel({ trade: summaryTrade, open, onClose })
   const noteSections = trade.notes_document?.version === 1 ? (trade.notes_document.sections ?? []).map(section => {
     const images = screenshots.filter(image => (owners.has(String(image.id)) ? owners.get(String(image.id))===section.id : image.section === section.title) && !usedImages.has(image));
     images.forEach(image => usedImages.add(image));
-    return {...section, images:restoreImageLayout(images,section.image_layout)};
+    return {...section, images:restoreImageLayout(images,section.image_layout).map(image=>({...image,afterContent:section.image_notes?.[String(image.id)],...section.image_details?.[String(image.id)]}))};
   }) : [];
   const otherImages = screenshots.filter(image => !usedImages.has(image));
   const widthToggle = screenshots.length > 0 && <Button type="button" variant="outline" size="sm" className="hidden md:flex" aria-pressed={wide} onClick={() => setWide(value => !value)}>{wide ? t("Standard width") : t("Wide review")}</Button>;
   function renderImages(images) {
-    return <div className="trade-note-images">{images.map((image,index) => <Fragment key={image.id}>{index>0 && image.startRow && <span className="trade-image-break" aria-hidden="true"/>}<TradeImage key={image.id} src={image.image_url} width={image.display_width ?? 100}
-      label={image.section ? t("{section} · Screenshot {number}", {section:image.section,number:screenshots.indexOf(image)+1}) : t("Screenshot {number}",{number:screenshots.indexOf(image)+1})}
-      onOpen={() => setLightboxSrc(image.image_url)} /></Fragment>)}</div>;
+    return <div className="trade-note-images">{images.map((image,index) => <Fragment key={image.id}>{index>0 && image.startRow && <span className="trade-image-break" aria-hidden="true"/>}<TradeImage key={image.id} src={image.image_url} annotations={image.annotations} caption={image.caption} width={image.display_width ?? 100}
+      label={image.section ? t("{section} · Screenshot {number}", {section:image.section,number:screenshots.findIndex(item=>String(item.id)===String(image.id))+1}) : t("Screenshot {number}",{number:screenshots.findIndex(item=>String(item.id)===String(image.id))+1})}
+      onOpen={() => setLightboxSrc({src:image.image_url,annotations:image.annotations,caption:image.caption})} />
+      {image.afterContent && documentText(image.afterContent).trim() && <div data-image-note-id={String(image.id)} className="rich-notes-readonly w-full min-w-0 basis-full"><RichNotesContent document={image.afterContent}/></div>}
+      </Fragment>)}</div>;
   }
 
 

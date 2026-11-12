@@ -55,6 +55,7 @@ if (customMode && localStorage.getItem("fixture-custom-trade"))
   stored = JSON.parse(localStorage.getItem("fixture-custom-trade"));
 window.__tradeSaves = 0;
 window.__imageUploads = 0;
+window.__imageDeletes = 0;
 window.__uploadedImages = [];
 window.__definitionWrites = 0;
 api.defaults.adapter = async (config) => {
@@ -68,6 +69,13 @@ api.defaults.adapter = async (config) => {
   }
   if (config.url.endsWith("/custom-fields/")) {
     if (config.url.includes('/screenshots/')) {
+    if(config.method==='delete') {
+      window.__imageDeletes++;
+      const id=Number(config.url.match(/screenshots\/([^/]+)\//)?.[1]);
+      stored.screenshots=(stored.screenshots??[]).filter(image=>Number(image.id)!==id);
+      if(customMode)localStorage.setItem('fixture-custom-trade',JSON.stringify(stored));
+      return reply(null);
+    }
     if (config.method === 'post') {
       window.__imageUploads++;
       const image={id:Date.now()+Math.random(),image_url:await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(config.data.get('file'));}),section:config.data.get('section'),display_width:Number(config.data.get('display_width')||100)};
@@ -89,6 +97,13 @@ api.defaults.adapter = async (config) => {
     return reply(definitions);
   }
   if (config.url.includes('/screenshots/')) {
+    if(config.method==='delete') {
+      window.__imageDeletes++;
+      const id=Number(config.url.match(/screenshots\/([^/]+)\//)?.[1]);
+      stored.screenshots=(stored.screenshots??[]).filter(image=>Number(image.id)!==id);
+      if(customMode)localStorage.setItem('fixture-custom-trade',JSON.stringify(stored));
+      return reply(null);
+    }
     if (config.method === 'post') {
       window.__imageUploads++;
       const image={id:Date.now()+Math.random(),image_url:await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(config.data.get('file'));}),section:config.data.get('section'),display_width:Number(config.data.get('display_width')||100)};

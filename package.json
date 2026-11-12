@@ -29,7 +29,9 @@
     "test:language": "npm run build && node tests/language-browser.mjs",
     "test:dropdown-options": "node tests/dropdown-options-browser.mjs",
     "test:dropdown-layout": "node tests/dropdown-layout-browser.mjs",
-    "test:response-time": "npm run build && node tests/response-time-browser.mjs"
+    "test:response-time": "npm run build && node tests/response-time-browser.mjs",
+    "test:image-text": "node tests/image-text-browser.mjs",
+    "test:journal-draft-ux": "node tests/journal-draft-ux-browser.mjs"
   },
   "dependencies": {
     "@date-fns/tz": "^1.4.1",
