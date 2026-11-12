@@ -248,3 +248,19 @@ key, migration, scheduler, data access, and usage limits.
 Run `npm run test:coach` for the mocked browser flow. Set `PLAYWRIGHT_MODULE`
 if Playwright is installed outside this project. No paid AI calls are made
 by this test.
+
+
+## Production API region
+
+Vercel builds pin `VITE_API_BASE_URL` to the Frankfurt backend in the
+`buildCommand` in `vercel.json`. This command takes precedence over an older
+API URL stored in Vercel's project environment. Other project variables, such as
+the Google client ID, retain their existing values. Local development still uses
+`.env` and the normal `npm run dev` / `npm run build` commands.
+
+The Frankfurt service uses the existing Supabase database and signing key, so
+this cutover does not require database migration or moving browser storage.
+For rollback, revert the `vercel.json` build-command change and redeploy the
+frontend. The Ohio service remains available during verification. It is also the
+source of the initial server-side Blueprint secret references; decouple those
+references before deleting the Ohio service.
