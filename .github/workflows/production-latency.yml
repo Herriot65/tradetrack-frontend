@@ -23,7 +23,8 @@ jobs:
       - name: Measure deployed frontend and rejected sign-in
         env:
           PLAYWRIGHT_MODULE: ${{ runner.temp }}/latency/node_modules/playwright/index.mjs
-          PROBE_ROUNDS: '6'
+          PROBE_ROUNDS: '2'
+          PROBE_CONTROLS: '1'
         run: node tests/production-latency.mjs
       - name: Save timing report
         if: always()

@@ -10,6 +10,7 @@ const destination = process.env.PROBE_OUTPUT || 'artifacts/production-latency';
 const safeUrl = url => { const u = new URL(url); return u.origin + u.pathname; };
 const rounded = x => Number.isFinite(x) ? Math.round(x * 10) / 10 : null;
 const results = [];
+const controlProbes = [];
 const browser = await chromium.launch({ headless: true, ...(process.env.CHROMIUM_PATH ? {executablePath:process.env.CHROMIUM_PATH} : {}) });
 let context;
 try {
@@ -88,6 +89,27 @@ try {
     }
     if(sample.error) break;
   }
+  if (process.env.PROBE_CONTROLS === '1') {
+    const loginUrl=results.flatMap(r=>r.api).find(r=>r.method==='POST')?.url;
+    if (loginUrl) {
+      const root=loginUrl.replace(/login\/$/,'');
+      const probes=[
+        {name:'unauthenticated_profile',url:root+'me/',method:'GET',expected:401},
+        {name:'login_missing_password',url:loginUrl,method:'POST',data:{email:'latency-control@example.invalid'},expected:401},
+        // Blank passwords are invalid: exercise email uniqueness validation
+        // without hashing or creating an account. Do not submit a valid signup.
+        {name:'registration_validation_only',url:root+'register/',method:'POST',data:{email:'latency-control@example.invalid',password:''},expected:400},
+      ];
+      for(const probe of probes)for(let i=0;i<3;i++){
+        const start=performance.now();
+        const response=await context.request.fetch(probe.url,{method:probe.method,data:probe.data,timeout:20000});
+        const result={name:probe.name,sample:i+1,status:response.status(),totalMs:rounded(performance.now()-start),serverTiming:response.headers()['server-timing']||null};
+        if(result.status!==probe.expected)throw new Error(`Unexpected control status for ${probe.name}: ${result.status}`);
+        if(probe.name==='registration_validation_only' && !(await response.json()).password)throw new Error('Registration did not reject the blank password');
+        controlProbes.push(result);
+      }
+    }
+  }
 } finally { await browser.close(); }
 const successfulMeasurements=results.filter(r=>r.expectedRejection && Number.isFinite(r.submitToErrorMs));
 const durations=successfulMeasurements.map(r=>r.submitToErrorMs).sort((a,b)=>a-b);
@@ -95,7 +117,7 @@ const report={
   measuredAt:new Date().toISOString(), app:base,
   method:'Real Chromium, mobile viewport, no CPU/network emulation. Synthetic rejected login only. Browser-cache labels do not imply hosting cold/warm state.',
   runner:process.env.GITHUB_ACTIONS?'GitHub-hosted ubuntu-24.04; geographic placement not controlled':'local',
-  successfulLoginMeasured:false,results,
+  successfulLoginMeasured:false,results,controlProbes,
   summary:{samples:durations.length,medianRejectedLoginMs:durations.length?rounded((durations[Math.floor((durations.length-1)/2)]+durations[Math.ceil((durations.length-1)/2)])/2):null,minMs:durations[0]??null,maxMs:durations.at(-1)??null},
 };
 await mkdir(destination,{recursive:true});
