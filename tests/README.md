@@ -215,3 +215,9 @@ conversation download, failed-request retry, stopping a pending request without
 losing its question, reset confirmation, task templates, manual results, task
 history/edit/pause/delete, journal switching, and the mobile layout. It never
 calls a paid AI provider.
+
+The coach mobile checks also cover 320/390/430px widths, normal page scrolling
+without a cropped prompt list, expandable filters, 44px prompt targets, and
+Enter inserting a newline without sending on phones. Mobile coach dialogs use
+the available viewport and account for the safe area; desktop keeps its chat
+scroller and keyboard shortcut.

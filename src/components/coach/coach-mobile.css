@@ -1,0 +1,76 @@
+/* Phones use page scrolling instead of squeezing the conversation between
+   three fixed-height toolbars. Desktop retains its independent chat scroller. */
+@media (max-width: 639px) {
+  .coach-workspace { --coach-touch-target: 44px; }
+  .coach-workspace > div:first-child { gap: 12px; }
+  .coach-workspace > div:first-child .nx-eyebrow { display: none; }
+  .coach-workspace h1 { font-size: 26px; margin-top: 0; }
+  .coach-chat {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+  .coach-chat > div:first-child > span { display: none; }
+  .coach-chat > div:first-child > div { width: 100%; justify-content: flex-end; }
+  .coach-messages {
+    overflow: visible;
+    flex: none;
+    min-height: 260px;
+    padding: 20px 16px;
+  }
+  .coach-messages h2 { font-size: 21px; line-height: 1.35; }
+  .coach-composer {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    border-radius: 0 0 12px 12px;
+    padding: 10px 12px max(10px, env(safe-area-inset-bottom));
+    box-shadow: 0 -5px 18px rgb(0 0 0 / 0.04);
+  }
+  .coach-composer textarea {
+    min-height: 64px;
+    max-height: 140px;
+    resize: none;
+    font-size: 16px;
+  }
+  .coach-workspace button, .coach-dialog button {
+    min-height: var(--coach-touch-target, 44px);
+  }
+  .coach-workspace input, .coach-workspace select,
+  .coach-dialog input, .coach-dialog select, .coach-dialog textarea {
+    font-size: 16px;
+    min-height: 44px;
+  }
+  .coach-workspace input[type="checkbox"], .coach-dialog input[type="checkbox"] {
+    min-height: 20px;
+    width: 20px;
+    height: 20px;
+  }
+  .coach-dialog {
+    top: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    left: 8px;
+    right: 8px;
+    transform: none;
+    width: auto;
+    max-width: none;
+    max-height: calc(100dvh - 16px);
+    align-content: start;
+    padding: 20px 16px;
+    scroll-padding-block: 16px;
+  }
+}
+@media (max-width: 639px) {
+  /* Before a conversation starts, put writing ahead of the optional shortcuts.
+     This keeps every prompt visible without a floating box covering the list. */
+  .coach-chat[data-conversation="false"] .coach-composer {
+    position: static;
+    order: 2;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .coach-chat[data-conversation="false"] .coach-messages {
+    order: 3;
+    min-height: 0;
+  }
+}

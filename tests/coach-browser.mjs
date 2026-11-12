@@ -8,7 +8,7 @@ const server = await preview({ preview: { host: "127.0.0.1", port: 4198, strictP
 let browser, page;
 try {
   browser = await chromium.launch({ headless: true, channel: "chrome" });
-  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, hasTouch: true });
   await context.addInitScript(() => { localStorage.setItem("access", "test-access"); localStorage.setItem("last_journal_id", "1"); });
   page = await context.newPage();
   page.setDefaultTimeout(10000);
@@ -166,6 +166,28 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForFunction(() => document.documentElement.scrollWidth <= innerWidth);
   await page.waitForFunction(() => document.getElementById("app-navigation").inert);
+  for (const width of [320, 390, 430]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.waitForFunction(() => document.documentElement.scrollWidth <= innerWidth);
+    assert.equal(await page.locator(".coach-messages").evaluate(node => getComputedStyle(node).overflowY), "visible");
+    const starter = page.getByRole("button", {name:"Check my goal progress",exact:false});
+    await starter.scrollIntoViewIfNeeded();
+    const box = await starter.boundingBox();
+    assert.ok(box.height >= 44, "Starter has a comfortable touch target");
+    const mobileFilters = page.locator(".coach-mobile-scope");
+    await mobileFilters.locator("summary").click();
+    await mobileFilters.getByRole("combobox",{name:"Trades to include",exact:true}).selectOption("WIN");
+    await mobileFilters.locator("summary").click();
+    await page.getByLabel("Ask your coach",{exact:true}).fill("First line");
+    const beforeEnter = chatRequests;
+    await page.getByLabel("Ask your coach",{exact:true}).press("Enter");
+    await page.getByLabel("Ask your coach",{exact:true}).pressSequentially("Second line");
+    assert.equal(await page.getByLabel("Ask your coach",{exact:true}).inputValue(),"First line\nSecond line");
+    assert.equal(chatRequests,beforeEnter,"Phone Enter adds a line instead of sending");
+  }
+  await page.getByLabel("Ask your coach",{exact:true}).fill("");
+  await page.setViewportSize({width:390,height:844});
+  await page.evaluate(() => window.scrollTo(0,0));
   await page.screenshot({ path: "artifacts/coach/mobile.png", fullPage: true, animations: "disabled" });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   await page.setViewportSize({width:320,height:844});
