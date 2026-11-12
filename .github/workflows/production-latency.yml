@@ -6,6 +6,7 @@ on:
       - '.github/workflows/production-latency.yml'
       - 'tests/production-latency.mjs'
       - 'tests/production-success-latency.mjs'
+      - 'tests/region-latency.mjs'
 permissions:
   contents: read
 concurrency:
@@ -29,7 +30,7 @@ jobs:
           import {pathToFileURL} from 'node:url';
           const {request}=await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE).href);
           const client=await request.newContext();
-          const url='https://tradetrack-backend-sx8d.onrender.com/api/auth/login/';
+          const url='https://tradetrack-backend-frankfurt-fxf1.onrender.com/api/auth/login/';
           let ready=false,networkFailures=0;
           for(let attempt=1;attempt<=20;attempt++){
             try{
@@ -44,12 +45,12 @@ jobs:
           await client.dispose();
           if(!ready)throw new Error('The new authentication timing headers did not appear; production deployment is unconfirmed.');
           JS
-      - name: Measure deployed authentication after optimization
+      - name: Compare Ohio and Frankfurt before frontend cutover
         env:
           PLAYWRIGHT_MODULE: ${{ runner.temp }}/latency/node_modules/playwright/index.mjs
           PROBE_ROUNDS: '6'
           PROBE_CONTROLS: '1'
-        run: node tests/production-latency.mjs
+        run: node tests/region-latency.mjs
       - name: Save timing report
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
