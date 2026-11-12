@@ -205,3 +205,13 @@ for ordering and grouping rather than reconstructing it inside every comparison.
 history in America/New_York. Five-sample local medians were 335 ms before and
 43 ms after this change; these are CPU-only Node timings, not network or browser
 response times. Formula, timezone and DST-overlap ordering checks run in `npm test`.
+
+### AI coach usability
+
+`npm run test:coach` builds and exercises the real coach with mocked API replies.
+It covers editable trader prompts, output controls, losing-trade scope, searching
+and choosing a trade, restoring scope, rich-note evidence, follow-up prompts,
+conversation download, failed-request retry, stopping a pending request without
+losing its question, reset confirmation, task templates, manual results, task
+history/edit/pause/delete, journal switching, and the mobile layout. It never
+calls a paid AI provider.
