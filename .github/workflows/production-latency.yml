@@ -22,19 +22,26 @@ jobs:
           npm install --prefix "$RUNNER_TEMP/latency" --save-exact playwright@1.62.1
           "$RUNNER_TEMP/latency/node_modules/.bin/playwright" install --with-deps chromium
       - name: Wait for deployed authentication phase timings
+        env:
+          PLAYWRIGHT_MODULE: ${{ runner.temp }}/latency/node_modules/playwright/index.mjs
         run: |
           node --input-type=module <<'JS'
+          import {pathToFileURL} from 'node:url';
+          const {request}=await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE).href);
+          const client=await request.newContext();
           const url='https://tradetrack-backend-sx8d.onrender.com/api/auth/login/';
-          let ready=false;
+          let ready=false,networkFailures=0;
           for(let attempt=1;attempt<=20;attempt++){
             try{
-              const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'deployment-probe@example.invalid',password:'SyntheticProbe123!'}),signal:AbortSignal.timeout(15000)});
-              const timing=response.headers.get('server-timing')||'';
+              const response=await client.post(url,{data:{email:'deployment-probe@example.invalid',password:'SyntheticProbe123!'},timeout:15000});
+              const timing=response.headers()['server-timing']||'';
+              networkFailures=0;
               console.log(JSON.stringify({attempt,status:response.status(),serverTiming:timing}));
-              if(response.status===401&&timing.includes('password_cpu;dur=')){ready=true;break;}
-            }catch(error){console.log(JSON.stringify({attempt,error:error.name}));}
+              if(response.status()===401&&timing.includes('password_cpu;dur=')){ready=true;break;}
+            }catch(error){console.log(JSON.stringify({attempt,error:error.message.slice(0,300)}));if(++networkFailures>=3)break;}
             if(attempt<20)await new Promise(resolve=>setTimeout(resolve,10000));
           }
+          await client.dispose();
           if(!ready)throw new Error('The new authentication timing headers did not appear; production deployment is unconfirmed.');
           JS
       - name: Measure deployed authentication after optimization
