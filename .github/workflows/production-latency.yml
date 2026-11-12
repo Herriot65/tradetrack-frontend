@@ -1,0 +1,35 @@
+name: Production latency measurement
+on:
+  push:
+    branches: [diagnostics/production-latency]
+    paths:
+      - '.github/workflows/production-latency.yml'
+      - 'tests/production-latency.mjs'
+permissions:
+  contents: read
+concurrency:
+  group: production-latency-measurement
+  cancel-in-progress: true
+jobs:
+  measure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install measurement browser
+        run: |
+          npm install --prefix "$RUNNER_TEMP/latency" --save-exact playwright@1.62.1
+          "$RUNNER_TEMP/latency/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Measure deployed frontend and rejected sign-in
+        env:
+          PLAYWRIGHT_MODULE: ${{ runner.temp }}/latency/node_modules/playwright/index.mjs
+          PROBE_ROUNDS: '6'
+        run: node tests/production-latency.mjs
+      - name: Save timing report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: production-latency
+          path: artifacts/production-latency/report.json
+          if-no-files-found: ignore
+          retention-days: 7
