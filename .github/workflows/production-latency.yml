@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/production-latency.yml'
       - 'tests/production-latency.mjs'
+      - 'tests/production-success-latency.mjs'
 permissions:
   contents: read
 concurrency:
@@ -20,12 +21,11 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/latency" --save-exact playwright@1.62.1
           "$RUNNER_TEMP/latency/node_modules/.bin/playwright" install --with-deps chromium
-      - name: Measure deployed frontend and rejected sign-in
+      - name: Measure authorized temporary-account sign-in
         env:
           PLAYWRIGHT_MODULE: ${{ runner.temp }}/latency/node_modules/playwright/index.mjs
-          PROBE_ROUNDS: '2'
-          PROBE_CONTROLS: '1'
-        run: node tests/production-latency.mjs
+          PROBE_ROUNDS: '6'
+        run: node tests/production-success-latency.mjs
       - name: Save timing report
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
