@@ -83,6 +83,12 @@ try {
       sample.error=String(error.message).slice(0,600);
     } finally {
       sample.api=[...requests.values()].map(({start,...rest})=>rest);
+      const expectedOrigin=process.env.PROBE_EXPECTED_API_ORIGIN;
+      if(expectedOrigin){
+        const posts=sample.api.filter(request=>request.method==='POST');
+        sample.apiOriginMatches=posts.length>0 && posts.every(request=>new URL(request.url).origin===expectedOrigin);
+        if(!sample.apiOriginMatches)sample.error='The deployed frontend did not use the expected API origin';
+      }
       results.push(sample);
       console.log(JSON.stringify(sample));
       await page.close();
@@ -117,11 +123,11 @@ const report={
   measuredAt:new Date().toISOString(), app:base,
   method:'Real Chromium, mobile viewport, no CPU/network emulation. Synthetic rejected login only. Browser-cache labels do not imply hosting cold/warm state.',
   runner:process.env.GITHUB_ACTIONS?'GitHub-hosted ubuntu-24.04; geographic placement not controlled':'local',
-  successfulLoginMeasured:false,results,controlProbes,
+  successfulLoginMeasured:false,expectedApiOrigin:process.env.PROBE_EXPECTED_API_ORIGIN||null,results,controlProbes,
   summary:{samples:durations.length,medianRejectedLoginMs:durations.length?rounded((durations[Math.floor((durations.length-1)/2)]+durations[Math.ceil((durations.length-1)/2)])/2):null,minMs:durations[0]??null,maxMs:durations.at(-1)??null},
 };
 await mkdir(destination,{recursive:true});
 await writeFile(`${destination}/report.json`,JSON.stringify(report,null,2));
 console.log('PRODUCTION_LATENCY_REPORT '+JSON.stringify(report));
 if(process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY,`## Production latency\n\n${report.method}\n\n\`\`\`json\n${JSON.stringify(report,null,2)}\n\`\`\`\n`);
-if(successfulMeasurements.length !== rounds)process.exitCode=1;
+if(successfulMeasurements.length !== rounds || results.some(r=>r.error))process.exitCode=1;

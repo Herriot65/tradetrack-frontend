@@ -22,7 +22,7 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/latency" --save-exact playwright@1.62.1
           "$RUNNER_TEMP/latency/node_modules/.bin/playwright" install --with-deps chromium
-      - name: Wait for deployed authentication phase timings
+      - name: Wait for the deployed frontend to reference Frankfurt
         env:
           PLAYWRIGHT_MODULE: ${{ runner.temp }}/latency/node_modules/playwright/index.mjs
         run: |
@@ -30,27 +30,34 @@ jobs:
           import {pathToFileURL} from 'node:url';
           const {request}=await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE).href);
           const client=await request.newContext();
-          const url='https://tradetrack-backend-frankfurt-fxf1.onrender.com/api/auth/login/';
-          let ready=false,networkFailures=0;
+          const base='https://tradetrack-frontend-psi.vercel.app';
+          const expected='https://tradetrack-backend-frankfurt-fxf1.onrender.com/api';
+          let ready=false,failures=0;
           for(let attempt=1;attempt<=20;attempt++){
             try{
-              const response=await client.post(url,{data:{email:'deployment-probe@example.invalid',password:'SyntheticProbe123!'},timeout:15000});
-              const timing=response.headers()['server-timing']||'';
-              networkFailures=0;
-              console.log(JSON.stringify({attempt,status:response.status(),serverTiming:timing}));
-              if(response.status()===401&&timing.includes('password_cpu;dur=')){ready=true;break;}
-            }catch(error){console.log(JSON.stringify({attempt,error:error.message.slice(0,300)}));if(++networkFailures>=3)break;}
+              const response=await client.get(`${base}/login?deployment-check=${Date.now()}`,{timeout:15000});
+              const html=await response.text();
+              const paths=[...html.matchAll(/(?:src|href)=["']([^"']+\.js)["']/g)].map(match=>new URL(match[1],base)).filter(url=>url.origin===base);
+              for(const url of paths){
+                const asset=await client.get(url.href,{timeout:15000});
+                if(asset.status()===200&&(await asset.text()).includes(expected)){ready=true;break;}
+              }
+              failures=0;
+              console.log(JSON.stringify({attempt,status:response.status(),frankfurtBundle:ready}));
+              if(ready)break;
+            }catch(error){console.log(JSON.stringify({attempt,error:error.message.slice(0,200)}));if(++failures>=3)break;}
             if(attempt<20)await new Promise(resolve=>setTimeout(resolve,10000));
           }
           await client.dispose();
-          if(!ready)throw new Error('The new authentication timing headers did not appear; production deployment is unconfirmed.');
+          if(!ready)throw new Error('The production frontend cutover to Frankfurt has not been confirmed.');
           JS
-      - name: Compare Ohio and Frankfurt before frontend cutover
+      - name: Verify browser requests use Frankfurt and measure response times
         env:
           PLAYWRIGHT_MODULE: ${{ runner.temp }}/latency/node_modules/playwright/index.mjs
           PROBE_ROUNDS: '6'
           PROBE_CONTROLS: '1'
-        run: node tests/region-latency.mjs
+          PROBE_EXPECTED_API_ORIGIN: https://tradetrack-backend-frankfurt-fxf1.onrender.com
+        run: node tests/production-latency.mjs
       - name: Save timing report
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
