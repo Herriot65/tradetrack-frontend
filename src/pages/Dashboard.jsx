@@ -176,10 +176,9 @@ export default function Dashboard() {
 
         {/* Loading skeletons */}
         {loading && (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[0, 1].map((i) => (
-              <Skeleton key={i} className="h-[88px] rounded-xl" />
-            ))}
+          <div role="status" aria-label={t('Loading accounts')} className="space-y-8">
+            <div className="nx-workspace-stats">{[0,1,2].map(i=><Skeleton key={i} className="h-[90px] rounded-xl" />)}</div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{[0,1,2].map(i=><div key={i} className="nx-surface space-y-6 p-6"><Skeleton className="size-10 rounded-xl"/><Skeleton className="h-5 w-3/4"/><Skeleton className="h-12 w-1/2"/><Skeleton className="h-8 w-full"/></div>)}</div>
           </div>
         )}
 

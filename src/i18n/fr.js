@@ -1,5 +1,18 @@
 // English source strings are stable keys; API values and user content stay unchanged.
 export default {
+  "Loading accounts": "Chargement des comptes",
+  "Filtered by": "Filtré par",
+  "Active filters": "Filtres actifs",
+  "Log your first trade": "Enregistrer mon premier trade",
+  "Capture your first trade to start building your trading history.": "Enregistrez votre premier trade pour commencer votre historique.",
+  "Use ↑ ↓ to navigate, Enter to open, Esc to close.": "↑ ↓ pour naviguer, Entrée pour ouvrir, Échap pour fermer.",
+  "Clear search": "Effacer la recherche",
+  "No sections found": "Aucune section trouvée",
+  "Navigation results": "Résultats de navigation",
+  "Find a section": "Rechercher une section",
+  "Jump to a section of your workspace.": "Accédez à une section de votre espace de travail.",
+  "Go to…": "Aller à…",
+  "Quick navigation": "Navigation rapide",
   "Nexora overview showing an equity curve, key metrics, and recent trades using sample data.": "Vue d’ensemble Nexora présentant une courbe de capital, des indicateurs clés et les trades récents à partir de données de démonstration.",
   "Pause animation": "Mettre l’animation en pause",
   "Play animation": "Lancer l’animation",

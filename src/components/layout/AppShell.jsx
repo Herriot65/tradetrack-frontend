@@ -32,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import JournalSwitcher from "@/components/dashboard/JournalSwitcher";
 import UserSettings from "./UserSettings";
 import LanguageSelector from "./LanguageSelector";
+import QuickNavigation from "./QuickNavigation";
 import ThemeToggle from "./ThemeToggle";
 
 function readCollapsed() {
@@ -229,6 +230,11 @@ export default function AppShell({ children }) {
             <div className="nx-header-location"><span>/</span>{t(section === 'accounts' ? 'Workspace' : section === 'journal' ? 'Journal' : section === 'analytics' ? 'Analytics' : section === 'settings' ? 'Settings' : section === 'coach' ? 'AI Coach' : 'Overview')}</div>
           </div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+            <QuickNavigation suspended={mobileOpen} destinations={[
+              {label:'Trading accounts', href:'/dashboard', icon:Layers3},
+              ...destinations.filter(item => journal || item.href).map(item=>({...item, href:item.href ?? sectionLink(item.tab)})),
+              ...(journal ? [{label:'Settings',href:sectionLink('settings'),icon:Settings}] : []),
+            ]}/>
             <LanguageSelector />
             <ThemeToggle />
             <DropdownMenu>

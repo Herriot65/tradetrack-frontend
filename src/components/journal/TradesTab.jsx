@@ -47,10 +47,10 @@ function TableSkeleton() {
   );
 }
 
-function EmptyTrades({ hasFilters }) {
+function EmptyTrades({ hasFilters, onReset, onCreate }) {
   useLanguage();
   return (
-    <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-zinc-800 py-20 text-center">
+    <div className="nx-empty-trades flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-zinc-800 px-4 py-16 text-center">
       <div className="flex size-12 items-center justify-center rounded-xl bg-zinc-900 ring-1 ring-zinc-800">
         <BookOpen className="size-5 text-zinc-600" />
       </div>
@@ -61,9 +61,10 @@ function EmptyTrades({ hasFilters }) {
         <p className="max-w-xs text-xs text-zinc-600">
           {hasFilters
             ? t("Try clearing the search or status filter.")
-            : t("Trades will appear here once synced.")}
+            : t("Capture your first trade to start building your trading history.")}
         </p>
       </div>
+      <Button variant={hasFilters ? 'outline' : 'default'} onClick={hasFilters ? onReset : onCreate}>{hasFilters ? t('Reset filters') : t('Log your first trade')}</Button>
     </div>
   );
 }
@@ -96,6 +97,11 @@ function TradesTab({ breakEvenMethod, journalId }) {
     sortDir: "desc",
   });
   const [panel, setPanel] = useState(null);
+  const [searchReset, setSearchReset] = useState(0);
+  function resetFilters() {
+    setQuery(current => ({...current,search:'',status:'',page:1}));
+    setSearchReset(value => value + 1);
+  }
   const prefix = query.sortDir === "desc" ? "-" : "";
   const sortColumn =
     query.sortField === "r"
@@ -156,7 +162,7 @@ function TradesTab({ breakEvenMethod, journalId }) {
   return (
     <div className="space-y-4">
       <div className="nx-toolbar">
-        <TradeSearchInput onSearch={onSearch} />
+        <TradeSearchInput key={searchReset} onSearch={onSearch} autoFocus={searchReset > 0} />
         <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t("Trade status")}>
           {STATUS_FILTERS.map((filter) => (
             <button
@@ -186,6 +192,12 @@ function TradesTab({ breakEvenMethod, journalId }) {
             <Plus className="size-3.5" />{t("New Trade")}</Button>
         </div>
       </div>
+      {(query.search || query.status) && <div className="nx-active-filters" aria-label={t('Active filters')}>
+        <span>{t('Filtered by')}</span>
+        {query.search && <span className="nx-filter-chip">{t('Asset')}: {query.search}</span>}
+        {query.status && <span className="nx-filter-chip">{t(STATUS_FILTERS.find(filter=>filter.value===query.status)?.label)}</span>}
+        <button type="button" onClick={resetFilters}>{t('Clear filters')}</button>
+      </div>}
       {error && (
         <div
           role="alert"
@@ -217,7 +229,7 @@ function TradesTab({ breakEvenMethod, journalId }) {
             displayUnit={displayUnit}
           />
         ) : !error ? (
-          <EmptyTrades hasFilters={!!query.search || !!query.status} />
+          <EmptyTrades hasFilters={!!query.search || !!query.status} onReset={resetFilters} onCreate={openNewTrade} />
         ) : null}
       </div>
       {totalPages > 1 && (

@@ -233,3 +233,13 @@ It captures dark/light routes including AI Coach and 320px public forms under
 `artifacts/uniform-style/`, using synthetic responses and no account writes.
 Use `PLAYWRIGHT_MODULE` as above. Shared tokens and component surfaces live in
 `src/theme.css`; workspace-specific layouts remain in `src/workspace.css`.
+
+## Navigation and filter UX
+
+`npm run test:ux-polish` exercises quick navigation with Ctrl/Cmd+K, keyboard
+results and Escape focus return; verifies shortcuts leave editors alone; and
+checks that resetting filters clears the input, status and pending debounce.
+It also covers mobile empty results and the first-trade action without saving
+anything. Screenshots are in `artifacts/ux-polish/`; use `PLAYWRIGHT_MODULE`
+as for the other browser checks. Quick navigation is in the desktop header;
+touch users retain the existing mobile navigation drawer.
