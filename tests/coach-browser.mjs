@@ -1,3 +1,4 @@
+import { chooseOption, chooseDate } from "./picker-helpers.mjs";
 // Exercise the real Coach UI with deterministic API responses; no paid AI calls.
 import assert from "node:assert/strict";
 import { preview } from "vite";
@@ -53,7 +54,7 @@ try {
   await page.getByRole("button", { name: "Understand my losses", exact: false }).click();
   assert.match(await page.getByLabel("Ask your coach", { exact: true }).inputValue(), /losing trades/);
   await page.getByRole("button", { name: "Adjust output" }).click();
-  await page.getByLabel("Response length").selectOption("detailed");
+  await chooseOption(page, page.getByRole("combobox", { name: "Response length" }), "Detailed");
   await page.getByRole("button", { name: "Full report", exact: true }).click();
   await page.getByLabel("Current goal", { exact: false }).fill("Wait for confirmation");
   await page.getByRole("button", { name: "Done", exact: true }).click();
@@ -73,11 +74,20 @@ try {
   await page.getByRole("button", { name: "Schedule this", exact: false }).click();
   await page.getByLabel("Task name").fill("Morning intention");
   await page.getByLabel("What should the coach do?").fill("Ask me three questions to prepare for my session.");
-  await page.getByLabel("Repeat", { exact: false }).selectOption("daily");
-  await page.getByLabel("Start date").fill("2099-01-01");
+  await chooseOption(page, page.getByRole("combobox", { name: "Repeat" }), "Daily");
+  await chooseDate(page, page.getByRole("button", { name: "Start date", exact: true }), "2099-01-01");
+  await page.getByRole("button", { name: "Time", exact: true }).click();
+  await chooseOption(page, page.getByRole("combobox", { name: "Time hour", exact: true }), "09");
+  await chooseOption(page, page.getByRole("combobox", { name: "Time minute", exact: true }), "45");
+  await page.getByRole("button", { name: "Done", exact: true }).click();
+  await page.getByRole("button", { name: "Timezone", exact: true }).click();
+  await page.getByRole("combobox", { name: "Search timezones" }).fill("New York");
+  await page.keyboard.press("Enter");
   await page.getByRole("button", { name: "Save task", exact: true }).click();
   await page.getByText("Morning intention", { exact: true }).waitFor().catch(async error => { console.error(await page.locator("body").innerText()); throw error; });
   assert.equal(tasks[0].frequency, "daily");
+  assert.equal(tasks[0].start_date, "2099-01-01");
+  assert.equal(tasks[0].local_time, "09:45");
   assert.equal(tasks[0].timezone, "America/New_York");
   assert.match(tasks[0].instructions, /three questions/);
   await page.getByRole("button", { name: "Pause Morning intention", exact: true }).click();

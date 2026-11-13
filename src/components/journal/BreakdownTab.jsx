@@ -1,3 +1,4 @@
+import SelectField from "@/components/ui/select-field";
 import { translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
 import { useCallback, useMemo, useState } from 'react';
@@ -30,8 +31,8 @@ export default function BreakdownTab({journal, active, syntheticEnabled}) {
       {syntheticEnabled && <span className="rounded-full border border-amber-400/20 bg-amber-400/5 px-3 py-1.5 text-xs text-amber-300">{t("Includes synthetic trades")}</span>}
     </div>
     <div className="flex flex-wrap gap-3 rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
-      <label className="flex min-w-0 flex-col gap-1.5 text-xs text-zinc-500">{t("Compare by")}<select aria-label={t("Breakdown attribute")} className={selectClass} value={field} onChange={e=>{setField(e.target.value);setExpanded(false);}}>{BREAKDOWN_FIELDS.map(([value,label])=><option key={value} value={value}>{t(label)}</option>)}</select></label>
-      <label className="flex flex-col gap-1.5 text-xs text-zinc-500">{t("Period")}<select aria-label={t("Breakdown period")} className={selectClass} value={range} onChange={e=>setRange(e.target.value)}><option value="ALL">{t("All time")}</option><option value="YTD">{t("This year")}</option><option value="12M">{t("Last 12 months")}</option><option value="3M">{t("Last 3 months")}</option></select></label>
+      <label className="flex min-w-0 flex-col gap-1.5 text-xs text-zinc-500">{t("Compare by")}<SelectField label={t("Breakdown attribute")} className={selectClass} value={field} onValueChange={next=>{setField(next);setExpanded(false);}} allowClear={false} options={BREAKDOWN_FIELDS.map(([value,label])=>({value,label:t(label)}))} /></label>
+      <label className="flex flex-col gap-1.5 text-xs text-zinc-500">{t("Period")}<SelectField label={t("Breakdown period")} className={selectClass} value={range} onValueChange={setRange} allowClear={false} options={[{value:"ALL",label:t("All time")},{value:"YTD",label:t("This year")},{value:"12M",label:t("Last 12 months")},{value:"3M",label:t("Last 3 months")}]} /></label>
       <p className="self-end pb-2 text-xs text-zinc-500">{t("Closed trades only.") + " "}{excluded}{" " + t("open or missing risk data excluded.")}{unassigned > 0 && ` ${unassigned} without this attribute omitted.`}</p>
     </div>
     {loading ? <p role="status" className="py-12 text-center text-zinc-500">{t("Loading trade breakdown…")}</p> : error ? <div role="alert" className="space-y-3 text-sm text-red-400"><p>{error}</p><Button variant="outline" onClick={refetch}>{t("Retry")}</Button></div> : !rows.length ? <div className="rounded-xl border border-dashed border-zinc-800 p-12 text-center"><h3 className="text-lg">{t("No comparable trades yet")}</h3><p className="mt-2 text-sm text-zinc-500">{t("Log closed trades with this attribute, or enable synthetic data in Analytics to explore sample results.")}</p></div> : <>

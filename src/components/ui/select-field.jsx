@@ -16,13 +16,17 @@ export default function SelectField({
   label,
   className,
   translateOptions = false,
+  disabled,
+  name,
+  required,
+  displayValue,
   ...triggerProps
 }) {
   useLanguage();
   const selected = value == null ? "" : String(value);
   const optionLabel = (label) => translateOptions ? t(label) : label;
   return (
-    <SelectPrimitive.Root
+    <SelectPrimitive.Root disabled={disabled} name={name} required={required}
       value={selected || EMPTY}
       onValueChange={(next) => onValueChange(next === EMPTY ? "" : next)}
     >
@@ -36,13 +40,13 @@ export default function SelectField({
         )}
       >
         <SelectPrimitive.Value>
-          {selected ? (
+          {displayValue ?? (selected ? (
             optionLabel(options.find(
               (option) => String(typeof option === "object" ? option.value : option) === selected,
             )?.label ?? selected)
           ) : (
             <span className="text-zinc-500">{t(placeholder)}</span>
-          )}
+          ))}
         </SelectPrimitive.Value>
         <SelectPrimitive.Icon>
           <ChevronDown className="size-3.5 shrink-0 text-zinc-500" />

@@ -1,5 +1,9 @@
 // English source strings are stable keys; API values and user content stay unchanged.
 export default {
+  "Select date": "Choisir une date",
+  "Select time": "Choisir une heure",
+  "Hex color": "Couleur hexadécimale",
+  "Apply": "Appliquer",
   "Loading accounts": "Chargement des comptes",
   "Filtered by": "Filtré par",
   "Active filters": "Filtres actifs",

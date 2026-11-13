@@ -1,7 +1,8 @@
+import SelectField from "@/components/ui/select-field";
 import { translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
 import { useEffect } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
@@ -20,9 +21,6 @@ import { FormErrorBanner } from "@/components/forms/FormErrorBanner";
 import { journalSchema } from "@/schemas/journalSchema";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD"];
-
-const selectClass =
-  "h-9 w-full rounded-md border border-zinc-800 bg-zinc-900/60 px-3 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 disabled:opacity-50";
 
 export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
   useLanguage();
@@ -100,10 +98,7 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
           {/* Journal Type */}
           <div className="space-y-1.5">
             <Label htmlFor="journal-type">{t("Journal Type")}</Label>
-            <select id="journal-type" className={selectClass} {...register("journalType")}>
-              <option value="trading">{t("Trading Journal")}</option>
-              <option value="backtest">{t("Backtest Journal")}</option>
-            </select>
+            <Controller name="journalType" control={control} render={({field}) => <SelectField id="journal-type" {...field} onValueChange={field.onChange} allowClear={false} aria-invalid={!!errors.journalType} options={[{value:"trading",label:t("Trading Journal")},{value:"backtest",label:t("Backtest Journal")}]} />} />
             <FieldError message={errors.journalType?.message} />
           </div>
 
@@ -125,13 +120,7 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
 
             <div className="space-y-1.5">
               <Label htmlFor="currency">{t("Currency")}</Label>
-              <select id="currency" className={selectClass} {...register("currency")}>
-                {CURRENCIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+              <Controller name="currency" control={control} render={({field}) => <SelectField id="currency" {...field} onValueChange={field.onChange} allowClear={false} aria-invalid={!!errors.currency} options={CURRENCIES} />} />
               <FieldError message={errors.currency?.message} />
             </div>
           </div>
@@ -139,10 +128,7 @@ export default function JournalFormDialog({ open, onOpenChange, onSubmit }) {
           {/* Break-Even Method */}
           <div className="space-y-1.5">
             <Label htmlFor="break-even-method">{t("Break-Even Method")}</Label>
-            <select id="break-even-method" className={selectClass} {...register("breakEvenMethod")}>
-              <option value="ratio">{t("Ratio Based")}</option>
-              <option value="profit">{t("Profit Based")}</option>
-            </select>
+            <Controller name="breakEvenMethod" control={control} render={({field}) => <SelectField id="break-even-method" {...field} onValueChange={field.onChange} allowClear={false} aria-invalid={!!errors.breakEvenMethod} options={[{value:"ratio",label:t("Ratio Based")},{value:"profit",label:t("Profit Based")}]} />} />
             <FieldError message={errors.breakEvenMethod?.message} />
           </div>
 

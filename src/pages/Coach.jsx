@@ -69,6 +69,9 @@ function CoachWorkspace({ journal, accountTimezone }) {
   }
   async function send(prompt = input) {
     if (!prompt.trim() || requestBusy.current) return;
+    if (configuration.period === "custom" && (!configuration.start_date || !configuration.end_date || configuration.start_date > configuration.end_date)) {
+      setError("Choose a valid start and end date in output settings."); setOptionsOpen(true); return;
+    }
     requestBusy.current = true;
     const request = new AbortController(); controller.current = request;
     const instruction = prompt.trim();

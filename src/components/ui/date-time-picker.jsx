@@ -1,3 +1,4 @@
+import CalendarDropdown from "./calendar-dropdown";
 import { fr, enUS } from "date-fns/locale";
 import { getLanguage, translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
@@ -14,11 +15,6 @@ import { getUserTimezone } from "@/lib/timezone";
 
 const HOURS=Array.from({length:24},(_,i)=>String(i).padStart(2,"0"));
 const MINUTES=Array.from({length:60},(_,i)=>String(i).padStart(2,"0"));
-
-function CalendarDropdown({ options, value, onChange, "aria-label": label, disabled }) {
-  useLanguage();
-  return <SelectField value={value} onValueChange={next=>onChange?.({target:{value:next}})} options={options} label={label} disabled={disabled} allowClear={false} className="h-8 w-auto shrink-0 border-transparent bg-transparent px-2" />;
-}
 
 export default function DateTimePicker({value, onChange, onBlur, label, id, invalid, ref: triggerRef}) {
   useLanguage();

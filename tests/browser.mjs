@@ -1,3 +1,4 @@
+import { chooseDate } from "./picker-helpers.mjs";
 import assert from "node:assert/strict";
 import { createServer } from "vite";
 import { mkdir } from "node:fs/promises";
@@ -37,8 +38,8 @@ try {
  });
 
  await page.getByRole("button",{name:"Custom",exact:true}).click();
- await page.locator("#analytics-start").fill("2025-01-01");
- await page.locator("#analytics-end").fill("2025-12-31");
+ await chooseDate(page, page.locator("#analytics-start"), "2025-01-01");
+ await chooseDate(page, page.locator("#analytics-end"), "2025-12-31");
  await page.getByText("8 trades",{exact:true}).first().waitFor();
  assert.equal(await page.getByTestId("analytics-kpis").getByText("+0.63R",{exact:true}).count(),1);
  assert.equal(await page.getByText("Recovery factor 1.7",{exact:true}).count(),1);
@@ -84,8 +85,8 @@ try {
  await page.getByRole("menuitem").filter({hasText:"EURUSD"}).click();
  await page.keyboard.press("Escape");
  await page.getByText("4 trades",{exact:true}).first().waitFor();
- await page.locator("#analytics-start").fill("2024-01-01");
- await page.locator("#analytics-end").fill("2024-12-31");
+ await chooseDate(page, page.locator("#analytics-start"), "2024-01-01");
+ await chooseDate(page, page.locator("#analytics-end"), "2024-12-31");
  await page.getByText("No trades in this range",{exact:true}).waitFor();
  assert.equal(await page.getByRole("heading",{name:"Equity and drawdown"}).count(),0);
  await page.getByRole("button",{name:"Reset filters",exact:true}).click();

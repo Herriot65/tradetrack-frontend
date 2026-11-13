@@ -1,3 +1,4 @@
+import { chooseOption } from "./picker-helpers.mjs";
 import assert from 'node:assert/strict';
 import {createServer} from 'vite';
 import {pathToFileURL} from 'node:url';
@@ -23,7 +24,7 @@ try {
  await before.locator('[data-trade-image]').nth(2).waitFor();
  const option=name=>page.getByRole('button',{name:'Image options for '+name,exact:true});
  async function width(name,value){await option(name).click();await page.getByRole('slider',{name:'Width of '+name,exact:true}).fill(String(value));await page.keyboard.press('Escape');}
- async function move(name,target,placement,keyboard=false){if(keyboard){await option(name).focus();await page.keyboard.press('Enter');}else await option(name).click();await page.getByRole('combobox',{name:'Move to',exact:true}).selectOption({label:target});if(placement)await page.getByRole('combobox',{name:'Placement',exact:true}).selectOption(placement);if(keyboard){await page.getByRole('button',{name:'Move image',exact:true}).focus();await page.keyboard.press('Enter');}else await page.getByRole('button',{name:'Move image',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('[data-slot="popover-content"]'));}
+ async function move(name,target,placement,keyboard=false){if(keyboard){await option(name).focus();await page.keyboard.press('Enter');}else await option(name).click();await chooseOption(page, page.getByRole('combobox',{name:'Move to',exact:true}), target);if(placement)await chooseOption(page, page.getByRole('combobox',{name:'Placement',exact:true}), {above:'Above',below:'Below',left:'Beside on the left',right:'Beside on the right'}[placement]);if(keyboard){await page.getByRole('button',{name:'Move image',exact:true}).focus();await page.keyboard.press('Enter');}else await page.getByRole('button',{name:'Move image',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('[data-slot="popover-content"]'));}
  const names=section=>section.locator('[data-trade-image] img').evaluateAll(images=>images.map(image=>image.alt));
  const ids=async section=>section.locator('[data-trade-image]').evaluateAll(images=>images.map(image=>image.dataset.noteImageId));
  async function drag(source,target,placement){
@@ -88,6 +89,6 @@ try {
  await page.evaluate(()=>{const data=JSON.parse(localStorage.getItem('fixture-custom-trade'));for(const section of data.notes_document.sections){if(['before','during'].includes(section.id))section.title='Shared notes';}for(const image of data.screenshots)image.section='Shared notes';localStorage.setItem('fixture-custom-trade',JSON.stringify(data));});
  await page.reload();await before.waitFor();await during.waitFor();assert.deepEqual(await ids(before),[idFor('alpha.png'),idFor('beta.png')]);assert.deepEqual(await ids(during),[idFor('gamma.png')]);
  assert.match(await before.getByRole('textbox',{name:'Notes for Shared notes',exact:true}).innerText(),/Before context/);assert.match(await during.getByRole('textbox',{name:'Notes for Shared notes',exact:true}).innerText(),/During context/);
- await option('screenshot-'+idFor('alpha.png')).click();assert.ok((await page.getByRole('combobox',{name:'Move to',exact:true}).locator('option').allTextContents()).includes('Shared notes · Section 2 · End of section'));await page.keyboard.press('Escape');
+ await option('screenshot-'+idFor('alpha.png')).click();await page.getByRole('combobox',{name:'Move to',exact:true}).click();await page.getByRole('option',{name:'Shared notes · Section 2 · End of section',exact:true}).waitFor();await page.keyboard.press('Escape');await page.keyboard.press('Escape');
  assert.deepEqual(errors,[]);console.log('PASS: mouse/touch drag, beside/below rows, reordering, section moves, keyboard/tap alternatives, auto-scroll/Escape cancel, stable upload IDs, failure/retry without duplicate uploads, save/reload and read-only layout.');
 }finally{await browser?.close();await server.close();}

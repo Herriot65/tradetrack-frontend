@@ -1,3 +1,4 @@
+import { chooseOption } from "./picker-helpers.mjs";
 // Uses the built app and stubbed API responses; never writes to live accounts.
 import assert from 'node:assert/strict';
 import { preview } from 'vite';
@@ -18,16 +19,16 @@ try {
     return route.fulfill({json:path==='/api/auth/me/' ? {id:1,first_name:'Alice',email:'alice@example.test',timezone:'UTC'} : path==='/api/journals/' ? savedJournals : [],headers:{'access-control-allow-origin':'*'}});
   });
   await page.goto('http://127.0.0.1:4198');
-  await page.getByRole('combobox',{name:'Select language'}).selectOption('fr-FR');
+  await chooseOption(page, page.getByRole('combobox',{name:'Select language'}), 'Français (FR)');
   await page.getByRole('link',{name:'Fonctionnalités',exact:true}).first().waitFor();
   assert.equal(await page.locator('html').getAttribute('lang'),'fr-FR');
   assert.equal(await page.evaluate(()=>localStorage.getItem('nexora_language')),'fr-FR');
   await page.goto('http://127.0.0.1:4198/login');
   await page.getByRole('button',{name:'Se connecter',exact:true}).waitFor();
   await page.getByLabel('E-mail',{exact:true}).fill('keep@example.test');
-  await page.getByRole('combobox',{name:'Choisir la langue'}).selectOption('en-US');
+  await chooseOption(page, page.getByRole('combobox',{name:'Choisir la langue'}), 'English (US)');
   assert.equal(await page.getByLabel('Email',{exact:true}).inputValue(),'keep@example.test');
-  await page.getByRole('combobox',{name:'Select language'}).selectOption('fr-FR');
+  await chooseOption(page, page.getByRole('combobox',{name:'Select language'}), 'Français (FR)');
   await page.reload();
   await page.getByRole('button',{name:'Se connecter',exact:true}).waitFor();
   await page.getByRole('button',{name:'Se connecter',exact:true}).click();
@@ -48,12 +49,12 @@ try {
     assert(box.x>=0 && box.x+box.width<=width,`Selector fits at ${width}px`);
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`No overflow at ${width}px: ${JSON.stringify(await page.evaluate(()=>[...document.querySelectorAll("body *")].filter(el=>el.getBoundingClientRect().right>innerWidth+1 && getComputedStyle(el).position!=="fixed").map(el=>({tag:el.tagName,text:el.textContent.slice(0,80),right:el.getBoundingClientRect().right})).slice(0,8)))}`);
   }
-  await page.getByRole('combobox',{name:'Choisir la langue'}).selectOption('en-US');
+  await chooseOption(page, page.getByRole('combobox',{name:'Choisir la langue'}), 'English (US)');
   await page.getByRole('heading',{name:'Welcome, Alice!'}).waitFor();
   // Another tab's preference changes the current UI as well.
   const other=await context.newPage();
   await other.goto('http://127.0.0.1:4198/login');
-  await other.getByRole('combobox',{name:'Select language'}).selectOption('fr-FR');
+  await chooseOption(other, other.getByRole('combobox',{name:'Select language'}), 'Français (FR)');
   await page.getByRole('heading',{name:'Bienvenue, Alice !'}).waitFor();
   // User content that happens to match a translation key must keep its spelling.
   savedJournals=[{id:1,name:'Dashboard',journalType:'trading',startingCapital:10000,starting_capital:10000,currency:'USD',breakEvenMethod:'ratio',breakEvenValue:0}];

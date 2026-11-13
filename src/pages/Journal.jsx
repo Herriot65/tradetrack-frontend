@@ -1,3 +1,4 @@
+import SelectField from "@/components/ui/select-field";
 import { getLanguage, translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
 import { useCallback, useEffect, useState } from "react";
@@ -113,7 +114,6 @@ function SettingsDialog({ open, onClose, journal }) {
 
   const fieldClass =
     "w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-400/40";
-  const selectClass = fieldClass;
   const labelClass = "text-xs font-medium text-zinc-500";
 
   return (
@@ -139,14 +139,7 @@ function SettingsDialog({ open, onClose, journal }) {
           {/* Type */}
           <div className="space-y-1.5">
             <label className={labelClass}>{t("Type")}</label>
-            <select
-              className={selectClass}
-              value={journalType}
-              onChange={(e) => setJournalType(e.target.value)}
-            >
-              <option value="trading">{t("Trading Journal")}</option>
-              <option value="backtest">{t("Backtest Journal")}</option>
-            </select>
+            <SelectField label={t("Type")} value={journalType} onValueChange={setJournalType} allowClear={false} options={[{value:"trading",label:t("Trading Journal")},{value:"backtest",label:t("Backtest Journal")}]} />
           </div>
 
           {/* Currency + Starting Capital side by side */}
@@ -178,14 +171,7 @@ function SettingsDialog({ open, onClose, journal }) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className={labelClass}>{t("Break-Even Method")}</label>
-              <select
-                className={selectClass}
-                value={breakEvenMethod}
-                onChange={(e) => setBreakEvenMethod(e.target.value)}
-              >
-                <option value="ratio">{t("Ratio Based")}</option>
-                <option value="profit">{t("Profit Based")}</option>
-              </select>
+              <SelectField label={t("Break-Even Method")} value={breakEvenMethod} onValueChange={setBreakEvenMethod} allowClear={false} options={[{value:"ratio",label:t("Ratio Based")},{value:"profit",label:t("Profit Based")}]} />
             </div>
             <div className="space-y-1.5">
               <label className={labelClass}>{t("BE Threshold") + " "}{breakEvenMethod === "profit" ? `(${currency || "currency"})` : "(R)"}

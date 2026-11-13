@@ -1,3 +1,7 @@
+import SelectField from "@/components/ui/select-field";
+import DateField from "@/components/ui/date-field";
+import TimeField from "@/components/ui/time-field";
+import TimezoneField from "@/components/ui/timezone-field";
 import { getUserTimezone } from "@/lib/timezone";
 import { useState } from "react";
 import { CalendarClock, Loader2 } from "lucide-react";
@@ -13,7 +17,10 @@ export default function CoachTaskDialog({ journalId, task, seed, onClose, onSave
   const [error, setError] = useState("");
   const set = (key, next) => setValue(previous => ({ ...previous, [key]: next }));
   async function save(event) {
-    event.preventDefault(); setBusy(true); setError("");
+    event.preventDefault();
+    if (!value.start_date || !/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(value.local_time)) { setError("Choose a start date and time."); return; }
+    try { new Intl.DateTimeFormat("en-US", { timeZone: value.timezone }).format(); } catch { setError("Choose a valid timezone."); return; }
+    setBusy(true); setError("");
     try {
       const { title, instructions, configuration, frequency, start_date, local_time, timezone, enabled } = value;
       await saveCoachTask(journalId, { title, instructions, configuration, frequency, start_date, local_time, timezone, enabled }, task?.id);
@@ -25,11 +32,11 @@ export default function CoachTaskDialog({ journalId, task, seed, onClose, onSave
       <label className="block text-xs font-medium">Task name<input required maxLength={100} className={`${fieldClass} mt-2`} value={value.title} onChange={e => set("title", e.target.value)} placeholder="My pre-session preparation" /></label>
       <label className="block text-xs font-medium">What should the coach do?<textarea required rows={3} maxLength={4000} className={`${fieldClass} mt-2 resize-y`} value={value.instructions} onChange={e => set("instructions", e.target.value)} placeholder="Ask me three questions to prepare for my session. Focus on patience and following my plan." /></label>
       <CoachConfiguration scheduled value={value.configuration} onChange={next => set("configuration", next)} />
-      <div className="grid grid-cols-2 gap-4">
-        <label className="text-xs font-medium">Repeat<select className={`${fieldClass} mt-2`} value={value.frequency} onChange={e => set("frequency", e.target.value)}><option value="once">Once</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></label>
-        <label className="text-xs font-medium">{value.frequency === "once" ? "Date" : "Start date"}<input type="date" required className={`${fieldClass} mt-2`} value={value.start_date} onChange={e => set("start_date", e.target.value)} /></label>
-        <label className="text-xs font-medium">Time<input type="time" required className={`${fieldClass} mt-2`} value={value.local_time} onChange={e => set("local_time", e.target.value)} /></label>
-        <label className="text-xs font-medium">Timezone<input required maxLength={64} className={`${fieldClass} mt-2`} value={value.timezone} onChange={e => set("timezone", e.target.value)} list="coach-timezones" /><datalist id="coach-timezones">{["UTC", "America/New_York", "America/Chicago", "America/Los_Angeles", "Europe/London", "Europe/Paris", "Asia/Dubai", "Asia/Tokyo", "Australia/Sydney"].map(zone => <option key={zone} value={zone} />)}</datalist></label>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label className="text-xs font-medium">Repeat<SelectField label="Repeat" className="mt-2" value={value.frequency} onValueChange={next => set("frequency", next)} allowClear={false} options={[{value:"once",label:"Once"},{value:"daily",label:"Daily"},{value:"weekly",label:"Weekly"},{value:"monthly",label:"Monthly"}]} /></label>
+        <label className="text-xs font-medium">{value.frequency === "once" ? "Date" : "Start date"}<DateField label={value.frequency === "once" ? "Date" : "Start date"} required className="mt-2" value={value.start_date} onChange={next => set("start_date", next)} /></label>
+        <label className="text-xs font-medium">Time<TimeField label="Time" required className="mt-2" value={value.local_time} onChange={next => set("local_time", next)} /></label>
+        <label className="text-xs font-medium">Timezone<TimezoneField label="Timezone" className="mt-2" value={value.timezone} onChange={next => set("timezone", next)} /></label>
       </div>
       <p className="rounded-lg bg-muted/50 p-3 text-xs leading-5 text-muted-foreground">{value.frequency === "once" ? "Once" : `Every ${value.frequency === "daily" ? "day" : value.frequency === "weekly" ? "week" : "month"}`} at {value.local_time.slice(0, 5)} ({value.timezone}), starting {value.start_date}.<br />Uses fresh data from the selected rolling period. Automatic runs require the server scheduler.</p>
       <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={value.enabled} onChange={e => set("enabled", e.target.checked)} />Enable task</label>

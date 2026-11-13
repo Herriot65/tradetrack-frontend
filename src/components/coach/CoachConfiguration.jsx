@@ -1,21 +1,21 @@
+import SelectField from "@/components/ui/select-field";
+import DateField from "@/components/ui/date-field";
 import { SECTION_OPTIONS, fieldClass } from "./coachConfiguration.js";
 
 export default function CoachConfiguration({ value, onChange, scheduled = false }) {
   const set = (key, next) => onChange({ ...value, [key]: next });
   return <div className="space-y-5">
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <label className="space-y-2 text-xs font-medium">Data period
-        <select className={`${fieldClass} mt-2`} value={value.period} onChange={e => set("period", e.target.value)}>
-          <option value="day">Today</option><option value="week">Last 7 days</option><option value="month">Last 30 days</option>{!scheduled && <option value="custom">Custom dates</option>}
-        </select>
+        <SelectField label="Data period" className="mt-2" value={value.period} onValueChange={next => set("period", next)} allowClear={false} options={[{value:"day",label:"Today"},{value:"week",label:"Last 7 days"},{value:"month",label:"Last 30 days"},...(!scheduled ? [{value:"custom",label:"Custom dates"}] : [])]} />
       </label>
       <label className="space-y-2 text-xs font-medium">Response length
-        <select className={`${fieldClass} mt-2`} value={value.detail} onChange={e => set("detail", e.target.value)}><option value="brief">Brief</option><option value="detailed">Detailed</option></select>
+        <SelectField label="Response length" className="mt-2" value={value.detail} onValueChange={next => set("detail", next)} allowClear={false} options={[{value:"brief",label:"Brief"},{value:"detailed",label:"Detailed"}]} />
       </label>
     </div>
-    {value.period === "custom" && <div className="grid grid-cols-2 gap-4">
-      <label className="text-xs">From<input required type="date" className={`${fieldClass} mt-2`} value={value.start_date || ""} onChange={e => set("start_date", e.target.value)} /></label>
-      <label className="text-xs">Through<input required type="date" min={value.start_date} className={`${fieldClass} mt-2`} value={value.end_date || ""} onChange={e => set("end_date", e.target.value)} /></label>
+    {value.period === "custom" && <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <label className="text-xs">From<DateField label="From" required max={value.end_date} className="mt-2" value={value.start_date || ""} onChange={next => set("start_date", next)} /></label>
+      <label className="text-xs">Through<DateField label="Through" required min={value.start_date} className="mt-2" value={value.end_date || ""} onChange={next => set("end_date", next)} /></label>
     </div>}
     <fieldset><legend className="text-xs font-medium">Report sections</legend>
       <p className="mb-3 mt-1 text-xs text-muted-foreground">Optional. Leave empty for a natural answer to your question.</p>
