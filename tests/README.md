@@ -221,3 +221,20 @@ without a cropped prompt list, expandable filters, 44px prompt targets, and
 Enter inserting a newline without sending on phones. Mobile coach dialogs use
 the available viewport and account for the safe area; desktop keeps its chat
 scroller and keyboard shortcut.
+
+## Cloud drafts, sticky formatting and uploads
+
+`PLAYWRIGHT_MODULE=/workspace/.tradetrack/playwright.mjs npm run test:cloud-drafts`
+checks two independent browser profiles, image hydration, full-dialog recovery,
+revision conflicts, explicit resolution, offline reconnect, sticky toolbar geometry
+at 320/390/1280px, compression, upload progress and individual retries.
+The test uses an in-memory HTTP adapter and never contacts a live journal.
+`test:journal-draft-ux` continues to exercise IndexedDB recovery without cloud access.
+
+Cloud sync is enabled for signed-in users. Local drafts are saved first; cloud
+requests are debounced separately and do not invalidate analytics query caches.
+A compact toolbar stays inside each note section; More formatting reveals the
+remaining tools. New image uploads optimize large raster images to WebP when
+smaller, with a 2560px longest edge and 0.92 quality, retaining the source preview.
+Uploads run two at a time. Successful uploads are retained across failed saves;
+per-image retries reuse a stable client ID.

@@ -2,9 +2,10 @@ import { translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
 import { useState } from "react";
 import { Controller } from "react-hook-form";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import EntryFieldActions from "./EntryFieldActions";
 import OptionCombobox from "./OptionCombobox";
 import SelectField from "@/components/ui/select-field";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -52,7 +53,7 @@ export function AddCustomFieldButton({onCreate,disabled}) {
   </>;
 }
 
-export default function TradeCustomFields({section,fields,control,errors,onCreate,onRemove,onUpdateOptions,disabled,showAdd=true}) {
+export default function TradeCustomFields({section,fields,control,errors,onCreate,onRemove,onUpdateOptions,onRename,active=false,disabled,showAdd=true}) {
   useLanguage();
   const [adding,setAdding]=useState(false);
   const [removing,setRemoving]=useState(null);
@@ -70,7 +71,9 @@ export default function TradeCustomFields({section,fields,control,errors,onCreat
       {definitions.map(definition=><div key={definition.id} className="min-w-0 space-y-1.5">
         <div className="flex items-center justify-between gap-2">
           <label htmlFor={`custom-${definition.id}`} className="block text-xs font-medium text-zinc-400">{definition.label}</label>
-          {onRemove&&<button type="button" aria-label={`Delete custom field ${definition.label}`} disabled={disabled||removing!==null} onClick={()=>{setRemoveError("");setDeleteTarget(definition);}} className="rounded p-1 text-zinc-500 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-40"><Trash2 className="size-3.5"/></button>}
+          <EntryFieldActions id={`custom-${definition.id}`} label={definition.label} active={active} disabled={disabled||removing!==null} maxNameLength={80}
+            onRename={name=>onRename(definition.id,name)} onRequestRemove={onRemove?()=>{setRemoveError("");setDeleteTarget(definition);}:undefined}/>
+
         </div>
         <Controller name={`custom_fields.${definition.id}`} control={control} defaultValue="" render={({field})=>{
           const props={id:`custom-${definition.id}`,"aria-label":definition.label,onBlur:field.onBlur,ref:field.ref};

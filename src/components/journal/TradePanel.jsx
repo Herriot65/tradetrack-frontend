@@ -1,5 +1,7 @@
 import { useTradeDraft } from "@/hooks/useTradeDraft";
 import { restoreDraftImages } from "@/lib/tradeDraftStore";
+import { prepareImage } from "@/lib/prepareImage";
+import { mapConcurrent } from "@/lib/mapConcurrent";
 import EntrySectionHeader from "./EntrySectionHeader";
 import EntryFieldActions from "./EntryFieldActions";
 import EntryFieldPreferences from "./EntryFieldPreferences";
@@ -296,13 +298,18 @@ export default function TradePanel({
   );
   const customFields = useTradeCustomFields(journalId, { enabled: open });
 
+  const [uploadStates,setUploadStates]=useState({});
+  const uploadBusy=useRef(new Set());
   const [notesSections, setNotesSections] = useState(() => buildSections(trade?.screenshots, trade?.notes_document));
   const [generalDocument, setGeneralDocument] = useState(() => trade?.notes_document?.general ?? documentFromText(trade?.notes));
+  const notesLatest=useRef(notesSections),generalLatest=useRef(generalDocument);
+  useLayoutEffect(()=>{notesLatest.current=notesSections;generalLatest.current=generalDocument;});
   const savedDraftId = useRef(null);
   const [removedImageIds,setRemovedImageIds]=useState([]);
   const [discardDraftOpen,setDiscardDraftOpen]=useState(false);
   const notesDirty = useRef(false);
   const hydratedDraft = useRef(null);
+  const formBaseline=useRef(tradeToDefaults(trade,timezone));
   const [draftSource, setDraftSource] = useState({ open, tradeId: trade?.id, mode });
   // A new draft must not retain the previous trade's attachments.
   if (draftSource.open !== open || draftSource.tradeId !== trade?.id || draftSource.mode !== mode) {
@@ -310,6 +317,7 @@ export default function TradePanel({
     if (open) {
       setNotesSections(buildSections(trade?.screenshots, trade?.notes_document));
       setGeneralDocument(trade?.notes_document?.general ?? documentFromText(trade?.notes));
+      setUploadStates({});
 
     }
   }
@@ -386,7 +394,8 @@ export default function TradePanel({
     savedDraftId.current = null;
     setRemovedImageIds([]);
     notesDirty.current = false;
-    reset(tradeToDefaults(trade, timezone));
+    formBaseline.current=tradeToDefaults(trade,timezone);
+    reset(formBaseline.current);
     if (mode === "edit" && trade?.id && journalId) {
       // The list endpoint doesn't include screenshots; fetch the detail to populate them.
       let cancelled = false;
@@ -396,6 +405,7 @@ export default function TradePanel({
             setNotesSections(buildSections(full.screenshots, full.notes_document));
             setGeneralDocument(full.notes_document?.general ?? documentFromText(full.notes));
             setValue("notes", full.notes_document?.version === 1 ? documentText(full.notes_document.general) : full.notes ?? "");
+            formBaseline.current={...formBaseline.current,notes:full.notes_document?.version === 1 ? documentText(full.notes_document.general) : full.notes ?? ""};
           }
         })
         .catch(() => {
@@ -408,10 +418,11 @@ export default function TradePanel({
   }, [open, trade, reset, mode, journalId, timezone, setValue]);
 
   const allValues=useWatch({control});
-  const draft=useTradeDraft({open,identity:`${auth?.user?.id ?? auth?.user?.email ?? 'browser'}:${journalId}:${mode}:${trade?.id ?? 'new'}:${timezone}`,
-    snapshot:{values:allValues,sections:notesSections,generalDocument,pnlUnit,riskUnit,removedImageIds},
+  const draft=useTradeDraft({open,cloudEnabled:!!auth?.user?.id,journalId,scope:mode==="edit"?String(trade?.id):"new",identity:`${auth?.user?.id ?? auth?.user?.email ?? 'browser'}:${journalId}:${mode}:${trade?.id ?? 'new'}:${timezone}`,
+    snapshot:{timezone,values:allValues,sections:notesSections,generalDocument,pnlUnit,riskUnit,removedImageIds},
     getSavedTradeId:()=>savedDraftId.current,
-    onRestore:stored=>{notesDirty.current=true;reset(stored.values);setNotesSections(restoreDraftImages(stored.sections));setGeneralDocument(stored.generalDocument);setPnlUnit(stored.pnlUnit);setRiskUnit(stored.riskUnit);setRemovedImageIds(stored.removedImageIds??[]);savedDraftId.current=stored.savedTradeId??null;},
+    getHasChanges:()=>notesDirty.current || JSON.stringify(getValues())!==JSON.stringify(formBaseline.current) || pnlUnit!==defaultUnit || riskUnit!==(defaultUnit==="USD"?"USD":"PCT") || removedImageIds.length>0,
+    onRestore:stored=>{if(!stored){notesDirty.current=false;reset(tradeToDefaults(trade,timezone));setNotesSections(buildSections(trade?.screenshots,trade?.notes_document));setGeneralDocument(trade?.notes_document?.general??documentFromText(trade?.notes));setRemovedImageIds([]);savedDraftId.current=null;return;}notesDirty.current=true;const values={...stored.values};if(stored.timezone&&stored.timezone!==timezone)for(const field of ['entry_datetime','exit_datetime']){const instant=fromInputDt(values[field],stored.timezone);if(instant)values[field]=toInputDt(instant,timezone);}reset(values);setNotesSections(restoreDraftImages(stored.sections));setGeneralDocument(stored.generalDocument);setPnlUnit(stored.pnlUnit);setRiskUnit(stored.riskUnit);setRemovedImageIds(stored.removedImageIds??[]);savedDraftId.current=stored.savedTradeId??null;},
   });
   useLayoutEffect(()=>{draftFlush.current=draft.flush;});
 
@@ -430,6 +441,45 @@ export default function TradePanel({
     const values = { ...getValues("custom_fields") };
     delete values[String(id)];
     setValue("custom_fields", values, { shouldDirty: true });
+  }
+
+  function imageState(id,patch){setUploadStates(states=>({...states,[id]:{...states[id],...patch}}));}
+  async function saveImage(section,image,tradeId) {
+    imageState(image.id,{phase:image.file?'optimizing':'uploading',percent:0,error:null});
+    try {
+      let updated=image;
+      if(image.file) {
+        const prepared=image.cloudFile?{file:image.file,originalSize:image.file.size}:await prepareImage(image.file);
+        imageState(image.id,{phase:'uploading',originalSize:prepared.originalSize,size:prepared.file.size,percent:0});
+        const uploaded=await uploadScreenshot(journalId,tradeId,prepared.file,section.title,image.width??100,{clientId:image.id,onProgress:percent=>imageState(image.id,{percent})});
+        updated={...image,file:null,screenshotId:uploaded.id,preview:uploaded.image_url,width:uploaded.display_width??image.width??100,savedWidth:uploaded.display_width??image.width??100,savedSection:section.title};
+      } else if(image.screenshotId && ((image.width??100)!==(image.savedWidth??100)||section.title!==image.savedSection)) {
+        await updateScreenshotWidth(journalId,tradeId,image.screenshotId,image.width??100,section.title);
+        updated={...image,savedWidth:image.width,savedSection:section.title};
+      }
+      imageState(image.id,{phase:'uploaded',percent:100});return updated;
+    }catch(error){imageState(image.id,{phase:'failed',error:error?.response?.data?.error??error.message??'Upload failed.'});throw error;}
+  }
+  function noteDocument(sections) {
+    return {version:1,general:generalLatest.current,sections:sections.map(section=>({id:String(section.id).slice(0,100),title:section.title.slice(0,100),content:section.content??documentFromText(section.text),image_layout:serializeImageLayout(section.images),image_notes:serializeImageNotes(section.images),image_details:serializeImageDetails(section.images)}))};
+  }
+  async function retryImage(id) {
+    if(uploadBusy.current.has(id)||isSubmitting)return;
+    const section=notesSections.find(section=>section.images.some(image=>image.id===id));
+    const image=section?.images.find(image=>image.id===id),tradeId=savedDraftId.current??trade?.id;
+    if(!image||!tradeId)return;
+    uploadBusy.current.add(id);
+    try {
+      const updated=await saveImage(section,image,tradeId);
+      if(!notesLatest.current.some(section=>section.images.some(image=>image.id===id))) {
+        if(image.file && updated.screenshotId)await deleteScreenshot(journalId,tradeId,updated.screenshotId);
+        return;
+      }
+      const sections=notesLatest.current.map(section=>({...section,images:section.images.map(image=>image.id===id?{...image,file:updated.file,screenshotId:updated.screenshotId,preview:updated.preview,savedWidth:updated.savedWidth,savedSection:updated.savedSection}:image)}));
+      setNotesSections(sections);
+      await onSave({notes_document:noteDocument(sections)},tradeId);
+    }catch(error){imageState(id,{phase:'failed',error:error.message??'Upload failed.'});}
+    finally {uploadBusy.current.delete(id);}
   }
 
   async function submit(values) {
@@ -493,16 +543,11 @@ export default function TradePanel({
       savedDraftId.current = tradeId;
       if (tradeId && journalId) {
         const updates = new Map();
-        const tasks = notesSections.flatMap(section => section.images.map(image => async () => {
-          if (image.file) {
-            const uploaded = await uploadScreenshot(journalId, tradeId, image.file, section.title, image.width ?? 100);
-            updates.set(image.id, {...image,file:null,screenshotId:uploaded.id,preview:uploaded.image_url,width:uploaded.display_width ?? image.width ?? 100,savedWidth:uploaded.display_width ?? image.width ?? 100,savedSection:section.title});
-          } else if (image.screenshotId && ((image.width ?? 100) !== (image.savedWidth ?? 100) || section.title !== image.savedSection)) {
-            await updateScreenshotWidth(journalId, tradeId, image.screenshotId, image.width ?? 100, section.title);
-            updates.set(image.id,{...image,savedWidth:image.width,savedSection:section.title});
-          }
-        }));
-        const results = await Promise.allSettled(tasks.map(task => task()));
+        const tasks=notesSections.flatMap(section=>section.images.filter(image=>image.file||(image.screenshotId&&((image.width??100)!==(image.savedWidth??100)||section.title!==image.savedSection))).map(image=>({section,image})));
+        const results=await mapConcurrent(tasks,2,async({section,image})=>{
+          try {const updated=await saveImage(section,image,tradeId);updates.set(image.id,updated);return {status:'fulfilled'};}
+          catch {return {status:'rejected'};}
+        });
         setNotesSections(current => current.map(section => ({...section,images:section.images.map(image => updates.get(image.id) ?? image)})));
         if (results.some(result => result.status === 'rejected')) {
           setError("root", {message:"Trade notes saved, but some images could not be saved. Try saving again to retry the remaining images."});
@@ -601,11 +646,16 @@ export default function TradePanel({
 
           <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border px-6 py-2 text-xs text-muted-foreground">
             <span role="status" aria-live="polite">{t(({loading:'Loading draft…',ready:'Drafts save on this device',saving:'Saving draft…',saved:'Draft saved on this device',restored:'Draft restored',error:'Draft could not be saved. Keep this dialog open.'})[draft.status])}</span>
-            <button type="button" onClick={()=>setDiscardDraftOpen(true)} className="min-h-9 rounded px-2 hover:bg-secondary">{t('Discard draft')}</button>
+            {draft.cloudStatus!=='disabled'&&<span role="status">{t(({syncing:'Syncing draft…',synced:'Draft synced across devices',offline:'Cloud sync pending — saved on this device',conflict:'Draft changed on another device',attention:'Cloud sync needs attention — saved on this device'})[draft.cloudStatus])}</span>}
+            {draft.cloudError&&<span role="alert" className="break-words text-amber-400">{draft.cloudError}</span>}
+            {['offline','attention'].includes(draft.cloudStatus)&&<button type="button" onClick={draft.retrySync} className="min-h-9 rounded px-2 hover:bg-secondary">{t('Retry sync')}</button>}
+            {draft.cloudStatus==='conflict'&&<div className="flex flex-wrap gap-2"><button type="button" disabled={isSubmitting} onClick={draft.loadCloud} className="min-h-9 rounded border border-border px-2">{t('Load cloud draft')}</button><button type="button" disabled={isSubmitting} onClick={draft.keepLocal} className="min-h-9 rounded border border-border px-2">{t('Keep this draft')}</button></div>}
+            <button type="button" disabled={isSubmitting} onClick={()=>setDiscardDraftOpen(true)} className="min-h-9 rounded px-2 hover:bg-secondary">{t('Discard draft')}</button>
           </div>
           {configurationNotification}
           <SheetBody className="trade-panel-body">
             <form id="trade-form" onSubmit={event => {event.preventDefault();requestExit(() => handleSubmit(submit)());}} noValidate>
+              <fieldset disabled={isSubmitting || draft.status==="loading"} className="min-w-0">
               {errors.root && (
                 <p id="trade-save-error" role="alert" className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
                   {t(errors.root.message)}
@@ -767,6 +817,8 @@ export default function TradePanel({
                   </div>
                   <TradeCustomFields
                     section="execution"
+                    active={customizingSection === "execution"}
+                    onRename={customFields.rename}
                     fields={customFields.fields}
                     control={control}
                     errors={errors}
@@ -880,6 +932,8 @@ export default function TradePanel({
                   </div>
                   <TradeCustomFields
                     section="performance"
+                    active={customizingSection === "performance"}
+                    onRename={customFields.rename}
                     fields={customFields.fields}
                     control={control}
                     errors={errors}
@@ -1052,6 +1106,8 @@ export default function TradePanel({
                   </div>
                   <TradeCustomFields
                     section="setup"
+                    active={customizingSection === "setup"}
+                    onRename={customFields.rename}
                     fields={customFields.fields}
                     control={control}
                     errors={errors}
@@ -1103,6 +1159,8 @@ export default function TradePanel({
                   </div>
                   <TradeCustomFields
                     section="psychology"
+                    active={customizingSection === "psychology"}
+                    onRename={customFields.rename}
                     fields={customFields.fields}
                     control={control}
                     errors={errors}
@@ -1119,10 +1177,12 @@ export default function TradePanel({
                 <section>
                   <EntrySectionHeader section="notes" title={t("Notes")} active={customizingSection === "notes"} onToggle={toggleCustomization} />
                   <F label={entryFields.label("notes", t("General trade notes"))} action={<EntryFieldActions active={customizingSection === "notes"} id="notes" label={t("General trade notes")} settings={entryFields} />}>
-                  <RichNotesEditor label={entryFields.label("notes", t("General trade notes"))} value={generalDocument} onChange={(content,text) => {notesDirty.current=true;setGeneralDocument(content);setValue("notes",text,{shouldDirty:true});}} />
+                  <RichNotesEditor readOnly={isSubmitting || draft.status==="loading"} label={entryFields.label("notes", t("General trade notes"))} value={generalDocument} onChange={(content,text) => {notesDirty.current=true;setGeneralDocument(content);setValue("notes",text,{shouldDirty:true});}} />
                   </F>
                   <TradeCustomFields
                     section="notes"
+                    active={customizingSection === "notes"}
+                    onRename={customFields.rename}
                     fields={customFields.fields}
                     control={control}
                     errors={errors}
@@ -1139,6 +1199,7 @@ export default function TradePanel({
                   <EntrySectionHeader section="trade_notes" title={t("Trade Notes")} active={customizingSection === "trade_notes"} onToggle={toggleCustomization} />
                   <F label={entryFields.label("trade_notes", t("Trade Notes"))} action={<EntryFieldActions active={customizingSection === "trade_notes"} id="trade_notes" label={t("Trade Notes")} settings={entryFields} />}>
                   <TradeNotesEditor
+                    uploadStates={uploadStates} onRetryImage={retryImage} readOnly={isSubmitting || draft.status==="loading"}
                     sections={notesSections}
                     onChange={sections => {notesDirty.current=true;setNotesSections(sections);}}
                     onDeleteImage={handleDeleteBackendImage}
@@ -1148,6 +1209,8 @@ export default function TradePanel({
                   </F>
                   <TradeCustomFields
                     section="trade_notes"
+                    active={customizingSection === "trade_notes"}
+                    onRename={customFields.rename}
                     fields={customFields.fields}
                     control={control}
                     errors={errors}
@@ -1159,6 +1222,7 @@ export default function TradePanel({
                   />
                 </section>
               </div>
+                          </fieldset>
             </form>
           </SheetBody>
 
@@ -1179,7 +1243,7 @@ export default function TradePanel({
                 type="submit"
                 form="trade-form"
                 size="sm"
-                disabled={isSubmitting || catalog.loading || draft.status === "loading"}
+                disabled={isSubmitting || catalog.loading || draft.status === "loading" || Object.values(uploadStates).some(state=>["uploading","optimizing"].includes(state.phase))}
               >
                 {isSubmitting ? t("Saving…") : t("Save Trade")}
               </Button>

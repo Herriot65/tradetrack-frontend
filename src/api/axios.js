@@ -78,7 +78,7 @@ const refreshAccessToken = () => {
 ========================= */
 api.interceptors.response.use(
   (response) => {
-    if (!["get", "head", "options"].includes(response.config.method)) clearQueryCache();
+    if (!["get", "head", "options"].includes(response.config.method) && !response.config.url?.includes("/drafts/")) clearQueryCache();
     return response;
   },
   async (error) => {

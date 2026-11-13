@@ -56,14 +56,32 @@ if (customMode && localStorage.getItem("fixture-custom-trade"))
 window.__tradeSaves = 0;
 window.__imageUploads = 0;
 window.__imageDeletes = 0;
+window.__uploadAttempts=[];window.__uploadedFileSizes=[];
 window.__uploadedImages = [];
 window.__definitionWrites = 0;
 api.defaults.adapter = async (config) => {
   const reply = (data) => ({ data, status: 200, statusText: "OK", headers: {}, config });
+  if(config.url.includes('/drafts/')) {
+    if(!new URLSearchParams(location.search).has('cloud')){const error=new Error('Cloud offline in this fixture');error.response={status:503};throw error;}
+    const response=await fetch('/__cloud'+config.url,{method:config.method.toUpperCase(),body:config.method==='get'?undefined:config.data,headers:config.data instanceof FormData?undefined:{'Content-Type':'application/json'}});
+    const data=config.responseType==='blob'?await response.blob():await response.json();
+    if(!response.ok){const error=new Error(data.detail??'Cloud request failed');error.response={status:response.status,data};throw error;}
+    return reply(data);
+  }
   const customDetail=config.url.match(/\/custom-fields\/(\d+)\/$/);
+  if(customDetail && config.method==='delete') {
+    const id=Number(customDetail[1]);definitions=definitions.filter(field=>field.id!==id);
+    if(stored.custom_fields)delete stored.custom_fields[String(id)];
+    localStorage.setItem('fixture-custom-definitions',JSON.stringify(definitions));
+    if(customMode)localStorage.setItem('fixture-custom-trade',JSON.stringify(stored));
+    return reply(null);
+  }
   if (customDetail && config.method==='patch') {
-    const id=Number(customDetail[1]);const field=definitions.find(field=>field.id===id);
-    Object.assign(field,JSON.parse(config.data));
+    const id=Number(customDetail[1]),field=definitions.find(field=>field.id===id),changes=JSON.parse(config.data);
+    if(changes.label && (window.__failFieldRename || definitions.some(other=>other.id!==id && other.section===field.section && other.label.toLowerCase()===changes.label.trim().toLowerCase()))) {
+      window.__failFieldRename=false;const error=new Error('Unable to rename field.');error.response={data:{label:['A field with this name already exists in this section.']}};throw error;
+    }
+    Object.assign(field,changes);
     localStorage.setItem('fixture-custom-definitions',JSON.stringify(definitions));
     return reply(field);
   }
@@ -77,6 +95,11 @@ api.defaults.adapter = async (config) => {
       return reply(null);
     }
     if (config.method === 'post') {
+      const file=config.data.get('file');window.__uploadAttempts.push(file.name);window.__uploadedFileSizes.push({name:file.name,size:file.size,type:file.type});
+      config.onUploadProgress?.({loaded:Math.floor(file.size/2),total:file.size});
+      if(window.__slowUploads)await new Promise(resolve=>setTimeout(resolve,800));
+      if(window.__failUploadName===file.name){window.__failUploadName=null;throw new Error('Synthetic individual upload failure');}
+      config.onUploadProgress?.({loaded:file.size,total:file.size});
       window.__imageUploads++;
       const image={id:Date.now()+Math.random(),image_url:await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(config.data.get('file'));}),section:config.data.get('section'),display_width:Number(config.data.get('display_width')||100)};
       window.__uploadedImages.push({name:config.data.get('file').name,id:image.id});stored.screenshots=[...(stored.screenshots??[]),image];if(customMode)localStorage.setItem("fixture-custom-trade",JSON.stringify(stored));return reply(image);
@@ -105,6 +128,11 @@ api.defaults.adapter = async (config) => {
       return reply(null);
     }
     if (config.method === 'post') {
+      const file=config.data.get('file');window.__uploadAttempts.push(file.name);window.__uploadedFileSizes.push({name:file.name,size:file.size,type:file.type});
+      config.onUploadProgress?.({loaded:Math.floor(file.size/2),total:file.size});
+      if(window.__slowUploads)await new Promise(resolve=>setTimeout(resolve,800));
+      if(window.__failUploadName===file.name){window.__failUploadName=null;throw new Error('Synthetic individual upload failure');}
+      config.onUploadProgress?.({loaded:file.size,total:file.size});
       window.__imageUploads++;
       const image={id:Date.now()+Math.random(),image_url:await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(config.data.get('file'));}),section:config.data.get('section'),display_width:Number(config.data.get('display_width')||100)};
       window.__uploadedImages.push({name:config.data.get('file').name,id:image.id});stored.screenshots=[...(stored.screenshots??[]),image];if(customMode)localStorage.setItem("fixture-custom-trade",JSON.stringify(stored));return reply(image);

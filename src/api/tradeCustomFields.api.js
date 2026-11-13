@@ -36,3 +36,16 @@ export async function updateTradeCustomFieldOptions(journalId,id,options) {
   }
   const {data}=await api.patch(`/journals/${journalId}/custom-fields/${id}/`,{options});return data;
 }
+
+export async function renameTradeCustomField(journalId,id,label) {
+  const name=label.trim();
+  if(USE_MOCK) {
+    const fields=read(journalId),field=fields.find(field=>String(field.id)===String(id));
+    if(!field)throw new Error('Field no longer exists.');
+    if(!name||name.length>80)throw new Error('Enter a field name of 1–80 characters.');
+    if(fields.some(other=>other.id!==field.id && other.section===field.section && other.label.toLowerCase()===name.toLowerCase()))throw new Error('A field with this name already exists in this section.');
+    const updated={...field,label:name};
+    localStorage.setItem(key(journalId),JSON.stringify(fields.map(item=>item.id===field.id?updated:item)));return updated;
+  }
+  const {data}=await api.patch(`/journals/${journalId}/custom-fields/${id}/`,{label:name});return data;
+}

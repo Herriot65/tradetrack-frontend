@@ -38,14 +38,16 @@ export const deleteTrade = async (workspaceId, id) => {
   await api.delete(`/journals/${workspaceId}/trades/${id}/`);
 };
 
-export const uploadScreenshot = async (journalId, tradeId, file, section = null, displayWidth = 100) => {
+export const uploadScreenshot = async (journalId, tradeId, file, section = null, displayWidth = 100, {onProgress,clientId} = {}) => {
   const formData = new FormData();
   formData.append("file", file);
+  if(clientId)formData.append("client_id",String(clientId));
   formData.append("display_width", String(displayWidth));
   if (section) formData.append("section", section);
   const { data } = await api.post(
     `/journals/${journalId}/trades/${tradeId}/screenshots/`,
     formData,
+    {onUploadProgress:event=>onProgress?.(event.total?Math.min(99,Math.round(event.loaded/event.total*100)):null)},
   );
   return data;
 };

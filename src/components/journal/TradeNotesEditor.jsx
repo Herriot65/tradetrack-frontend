@@ -45,12 +45,16 @@ function NoteSection({
   sections,
   placement,
   onPlaceImage,
+  uploadStates,
+  onRetryImage,
+  readOnly,
 }) {
   useLanguage();
   const [annotating,setAnnotating]=useState(null);
   const fileInputRef  = useRef(null);
   const [focusNote,setFocusNote] = useState(null);
   const [activeEditor,setActiveEditor] = useState(null);
+  const [toolbarHost,setToolbarHost]=useState(null);
   const rowEnds = new Set(imageRows(section.images).map(row=>row.at(-1).id));
 
   function readFiles(files,afterId) {
@@ -72,10 +76,10 @@ function NoteSection({
   }
 
   return (
-    <RichNotesScope.Provider value={{activeEditor,setActiveEditor}}>
+    <RichNotesScope.Provider value={{activeEditor,setActiveEditor,toolbarHost,readOnly}}>
     <div
       data-note-section={section.id}
-      className="overflow-hidden rounded-lg border border-border bg-card"
+      className="relative rounded-lg border border-border bg-card"
       onPaste={handlePaste}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => { e.preventDefault(); readFiles(e.dataTransfer.files,e.target.closest?.('[data-image-note-id]')?.dataset.imageNoteId); }}
@@ -116,6 +120,7 @@ function NoteSection({
         )}
       </div>
 
+      <div ref={setToolbarHost} data-note-toolbar-host className="sticky top-0 z-20 rounded-t-lg bg-card"/>
       {/* Text */}
       <RichNotesEditor embedded hasImages={section.images.length > 0} label={t("Notes for {section}", {section: section.title})} value={section.content ?? documentFromText(section.text)} onChange={(content,text) => onTextChange(text,content)} />
 
@@ -123,9 +128,9 @@ function NoteSection({
       {(section.images.length > 0 || placement.drag) && <div className="trade-note-images px-3 pb-3">
         {section.images.map((img,index) => <Fragment key={img.id}>
           {index>0 && img.startRow && <span className="trade-image-break" aria-hidden="true"/>}
-          <TradeImage src={img.preview} label={img.name} width={img.width ?? 100} onResize={width => onResizeImage(img.id,width)}
+          <TradeImage busy={["optimizing","uploading"].includes(uploadStates?.[img.id]?.phase)} uploadState={uploadStates?.[img.id]} onRetry={()=>onRetryImage?.(img.id)} src={img.preview} label={img.name} width={img.width ?? 100} onResize={width => onResizeImage(img.id,width)}
             annotations={img.annotations} caption={img.caption} onAnnotate={()=>setAnnotating(img.id)}
-            onOpen={() => onImageClick({src:img.preview,annotations:img.annotations,caption:img.caption})} onRemove={() => onRemoveImage(img.id)}
+            onOpen={() => onImageClick({src:img.preview,annotations:img.annotations,caption:img.caption})} onRemove={() => {setFocusNote(null);onRemoveImage(img.id);}}
             arrangement={{imageId:String(img.id),dragging:placement.drag?.source.sectionId===section.id && String(placement.drag.source.imageId)===String(img.id),
               onPointerDown:event=>placement.start(event,{sectionId:section.id,imageId:img.id}),onPointerMove:placement.move,onPointerUp:placement.end,onLostPointerCapture:placement.cancel,
               consumeClick:placement.consumeClick,allowKeyboard:placement.allowKeyboard,
@@ -170,7 +175,7 @@ function NoteSection({
 
 // ─── Editor ───────────────────────────────────────────────────────────────────
 
-export default function TradeNotesEditor({ sections, onChange, onDeleteImage, onToggleWide, wide = false }) {
+export default function TradeNotesEditor({ sections, onChange, onDeleteImage, onToggleWide, wide = false, uploadStates={},onRetryImage,readOnly=false }) {
   useLanguage();
   const [editingId,   setEditingId]   = useState(null);
   const [lightboxSrc, setLightboxSrc] = useState(null);
@@ -283,6 +288,7 @@ export default function TradeNotesEditor({ sections, onChange, onDeleteImage, on
           <NoteSection
             key={s.id}
             section={s}
+            uploadStates={uploadStates} onRetryImage={onRetryImage} readOnly={readOnly}
             sections={sections}
             placement={placement}
             onPlaceImage={arrange}
