@@ -17,6 +17,7 @@
     "test:currency-scroll": "node tests/currency-scroll-browser.mjs",
     "test:tab-loading": "node tests/tab-loading-browser.mjs",
     "test:landing-motion": "node tests/landing-motion-browser.mjs",
+    "test:style": "node tests/style-browser.mjs",
     "test:motion": "node tests/motion-browser.mjs",
     "test:navigation": "node tests/navigation-browser.mjs",
     "test:trade-browser": "node tests/trade-browser.mjs",

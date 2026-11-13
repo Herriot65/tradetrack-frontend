@@ -224,3 +224,12 @@ orbit motion, pointer response, pause/resume, scroll reveals, registration links
 `CAPTURE_MOTION_FRAMES=0` to skip the 48 frames used for the animation preview.
 The hero is decorative CSS 3D geometry; its chart illustrates the product and
 is not live market data. Animation pauses offscreen and in background tabs.
+
+## Shared visual theme
+
+`npm run test:style` checks that authentication, error pages, the workspace,
+portalled menus, settings dialogs and trade sheets inherit the same theme.
+It captures dark/light routes including AI Coach and 320px public forms under
+`artifacts/uniform-style/`, using synthetic responses and no account writes.
+Use `PLAYWRIGHT_MODULE` as above. Shared tokens and component surfaces live in
+`src/theme.css`; workspace-specific layouts remain in `src/workspace.css`.

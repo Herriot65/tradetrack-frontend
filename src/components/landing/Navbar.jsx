@@ -35,7 +35,7 @@ export default function Navbar() {
             </a>
           ))}
         </div>
-        <div className="hidden shrink-0 items-center gap-2 xl:flex">
+        <div className="ml-auto flex shrink-0 items-center gap-2 xl:ml-0">
           <ThemeToggle />
           <LanguageSelector />
         </div>

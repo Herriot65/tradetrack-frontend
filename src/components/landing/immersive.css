@@ -1,5 +1,5 @@
-.nx-immersive-landing { background: #080b10; color: #edf5f2; overflow: clip; }
-.light .nx-immersive-landing { background: #f4f8f7; color: #172b25; }
+.nx-immersive-landing { background: hsl(var(--background)); color: hsl(var(--foreground)); overflow: clip; }
+
 .nx-market .nx-immersive-hero { padding-top: 150px; padding-bottom: 80px; }
 .nx-hero-atmosphere { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 45% 35% at 78% 20%, rgb(var(--gain-rgb) / .1), transparent), linear-gradient(transparent, rgb(var(--gain-rgb) / .02), transparent); }
 .nx-immersive-layout { display: grid; grid-template-columns: 1.1fr 1fr; align-items: center; gap: 25px; position: relative; }

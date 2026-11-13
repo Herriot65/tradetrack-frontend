@@ -1,33 +1,5 @@
 /* Shared workspace language: graphite planes, quiet borders, emerald light. */
-.nx-shell {
-  --background: 225 22% 5%;
-  --card: 225 18% 8%;
-  --secondary: 225 15% 12%;
-  --border: 225 13% 16%;
-  --input: 225 13% 21%;
-  --border-hairline: #252a34;
-  --border-control: #343c49;
-  --bg-ground: #0a0d14;
-  --surface-card: hsl(var(--card));
-  --surface-page: hsl(var(--background));
-  --surface-raised: hsl(var(--secondary));
-  --hairline: var(--border-hairline);
-  --chart-grid: #202630;
-  --shadow-panel: 0 8px 24px rgb(0 0 0 / .14), inset 0 1px 0 rgb(255 255 255 / .035);
-  background: radial-gradient(ellipse at 65% 0%, rgb(40 89 78 / .11), transparent 48%), hsl(var(--background));
-}
-.light .nx-shell {
-  --background: 210 25% 97%;
-  --card: 0 0% 100%;
-  --secondary: 210 20% 94%;
-  --border: 210 18% 87%;
-  --input: 210 17% 79%;
-  --border-hairline: #dce3eb;
-  --border-control: #c3ced9;
-  --bg-ground: #f5f7fa;
-  --chart-grid: #e8edf2;
-  --shadow-panel: 0 8px 24px rgb(25 40 60 / .045), inset 0 1px 0 white;
-}
+.nx-shell { background: var(--page-atmosphere), hsl(var(--background)); }
 .nx-shell .nx-sidebar {
   background: linear-gradient(180deg, rgb(var(--gain-rgb) / .025), transparent 35%), hsl(var(--card));
   border-right-color: var(--border-hairline);

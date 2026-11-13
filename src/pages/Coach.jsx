@@ -61,7 +61,7 @@ function CoachWorkspace({ journal, accountTimezone }) {
     listCoachTasks(journal.id).then(value => { if (!abort.signal.aborted) setTasks(value); }).catch(err => { if (!abort.signal.aborted) setTaskError(apiError(err)); }).finally(() => { if (!abort.signal.aborted) setTasksLoading(false); });
     return () => { mounted.current = false; controller.current?.abort(); abort.abort(); };
   }, [journal.id]);
-  useEffect(() => { bottom.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, [messages, busy]);
+  useEffect(() => { bottom.current?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "nearest" }); }, [messages, busy]);
 
   async function reloadTasks() {
     try { const value = await listCoachTasks(journal.id); if (mounted.current) { setTasks(value); setTaskError(""); } }

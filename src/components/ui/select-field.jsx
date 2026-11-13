@@ -27,6 +27,7 @@ export default function SelectField({
       onValueChange={(next) => onValueChange(next === EMPTY ? "" : next)}
     >
       <SelectPrimitive.Trigger
+        data-slot="select-trigger"
         aria-label={label}
         {...triggerProps}
         className={cn(
@@ -49,6 +50,7 @@ export default function SelectField({
       </SelectPrimitive.Trigger>
       <SelectPrimitive.Portal>
         <SelectPrimitive.Content
+          data-slot="select-content"
           position="popper"
           sideOffset={6}
           collisionPadding={12}

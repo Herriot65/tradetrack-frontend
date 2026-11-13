@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 export default function NotFound() {
   useLanguage();
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 px-6 text-center">
+    <div className="nx-empty-page flex min-h-screen flex-col items-center justify-center bg-zinc-950 px-6 text-center">
       {/* Brand mark */}
       <img
         src="/nexora.png"
@@ -15,7 +15,7 @@ export default function NotFound() {
       />
 
       {/* 404 */}
-      <p className="text-[80px] font-black leading-none tracking-tight text-zinc-800 sm:text-[120px]">
+      <p className="text-[80px] font-black leading-none tracking-tight text-primary/40 sm:text-[120px]">
         404
       </p>
 
