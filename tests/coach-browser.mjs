@@ -122,6 +122,7 @@ try {
   await page.getByRole("heading",{name:"What would you like to work on?",exact:true}).waitFor();
   await page.locator("aside").getByRole("button", { name: "Schedule this", exact: false }).click();
   await page.getByLabel("Start with a template", {exact:true}).selectOption("prepare");
+  await page.getByText("Edit task details",{exact:true}).click();
   assert.equal(await page.getByLabel("Task name").inputValue(), "Session preparation");
   assert.match(await page.getByLabel("What should the coach do?").inputValue(), /risk limits/);
   await page.getByLabel("Task name").fill("Morning intention");
@@ -196,7 +197,10 @@ try {
   await page.screenshot({path:"artifacts/coach/task-mobile.png",fullPage:true,animations:"disabled"});
   const dialogBox = await page.getByRole("dialog").boundingBox();
   assert.ok(dialogBox.x >= 0 && dialogBox.x + dialogBox.width <= 321);
-  await page.getByRole("button",{name:"Cancel",exact:true}).click();
+  await page.getByRole("button",{name:"Save task",exact:true}).click();
+  await page.getByRole("heading",{name:"Weekly discipline check",exact:true}).waitFor();
+  assert.equal(tasks[0].title,"Weekly discipline check");
+  assert.equal(tasks[0].enabled,true);
   assert.deepEqual(errors, []);
   console.log("PASS: guided prompts, actual trade filters, trade picker, rich evidence, followups, export, retry, stop waiting, reset confirmation, task templates, task lifecycle, journal isolation, mobile layout");
 } catch (error) {
