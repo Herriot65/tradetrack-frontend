@@ -93,6 +93,15 @@ try {
     await page.evaluate(language => localStorage.setItem("nexora_language", language), language);
     const name = language === "fr-FR" ? "Thème" : "Theme";
     for (const route of ["/", "/login", "/register", "/dashboard"]) {
+      // Guest-only forms redirect authenticated users; exercise the actual route.
+      await page.evaluate(({ authenticated, user }) => {
+        for (const key of ['access', 'refresh', 'nexora_session_user']) localStorage.removeItem(key);
+        if (authenticated) {
+          localStorage.setItem('access', 'test-access');
+          localStorage.setItem('refresh', 'test-refresh');
+          localStorage.setItem('nexora_session_user', JSON.stringify(user));
+        }
+      }, { authenticated: route === '/dashboard', user });
       await page.goto(`${base}${route}`);
       for (const width of [320, 390, 768, 1024, 1440]) {
         await page.setViewportSize({ width, height: 900 });
