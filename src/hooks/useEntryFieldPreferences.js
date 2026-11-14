@@ -4,7 +4,6 @@ export const fields = {
  execution: [["asset","Asset"],["side","Side"],["entry_datetime","Entry date/time"],["exit_datetime","Exit date/time"],["risk_percent","Risk"]],
  performance: [["pnl_r","PnL"],["status","Status"],["commission","Commission"],["swap","Swap"]],
  notes: [["notes","General trade notes"]],
- trade_notes: [["trade_notes","Trade Notes"]],
  setup: [['reference_timeframe','Reference TF'],['trade_score','Trade score'],['opportunity_timeframe','Opportunity TF'],['entry_timeframe','Entry TF'],['trend_direction','Trend'],['session','Session'],['setup','Setup']],
  psychology: [['emotions','Emotion'],['mistakes','Mistake']],
 };

@@ -15,7 +15,7 @@ export function useTradeDraft({open,identity,snapshot,onRestore,getSavedTradeId,
       try {
         const record=await draftStore(s.key,'get');if(!record)return;
         if(s.revision==null) {
-          const remote=await s.transport.get();s.revision=remote.revision;
+          const remote=await s.transport.get(3500);s.revision=remote.revision;
           if(remote.revision>(record.cloudRevision??0)) {s.conflict=remote;cloudState(s,'conflict');return;}
         }
         const response=record.deleted?await s.transport.clear(s.revision):await s.transport.put(record,s.revision);
@@ -23,7 +23,7 @@ export function useTradeDraft({open,identity,snapshot,onRestore,getSavedTradeId,
         await writeLocal(async()=>{
           const current=await draftStore(s.key,'get');
           if(current?.updatedAt===record.updatedAt) {
-            if(record.deleted)await draftStore(s.key,'delete');
+            if(record.deleted){await draftStore(s.key,'delete');try{if(Number(localStorage.getItem('trade-draft-discard:'+s.key))<=record.updatedAt)localStorage.removeItem('trade-draft-discard:'+s.key);}catch{/* Optional fallback. */}}
             else await draftStore(s.key,'put',{...current,cloudRevision:s.revision,syncedAt:record.updatedAt});
           }
         });
@@ -62,18 +62,20 @@ export function useTradeDraft({open,identity,snapshot,onRestore,getSavedTradeId,
       try {local=await draftStore(identity,'get');}catch{setStatus('error');}
       if(s.transport) {
         cloudState(s,'syncing');
-        try {remote=await s.transport.get();s.revision=remote.revision;cloudState(s,'synced');}
+        try {remote=await s.transport.get(3500);s.revision=remote.revision;cloudState(s,'synced');}
         catch {cloudState(s,'offline');}
       }
-      if(cancelled)return;
+      if(cancelled||s.suppressed||s.deleted)return;
       let selected=local;
+      try {const discarded=Number(localStorage.getItem('trade-draft-discard:'+identity));if(discarded&&(!selected||selected.updatedAt<=discarded))selected={deleted:true,updatedAt:discarded,cloudRevision:local?.cloudRevision??0};}catch{/* IndexedDB remains the primary store. */}
       try {
         const pending=local && local.updatedAt>(local.syncedAt??0);
-        if(remote&&remote.revision>(local?.cloudRevision??0)) {
+        if(!selected?.deleted && remote&&remote.revision>(local?.cloudRevision??0)) {
           if(local&&pending){s.conflict=remote;cloudState(s,'conflict');}
           else {selected=await s.transport.hydrate(remote);if(selected)await writeLocal(()=>draftStore(identity,'put',selected));else await writeLocal(()=>draftStore(identity,'delete'));}
-        } else if(!local&&remote?.data){selected=await s.transport.hydrate(remote);await writeLocal(()=>draftStore(identity,'put',selected));}
-        if(cancelled)return;
+        } else if(!selected&&remote?.data){selected=await s.transport.hydrate(remote);await writeLocal(()=>draftStore(identity,'put',selected));}
+        if(cancelled||s.suppressed||s.deleted)return;
+        if(selected?.deleted&&!local?.deleted)await writeLocal(()=>draftStore(identity,'put',selected));
         s.skipBaseline=true;
         if(selected&&!selected.deleted)restore.current(selected);
         s.localRevision=selected?.cloudRevision??0;s.syncedAt=selected?.syncedAt??0;s.ready=true;
@@ -101,6 +103,7 @@ export function useTradeDraft({open,identity,snapshot,onRestore,getSavedTradeId,
     try {
       const remote=await s.transport.get();s.revision=remote.revision;s.conflict=null;
       if(useCloud) {
+        try{localStorage.removeItem('trade-draft-discard:'+s.key);}catch{/* Optional fallback. */}
         const data=await s.transport.hydrate(remote);
         s.skipBaseline=true;
         if(data){restore.current(data);await writeLocal(()=>draftStore(s.key,'put',data));setStatus('restored');}
@@ -111,13 +114,22 @@ export function useTradeDraft({open,identity,snapshot,onRestore,getSavedTradeId,
   }
   async function clear() {
     const s=session.current;if(!s)return;
-    s.suppressed=true;clearTimeout(s.timer);await localQueue.current.catch(()=>{});await s.syncing;
-    let deferred=false;
-    if(s.transport&&!s.conflict) {
-      try {if(s.revision==null)s.revision=(await s.transport.get()).revision;await s.transport.clear(s.revision);}
-      catch(error){deferred=![404,409].includes(error?.response?.status);}
-    }
-    await writeLocal(()=>deferred?draftStore(s.key,'put',{deleted:true,updatedAt:Date.now(),cloudRevision:s.revision??0}):draftStore(s.key,'delete'));if(deferred){s.deleted=true;s.suppressed=false;}setStatus('ready');
+    s.suppressed=true;s.deleted=true;clearTimeout(s.timer);
+    const tombstone={deleted:true,updatedAt:Date.now(),cloudRevision:s.revision??0};
+    // Finish the user action locally; cloud cleanup must not hold the dialog open.
+    try {localStorage.setItem('trade-draft-discard:'+s.key,String(tombstone.updatedAt));}catch{/* Storage may be unavailable. */}
+    try {await writeLocal(()=>s.transport?draftStore(s.key,'put',tombstone):draftStore(s.key,'delete'));}catch{/* Saving a trade must not depend on draft storage. */}
+    setStatus('ready');
+    const finish=async()=>{
+      await s.syncing;
+      if(s.transport&&!s.conflict) {
+        try {if(s.revision==null)s.revision=(await s.transport.get()).revision;await s.transport.clear(s.revision);}
+        catch(error){if(![404,409].includes(error?.response?.status)){s.suppressed=false;return;}}
+      }
+      try {await writeLocal(async()=>{const current=await draftStore(s.key,'get');if(!current || (current.deleted&&current.updatedAt<=tombstone.updatedAt))await draftStore(s.key,'delete');});if(Number(localStorage.getItem('trade-draft-discard:'+s.key))===tombstone.updatedAt)localStorage.removeItem('trade-draft-discard:'+s.key);}catch{/* A local tombstone still prevents restoration. */}
+    };
+    void finish();
   }
+
   return {status,cloudStatus,cloudError,flush,clear,loadCloud:()=>resolveCloud(true),keepLocal:()=>resolveCloud(false),retrySync:()=>sync(session.current)};
 }

@@ -1,7 +1,6 @@
-import ImageAnnotations from './ImageAnnotations';
 import { useRef, useState } from 'react';
 import { imageWidth } from '@/lib/noteDocument';
-import { GripVertical, Loader2, SlidersHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { GripVertical, Loader2, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { translate as t } from '@/i18n/language';
 import { useLanguage } from '@/i18n/useLanguage';
@@ -10,7 +9,7 @@ import ImagePlacementControls from './ImagePlacementControls';
 
 // Images share the section canvas. A saved width belongs to the whole image
 // block, so smaller screenshots can sit beside one another without empty cards.
-export default function TradeImage({src, label, onOpen, onRemove, busy = false, deleting = false, width = 100, onResize, arrangement, annotations=[], caption, onAnnotate, uploadState, onRetry, children}) {
+export default function TradeImage({src, label, onOpen, onRemove, busy = false, deleting = false, width = 100, onResize, arrangement, caption, uploadState, onRetry, children}) {
   useLanguage();
   const frame = useRef(null);
   const drag = useRef(null);
@@ -33,7 +32,6 @@ export default function TradeImage({src, label, onOpen, onRemove, busy = false, 
         aria-label={t('View {image} full screen', {image: label})}
         className="relative block w-full cursor-zoom-in bg-transparent p-0 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary">
         <img src={src} alt={label} decoding="async" draggable={false} className="block h-auto w-full object-contain"/>
-        <ImageAnnotations items={annotations}/>
         {busy && <span className="absolute inset-0 flex items-center justify-center bg-background/60"><Loader2 aria-label={t('Uploading screenshot')} className="size-6 animate-spin"/></span>}
       </button>
       {onResize && <button type="button" disabled={busy||deleting} aria-label={t('Drag to resize {image}',{image:label})}
@@ -51,7 +49,7 @@ export default function TradeImage({src, label, onOpen, onRemove, busy = false, 
       {uploadState.size<uploadState.originalSize&&<span className="block text-muted-foreground">{t('Image optimized')}: {Math.round(uploadState.originalSize/1024)} KB → {Math.round(uploadState.size/1024)} KB</span>}
       {uploadState.phase==='failed'&&<><p role="alert" className="break-words text-red-400">{uploadState.error}</p><button type="button" onClick={onRetry} className="min-h-11 rounded border border-border px-2 hover:bg-secondary">{t('Retry this image')}</button></>}
     </div>}
-    {(onResize || onRemove || onAnnotate) && <div className="flex min-h-11 flex-wrap items-center justify-end gap-1">
+    {(onResize || onRemove) && <div className="flex min-h-11 flex-wrap items-center justify-end gap-1">
       {onResize && <Popover modal open={optionsOpen} onOpenChange={setOptionsOpen}>
         <PopoverTrigger asChild><button type="button" disabled={busy||deleting} data-image-arrange={arrangement ? '' : undefined}
           aria-label={t(arrangement ? 'Image options for {image}' : 'Resize {image}',{image:label})}
@@ -70,7 +68,6 @@ export default function TradeImage({src, label, onOpen, onRemove, busy = false, 
           {arrangement && <ImagePlacementControls targets={arrangement.targets} onPlace={target=>{if(arrangement.onPlace(target))setOptionsOpen(false);}}/>}
         </PopoverContent>
       </Popover>}
-      {onAnnotate && <button type="button" disabled={busy||deleting} aria-label={t('Annotate {image}',{image:label})} onClick={onAnnotate} className="flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary"><Pencil className="size-4"/></button>}
       {onRemove && <button type="button" disabled={busy || deleting} onClick={onRemove} aria-label={t('Remove {image}', {image:label})} className="flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive">{deleting ? <Loader2 className="size-4 animate-spin"/> : <Trash2 aria-hidden="true" className="size-4"/>}</button>}
     </div>}
     {children}

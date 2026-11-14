@@ -4,7 +4,7 @@ export function cloudDraftTransport(journalId,scope) {
   const root=`/journals/${journalId}/drafts/${scope}/`,uploaded=new Map();
   return {
     resetImages(){uploaded.clear();},
-    async get(){return (await api.get(root,{timeout:12000})).data;},
+    async get(timeout=12000){return (await api.get(root,{timeout})).data;},
     async clear(revision){return (await api.delete(root,{data:{revision},timeout:12000})).data;},
     async hydrate(record) {
       if(!record?.data)return null;

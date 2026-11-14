@@ -85,9 +85,9 @@ export default function TradeDetailPanel({ trade: summaryTrade, open, onClose })
   const otherImages = screenshots.filter(image => !usedImages.has(image));
   const widthToggle = screenshots.length > 0 && <Button type="button" variant="outline" size="sm" className="hidden md:flex" aria-pressed={wide} onClick={() => setWide(value => !value)}>{wide ? t("Standard width") : t("Wide review")}</Button>;
   function renderImages(images) {
-    return <div className="trade-note-images">{images.map((image,index) => <Fragment key={image.id}>{index>0 && image.startRow && <span className="trade-image-break" aria-hidden="true"/>}<TradeImage key={image.id} src={image.image_url} annotations={image.annotations} caption={image.caption} width={image.display_width ?? 100}
+    return <div className="trade-note-images">{images.map((image,index) => <Fragment key={image.id}>{index>0 && image.startRow && <span className="trade-image-break" aria-hidden="true"/>}<TradeImage key={image.id} src={image.image_url} caption={image.caption} width={image.display_width ?? 100}
       label={image.section ? t("{section} · Screenshot {number}", {section:image.section,number:screenshots.findIndex(item=>String(item.id)===String(image.id))+1}) : t("Screenshot {number}",{number:screenshots.findIndex(item=>String(item.id)===String(image.id))+1})}
-      onOpen={() => setLightboxSrc({src:image.image_url,annotations:image.annotations,caption:image.caption})} />
+      onOpen={() => setLightboxSrc({src:image.image_url,caption:image.caption})} />
       {image.afterContent && documentText(image.afterContent).trim() && <div data-image-note-id={String(image.id)} className="rich-notes-readonly w-full min-w-0 basis-full"><RichNotesContent document={image.afterContent}/></div>}
       </Fragment>)}</div>;
   }

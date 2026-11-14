@@ -60,7 +60,7 @@ import AssetCombobox from "./AssetCombobox";
 import CatalogCombobox from "./CatalogCombobox";
 import RichNotesEditor from "@/components/notes/RichNotesEditor";
 import { documentFromText, documentText } from "@/lib/noteDocument";
-import TradeNotesEditor, { DEFAULT_SECTIONS } from "./TradeNotesEditor";
+import { DEFAULT_SECTIONS } from "./TradeNotesEditor";
 import { uploadScreenshot, updateScreenshotWidth, deleteScreenshot, fetchTrade } from "@/api/trades.api";
 
 // ─── Options ──────────────────────────────────────────────────────────────────
@@ -234,12 +234,11 @@ export default function TradePanel({
   }, [open, entryFields.dirty]);
   const draftFlush = useRef(null);
   const exiting=useRef(false);
-  const requestExit = async (action = onClose) => {
+  const requestExit = async (action = onClose, save=false) => {
     if (isSubmitting || exiting.current) return;
     exiting.current=true;
     try {
-    const preserved=await draftFlush.current?.();
-    if(preserved===false)return;
+    if(!save){const preserved=await draftFlush.current?.();if(preserved===false)return;}
     if (entryFields.saving) return;
     if (!entryFields.dirty) {await action();return;}
     pendingExit.current = action;
@@ -299,11 +298,8 @@ export default function TradePanel({
   const customFields = useTradeCustomFields(journalId, { enabled: open });
 
   const [uploadStates,setUploadStates]=useState({});
-  const uploadBusy=useRef(new Set());
   const [notesSections, setNotesSections] = useState(() => buildSections(trade?.screenshots, trade?.notes_document));
   const [generalDocument, setGeneralDocument] = useState(() => trade?.notes_document?.general ?? documentFromText(trade?.notes));
-  const notesLatest=useRef(notesSections),generalLatest=useRef(generalDocument);
-  useLayoutEffect(()=>{notesLatest.current=notesSections;generalLatest.current=generalDocument;});
   const savedDraftId = useRef(null);
   const [removedImageIds,setRemovedImageIds]=useState([]);
   const [discardDraftOpen,setDiscardDraftOpen]=useState(false);
@@ -418,6 +414,7 @@ export default function TradePanel({
   }, [open, trade, reset, mode, journalId, timezone, setValue]);
 
   const allValues=useWatch({control});
+  const mandatoryFieldsReady=Boolean(allValues.asset?.trim()&&fromInputDt(allValues.entry_datetime,timezone));
   const draft=useTradeDraft({open,cloudEnabled:!!auth?.user?.id,journalId,scope:mode==="edit"?String(trade?.id):"new",identity:`${auth?.user?.id ?? auth?.user?.email ?? 'browser'}:${journalId}:${mode}:${trade?.id ?? 'new'}:${timezone}`,
     snapshot:{timezone,values:allValues,sections:notesSections,generalDocument,pnlUnit,riskUnit,removedImageIds},
     getSavedTradeId:()=>savedDraftId.current,
@@ -460,26 +457,10 @@ export default function TradePanel({
       imageState(image.id,{phase:'uploaded',percent:100});return updated;
     }catch(error){imageState(image.id,{phase:'failed',error:error?.response?.data?.error??error.message??'Upload failed.'});throw error;}
   }
-  function noteDocument(sections) {
-    return {version:1,general:generalLatest.current,sections:sections.map(section=>({id:String(section.id).slice(0,100),title:section.title.slice(0,100),content:section.content??documentFromText(section.text),image_layout:serializeImageLayout(section.images),image_notes:serializeImageNotes(section.images),image_details:serializeImageDetails(section.images)}))};
-  }
-  async function retryImage(id) {
-    if(uploadBusy.current.has(id)||isSubmitting)return;
-    const section=notesSections.find(section=>section.images.some(image=>image.id===id));
-    const image=section?.images.find(image=>image.id===id),tradeId=savedDraftId.current??trade?.id;
-    if(!image||!tradeId)return;
-    uploadBusy.current.add(id);
-    try {
-      const updated=await saveImage(section,image,tradeId);
-      if(!notesLatest.current.some(section=>section.images.some(image=>image.id===id))) {
-        if(image.file && updated.screenshotId)await deleteScreenshot(journalId,tradeId,updated.screenshotId);
-        return;
-      }
-      const sections=notesLatest.current.map(section=>({...section,images:section.images.map(image=>image.id===id?{...image,file:updated.file,screenshotId:updated.screenshotId,preview:updated.preview,savedWidth:updated.savedWidth,savedSection:updated.savedSection}:image)}));
-      setNotesSections(sections);
-      await onSave({notes_document:noteDocument(sections)},tradeId);
-    }catch(error){imageState(id,{phase:'failed',error:error.message??'Upload failed.'});}
-    finally {uploadBusy.current.delete(id);}
+  function invalidSubmit(errors) {
+    const labels={asset:t('Asset'),entry_datetime:t('Entry date/time'),exit_datetime:t('Exit date/time')};
+    setError('root',{message:t('Check the highlighted fields before saving.')+' '+Object.keys(errors).map(key=>labels[key]??key.replaceAll('_',' ')).join(', ')});
+    requestAnimationFrame(()=>document.getElementById('trade-save-error')?.scrollIntoView({block:'center'}));
   }
 
   async function submit(values) {
@@ -586,10 +567,6 @@ export default function TradePanel({
     }
   }
 
-  function handleDeleteBackendImage(screenshotId) {
-    setRemovedImageIds(ids=>ids.includes(screenshotId)?ids:[...ids,screenshotId]);
-  }
-
   async function handleDelete() {
     setDeleting(true);
     try {
@@ -645,16 +622,13 @@ export default function TradePanel({
           </SheetHeader>
 
           <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border px-6 py-2 text-xs text-muted-foreground">
-            <span role="status" aria-live="polite">{t(({loading:'Loading draft…',ready:'Drafts save on this device',saving:'Saving draft…',saved:'Draft saved on this device',restored:'Draft restored',error:'Draft could not be saved. Keep this dialog open.'})[draft.status])}</span>
-            {draft.cloudStatus!=='disabled'&&<span role="status">{t(({syncing:'Syncing draft…',synced:'Draft synced across devices',offline:'Cloud sync pending — saved on this device',conflict:'Draft changed on another device',attention:'Cloud sync needs attention — saved on this device'})[draft.cloudStatus])}</span>}
-            {draft.cloudError&&<span role="alert" className="break-words text-amber-400">{draft.cloudError}</span>}
-            {['offline','attention'].includes(draft.cloudStatus)&&<button type="button" onClick={draft.retrySync} className="min-h-9 rounded px-2 hover:bg-secondary">{t('Retry sync')}</button>}
-            {draft.cloudStatus==='conflict'&&<div className="flex flex-wrap gap-2"><button type="button" disabled={isSubmitting} onClick={draft.loadCloud} className="min-h-9 rounded border border-border px-2">{t('Load cloud draft')}</button><button type="button" disabled={isSubmitting} onClick={draft.keepLocal} className="min-h-9 rounded border border-border px-2">{t('Keep this draft')}</button></div>}
-            <button type="button" disabled={isSubmitting} onClick={()=>setDiscardDraftOpen(true)} className="min-h-9 rounded px-2 hover:bg-secondary">{t('Discard draft')}</button>
+            {['saved','restored'].includes(draft.status)&&<span role="status" aria-live="polite">{t('Draft saved')}</span>}
+            {draft.cloudStatus==='conflict'&&<div className="flex flex-wrap gap-2"><span className="sr-only">{t('Draft changed on another device')}</span><button type="button" disabled={isSubmitting} onClick={draft.loadCloud} className="min-h-9 rounded border border-border px-2">{t('Load cloud draft')}</button><button type="button" disabled={isSubmitting} onClick={draft.keepLocal} className="min-h-9 rounded border border-border px-2">{t('Keep this draft')}</button></div>}
+            <button type="button" disabled={isSubmitting} onClick={()=>setDiscardDraftOpen(true)} className="ml-auto min-h-9 rounded px-2 hover:bg-secondary">{t('Discard draft')}</button>
           </div>
           {configurationNotification}
           <SheetBody className="trade-panel-body">
-            <form id="trade-form" onSubmit={event => {event.preventDefault();requestExit(() => handleSubmit(submit)());}} noValidate>
+            <form id="trade-form" onSubmit={event => {event.preventDefault();requestExit(() => handleSubmit(submit,invalidSubmit)(),true);}} noValidate>
               <fieldset disabled={isSubmitting || draft.status==="loading"} className="min-w-0">
               {errors.root && (
                 <p id="trade-save-error" role="alert" className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
@@ -701,6 +675,7 @@ export default function TradePanel({
                         control={control}
                         render={({ field }) => (
                           <AssetCombobox
+                            id="trade-asset" ref={field.ref} onBlur={field.onBlur}
                             value={field.value}
                             onChange={field.onChange}
                             options={catalog.assets}
@@ -1194,33 +1169,6 @@ export default function TradePanel({
                   />
                 </section>
 
-                {/* ── Trade Notes ── */}
-                <section>
-                  <EntrySectionHeader section="trade_notes" title={t("Trade Notes")} active={customizingSection === "trade_notes"} onToggle={toggleCustomization} />
-                  <F label={entryFields.label("trade_notes", t("Trade Notes"))} action={<EntryFieldActions active={customizingSection === "trade_notes"} id="trade_notes" label={t("Trade Notes")} settings={entryFields} />}>
-                  <TradeNotesEditor
-                    uploadStates={uploadStates} onRetryImage={retryImage} readOnly={isSubmitting || draft.status==="loading"}
-                    sections={notesSections}
-                    onChange={sections => {notesDirty.current=true;setNotesSections(sections);}}
-                    onDeleteImage={handleDeleteBackendImage}
-                    wide={panelWidth > 760}
-                    onToggleWide={() => setPanelWidth(width => width > 760 ? 560 : Math.min(window.innerWidth, 1100))}
-                  />
-                  </F>
-                  <TradeCustomFields
-                    section="trade_notes"
-                    active={customizingSection === "trade_notes"}
-                    onRename={customFields.rename}
-                    fields={customFields.fields}
-                    control={control}
-                    errors={errors}
-                    onCreate={customFields.create}
-                    onRemove={removeCustomField}
-                    onUpdateOptions={customFields.updateOptions}
-                    disabled={customFields.loading || !!customFields.error}
-                    showAdd={false}
-                  />
-                </section>
               </div>
                           </fieldset>
             </form>
@@ -1238,12 +1186,12 @@ export default function TradePanel({
                 <Trash2 className="size-3.5" />{t("Delete")}</Button>
             )}
             <div className="ml-auto flex gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => requestExit()}>{t("Cancel")}</Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => isEdit?requestExit():setDiscardDraftOpen(true)}>{t(isEdit?"Cancel":"Discard")}</Button>
               <Button
                 type="submit"
                 form="trade-form"
                 size="sm"
-                disabled={isSubmitting || catalog.loading || draft.status === "loading" || Object.values(uploadStates).some(state=>["uploading","optimizing"].includes(state.phase))}
+                disabled={!mandatoryFieldsReady || isSubmitting || catalog.loading || draft.status === "loading" || Object.values(uploadStates).some(state=>["uploading","optimizing"].includes(state.phase))}
               >
                 {isSubmitting ? t("Saving…") : t("Save Trade")}
               </Button>
@@ -1255,7 +1203,7 @@ export default function TradePanel({
       </Sheet>
 
       <Dialog open={discardDraftOpen} onOpenChange={setDiscardDraftOpen}><DialogContent>
-        <DialogHeader><DialogTitle>{t('Discard draft?')}</DialogTitle><DialogDescription>{t('Remove your unsaved changes and return to the saved trade.')}</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>{t('Discard draft?')}</DialogTitle><DialogDescription>{t(isEdit?'Remove your unsaved changes and return to the saved trade.':'Discard this new entry and its draft?')}</DialogDescription></DialogHeader>
         <DialogFooter><Button type="button" variant="outline" onClick={()=>setDiscardDraftOpen(false)}>{t('Keep editing')}</Button><Button type="button" variant="destructive" onClick={async()=>{await draft.clear();reset(tradeToDefaults(trade,timezone));setNotesSections(buildSections(trade?.screenshots,trade?.notes_document));setGeneralDocument(trade?.notes_document?.general??documentFromText(trade?.notes));setRemovedImageIds([]);setDiscardDraftOpen(false);onClose();}}>{t('Discard draft')}</Button></DialogFooter>
       </DialogContent></Dialog>
       <Dialog open={saveConfigurationOpen} onOpenChange={value => {if (!value) dismissConfiguration();}}>

@@ -20,6 +20,4 @@
 /* Continue on the same canvas after a screenshot; the section toolbar is shared. */
 .rich-notes-continuation .rich-notes-content { position: relative; min-height: 44px !important; padding: 12px 0; }
 
-/* Section hosts span the whole canvas, including images and their continuation text. */
-.rich-notes-editor:not([data-embedded]) > .rich-notes-toolbar { position: sticky; top: 0; z-index: 20; }
 .rich-notes-toolbar { border-radius: inherit; box-shadow: 0 1px 0 hsl(var(--border)); }

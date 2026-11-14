@@ -1,13 +1,12 @@
 import { translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import { ImagePlus, Plus, X, Maximize2, Minimize2, Undo2, Redo2 } from "lucide-react";
+import { ImagePlus, Plus, X, Maximize2, Minimize2 } from "lucide-react";
 import { RichNotesScope } from "@/components/notes/richNotesScope";
 import RichNotesEditor from "@/components/notes/RichNotesEditor";
 import { documentFromText } from "@/lib/noteDocument";
 import { flattenImageRows, imageRows, placeImage } from "@/lib/imageLayout";
 import { useImagePlacement } from "@/hooks/useImagePlacement";
-import ImageAnnotationDialog from "./ImageAnnotationDialog";
 import TradeImage from "./TradeImage";
 import ImageLightbox from "./ImageLightbox";
 
@@ -37,7 +36,6 @@ function NoteSection({
   onRemove,
   onTextChange,
   onImageTextChange,
-  onImageDetailsChange,
   onResizeImage,
   onAddImages,
   onRemoveImage,
@@ -50,7 +48,6 @@ function NoteSection({
   readOnly,
 }) {
   useLanguage();
-  const [annotating,setAnnotating]=useState(null);
   const fileInputRef  = useRef(null);
   const [focusNote,setFocusNote] = useState(null);
   const [activeEditor,setActiveEditor] = useState(null);
@@ -129,8 +126,8 @@ function NoteSection({
         {section.images.map((img,index) => <Fragment key={img.id}>
           {index>0 && img.startRow && <span className="trade-image-break" aria-hidden="true"/>}
           <TradeImage busy={["optimizing","uploading"].includes(uploadStates?.[img.id]?.phase)} uploadState={uploadStates?.[img.id]} onRetry={()=>onRetryImage?.(img.id)} src={img.preview} label={img.name} width={img.width ?? 100} onResize={width => onResizeImage(img.id,width)}
-            annotations={img.annotations} caption={img.caption} onAnnotate={()=>setAnnotating(img.id)}
-            onOpen={() => onImageClick({src:img.preview,annotations:img.annotations,caption:img.caption})} onRemove={() => {setFocusNote(null);onRemoveImage(img.id);}}
+            caption={img.caption}
+            onOpen={() => onImageClick({src:img.preview,caption:img.caption})} onRemove={() => {setFocusNote(null);onRemoveImage(img.id);}}
             arrangement={{imageId:String(img.id),dragging:placement.drag?.source.sectionId===section.id && String(placement.drag.source.imageId)===String(img.id),
               onPointerDown:event=>placement.start(event,{sectionId:section.id,imageId:img.id}),onPointerMove:placement.move,onPointerUp:placement.end,onLostPointerCapture:placement.cancel,
               consumeClick:placement.consumeClick,allowKeyboard:placement.allowKeyboard,
@@ -168,7 +165,6 @@ function NoteSection({
         />
       </div>
     </div>
-    {annotating!=null && <ImageAnnotationDialog key={annotating} image={section.images.find(image=>image.id===annotating)} onClose={()=>setAnnotating(null)} onSave={details=>{onImageDetailsChange(annotating,details);setAnnotating(null);}}/>}
     </RichNotesScope.Provider>
   );
 }
@@ -272,12 +268,8 @@ export default function TradeNotesEditor({ sections, onChange, onDeleteImage, on
 
   return (
     <div data-notes-editor>
-      <div className="mb-2 flex flex-wrap gap-2">
-        <button type="button" aria-label={t('Undo notes change')} title={`${t('Undo notes change')} (Ctrl/⌘ Z)`} aria-keyshortcuts="Control+Z Meta+Z" disabled={!undoStack.length} onClick={undo} className="flex size-11 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary disabled:opacity-40"><Undo2 aria-hidden="true" className="size-4"/></button>
-        <button type="button" aria-label={t('Redo notes change')} title={`${t('Redo notes change')} (Ctrl/⌘ Shift+Z)`} aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z Control+Y" disabled={!redoStack.length} onClick={redo} className="flex size-11 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary disabled:opacity-40"><Redo2 aria-hidden="true" className="size-4"/></button>
-      </div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs leading-5 text-muted-foreground">{t("Paste or upload screenshots. Drag the grip to arrange; tap it for options.")}</p>
+        <p className="text-xs leading-5 text-muted-foreground">{t("Optional screenshots and commentary for before, during, and after your trade.")}</p>
         {onToggleWide && <button type="button" aria-pressed={wide} onClick={onToggleWide} className="hidden min-h-10 shrink-0 items-center gap-2 rounded-md border border-border px-3 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground md:flex">
           {wide ? <Minimize2 aria-hidden="true" className="size-3.5"/> : <Maximize2 aria-hidden="true" className="size-3.5"/>}
           {wide ? t("Standard width") : t("Wide review")}
@@ -298,7 +290,6 @@ export default function TradeNotesEditor({ sections, onChange, onDeleteImage, on
             onFinishRename={(v) => finishRename(s.id, v)}
             onRemove={() => removeSection(s.id)}
             onTextChange={(text,content) => update(s.id, { text, content },false)}
-            onImageDetailsChange={(id,details)=>update(s.id,{images:s.images.map(image=>image.id===id?{...image,...details}:image)})}
             onImageTextChange={(id,content,record=false)=>update(s.id,{images:s.images.map(image=>image.id===id?{...image,afterContent:content}:image)},record)}
             onResizeImage={(id,width) => update(s.id,{images:s.images.map(image => image.id===id?{...image,width}:image)})}
             onAddImages={(imgs,afterId) => addImages(s.id, imgs,afterId)}

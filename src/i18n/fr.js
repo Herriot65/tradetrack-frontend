@@ -1,5 +1,13 @@
 // English source strings are stable keys; API values and user content stay unchanged.
 export default {
+  "Optional screenshots and commentary for before, during, and after your trade.": "Captures et commentaires facultatifs avant, pendant et après votre trade.",
+  "Discard": "Abandonner",
+  "Discard this new entry and its draft?": "Abandonner cette nouvelle entrée et son brouillon ?",
+  "Draft saved": "Brouillon enregistré",
+  "Draft ready": "Brouillon prêt",
+  "Sync pending": "Synchronisation en attente",
+  "Sync needs attention": "Synchronisation à vérifier",
+  "Check the highlighted fields before saving.": "Vérifiez les champs signalés avant d’enregistrer.",
   "Cloud sync needs attention — saved on this device": "Synchronisation à vérifier — enregistré sur cet appareil",
   "More formatting": "Plus de mise en forme",
   "Syncing draft…": "Synchronisation du brouillon…",

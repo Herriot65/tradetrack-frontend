@@ -9,7 +9,8 @@ try {
  const page=await browser.newPage({viewport:{width:1280,height:1000}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:4217/tests/trade-form.html?edit=1');
  assert.equal(await page.getByRole('button',{name:'Edit Trend field',exact:true}).count(),0);
- for (const section of ['Execution','Performance','Setup','Psychology','Notes','Trade Notes']) assert.equal(await page.getByRole('button',{name:`Customize ${section}`,exact:true}).count(),1);
+ for (const section of ['Execution','Performance','Setup','Psychology','Notes']) assert.equal(await page.getByRole('button',{name:`Customize ${section}`,exact:true}).count(),1);
+ assert.equal(await page.getByRole('button',{name:'Customize Trade Notes',exact:true}).count(),0);
  await page.getByRole('button',{name:'Customize Execution',exact:true}).click();
  for (const field of ['Asset','Side','Entry date/time','Exit date/time','Risk']) {
   assert.equal(await page.getByRole('button',{name:`Edit ${field} field`,exact:true}).count(),1);
@@ -50,9 +51,6 @@ try {
  await page.getByRole('textbox',{name:'Field name',exact:true}).fill('Reflection');
  await page.getByRole('button',{name:'Save name',exact:true}).click();
  assert.equal(await page.getByRole('button',{name:'Remove Reflection field',exact:true}).count(),0);
- await page.getByRole('button',{name:'Customize Trade Notes',exact:true}).click();
- assert.equal(await page.getByRole('button',{name:'Edit Trade Notes field',exact:true}).count(),1);
- assert.equal(await page.getByRole('button',{name:'Remove Trade Notes field',exact:true}).count(),0);
  await page.getByRole('button',{name:'Customize Setup',exact:true}).click();
  await page.getByRole('button',{name:'Edit Trend field',exact:true}).click();
  await page.getByRole('textbox',{name:'Field name',exact:true}).fill('Market bias');
