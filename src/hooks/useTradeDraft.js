@@ -23,7 +23,7 @@ export function useTradeDraft({open,identity,snapshot,onRestore,getSavedTradeId,
         await writeLocal(async()=>{
           const current=await draftStore(s.key,'get');
           if(current?.updatedAt===record.updatedAt) {
-            if(record.deleted){await draftStore(s.key,'delete');try{if(Number(localStorage.getItem('trade-draft-discard:'+s.key))<=record.updatedAt)localStorage.removeItem('trade-draft-discard:'+s.key);}catch{/* Optional fallback. */}}
+            if(record.deleted)await draftStore(s.key,'delete');
             else await draftStore(s.key,'put',{...current,cloudRevision:s.revision,syncedAt:record.updatedAt});
           }
         });
@@ -48,7 +48,7 @@ export function useTradeDraft({open,identity,snapshot,onRestore,getSavedTradeId,
     if(hasChanges.current && !hasChanges.current())return true;
     const value={...latest.current,savedTradeId:savedId.current?.(),updatedAt:Date.now(),cloudRevision:s.revision??s.localRevision??0,syncedAt:s.syncedAt??0};
     s.previous=JSON.stringify(latest.current);setStatus('saving');
-    try {await writeLocal(()=>draftStore(s.key,'put',value));if(session.current===s)setStatus('saved');schedule(s,immediate);return true;}
+    try {await writeLocal(()=>draftStore(s.key,'put',value));try{const discarded=Number(localStorage.getItem('trade-draft-discard:'+s.key));if(discarded&&discarded<value.updatedAt)localStorage.removeItem('trade-draft-discard:'+s.key);}catch{/* Optional fallback. */}if(session.current===s)setStatus('saved');schedule(s,immediate);return true;}
     catch {if(session.current===s)setStatus('error');return false;}
   }
   const flushRef=useRef(flush),syncRef=useRef(sync),scheduleRef=useRef(schedule);useLayoutEffect(()=>{flushRef.current=flush;syncRef.current=sync;scheduleRef.current=schedule;});
@@ -126,7 +126,7 @@ export function useTradeDraft({open,identity,snapshot,onRestore,getSavedTradeId,
         try {if(s.revision==null)s.revision=(await s.transport.get()).revision;await s.transport.clear(s.revision);}
         catch(error){if(![404,409].includes(error?.response?.status)){s.suppressed=false;return;}}
       }
-      try {await writeLocal(async()=>{const current=await draftStore(s.key,'get');if(!current || (current.deleted&&current.updatedAt<=tombstone.updatedAt))await draftStore(s.key,'delete');});if(Number(localStorage.getItem('trade-draft-discard:'+s.key))===tombstone.updatedAt)localStorage.removeItem('trade-draft-discard:'+s.key);}catch{/* A local tombstone still prevents restoration. */}
+      try {await writeLocal(async()=>{const current=await draftStore(s.key,'get');if(!current || (current.deleted&&current.updatedAt<=tombstone.updatedAt))await draftStore(s.key,'delete');});}catch{/* The fallback marker still prevents restoration. */}
     };
     void finish();
   }

@@ -60,7 +60,7 @@ import AssetCombobox from "./AssetCombobox";
 import CatalogCombobox from "./CatalogCombobox";
 import RichNotesEditor from "@/components/notes/RichNotesEditor";
 import { documentFromText, documentText } from "@/lib/noteDocument";
-import { DEFAULT_SECTIONS } from "./TradeNotesEditor";
+import TradeNotesEditor, { DEFAULT_SECTIONS } from "./TradeNotesEditor";
 import { uploadScreenshot, updateScreenshotWidth, deleteScreenshot, fetchTrade } from "@/api/trades.api";
 
 // ─── Options ──────────────────────────────────────────────────────────────────
@@ -226,24 +226,25 @@ export default function TradePanel({
     const timer = setTimeout(() => setConfigurationNotice(null), 4000);
     return () => clearTimeout(timer);
   }, [configurationNotice]);
-  useEffect(() => {
-    if (!open || !entryFields.dirty) return;
-    const warn = event => {event.preventDefault();event.returnValue = "";};
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [open, entryFields.dirty]);
   const draftFlush = useRef(null);
+  const tradeChanges=useRef(false);
   const exiting=useRef(false);
+  const [draftExitOpen,setDraftExitOpen]=useState(false);
+  const pendingDraftExit=useRef(null);
+  const continueExit = async action => {
+    if(entryFields.saving)return;
+    if(!entryFields.dirty){await action();return;}
+    pendingExit.current=action;
+    setExitPending(true);
+    setSaveConfigurationOpen(true);
+  };
   const requestExit = async (action = onClose, save=false) => {
     if (isSubmitting || exiting.current) return;
     exiting.current=true;
     try {
-    if(!save){const preserved=await draftFlush.current?.();if(preserved===false)return;}
-    if (entryFields.saving) return;
-    if (!entryFields.dirty) {await action();return;}
-    pendingExit.current = action;
-    setExitPending(true);
-    setSaveConfigurationOpen(true);
+    if(save){await continueExit(action);return;}
+    if(tradeChanges.current){pendingDraftExit.current=action;setDraftExitOpen(true);return;}
+    await continueExit(action);
     } finally {exiting.current=false;}
   };
   const dismissConfiguration = () => {
@@ -298,12 +299,15 @@ export default function TradePanel({
   const customFields = useTradeCustomFields(journalId, { enabled: open });
 
   const [uploadStates,setUploadStates]=useState({});
+  const uploadBusy=useRef(new Set());
   const [notesSections, setNotesSections] = useState(() => buildSections(trade?.screenshots, trade?.notes_document));
   const [generalDocument, setGeneralDocument] = useState(() => trade?.notes_document?.general ?? documentFromText(trade?.notes));
+  const notesLatest=useRef(notesSections),generalLatest=useRef(generalDocument);
+  useLayoutEffect(()=>{notesLatest.current=notesSections;generalLatest.current=generalDocument;});
   const savedDraftId = useRef(null);
   const [removedImageIds,setRemovedImageIds]=useState([]);
-  const [discardDraftOpen,setDiscardDraftOpen]=useState(false);
   const notesDirty = useRef(false);
+  const [draftContentChanged,setDraftContentChanged]=useState(false);
   const hydratedDraft = useRef(null);
   const formBaseline=useRef(tradeToDefaults(trade,timezone));
   const [draftSource, setDraftSource] = useState({ open, tradeId: trade?.id, mode });
@@ -326,6 +330,14 @@ export default function TradePanel({
   const [panelWidth, setPanelWidth] = useState(560);
   const [pnlUnit, setPnlUnit] = useState(defaultUnit);
   const [riskUnit, setRiskUnit] = useState(defaultUnit === "USD" ? "USD" : "PCT");
+  const draftOwner=auth?.user?.id ?? auth?.user?.email ?? 'browser';
+  const newDraftStorageKey=`trade-new-draft:${draftOwner}:${journalId}`;
+  const makeNewDraftInstance=()=>globalThis.crypto?.randomUUID?.()??`${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const readNewDraftInstance=()=>{try{const stored=localStorage.getItem(newDraftStorageKey);if(stored)return stored;const created=makeNewDraftInstance();localStorage.setItem(newDraftStorageKey,created);return created;}catch{return makeNewDraftInstance();}};
+  const [newDraftSource,setNewDraftSource]=useState(()=>({key:newDraftStorageKey,id:readNewDraftInstance()}));
+  if(newDraftSource.key!==newDraftStorageKey)setNewDraftSource({key:newDraftStorageKey,id:readNewDraftInstance()});
+  const newDraftInstance=newDraftSource.id;
+  const rotateNewDraft=()=>{const id=makeNewDraftInstance();try{localStorage.setItem(newDraftStorageKey,id);}catch{/* The in-memory identity still rotates. */}setNewDraftSource({key:newDraftStorageKey,id});};
   const [unitSource, setUnitSource] = useState({ open, trade });
   if (unitSource.open !== open || unitSource.trade !== trade) {
     setUnitSource({ open, trade });
@@ -374,7 +386,7 @@ export default function TradePanel({
     setValue,
     setError,
     getValues,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm({
     resolver: zodResolver(tradeSchema),
     defaultValues: tradeToDefaults(trade, timezone),
@@ -382,7 +394,7 @@ export default function TradePanel({
 
   useEffect(() => {
     if (!open) { hydratedDraft.current = null; return; }
-    const identity = `${mode}:${trade?.id ?? 'new'}:${journalId}:${timezone}`;
+    const identity = `${mode}:${trade?.id ?? newDraftInstance}:${journalId}:${timezone}`;
     // A parent may refresh the same trade after the first save. Keep any
     // pending image layout changes intact so partial-save retries are safe.
     if (hydratedDraft.current === identity) return;
@@ -390,6 +402,7 @@ export default function TradePanel({
     savedDraftId.current = null;
     setRemovedImageIds([]);
     notesDirty.current = false;
+    setDraftContentChanged(false);
     formBaseline.current=tradeToDefaults(trade,timezone);
     reset(formBaseline.current);
     if (mode === "edit" && trade?.id && journalId) {
@@ -411,15 +424,23 @@ export default function TradePanel({
         cancelled = true;
       };
     }
-  }, [open, trade, reset, mode, journalId, timezone, setValue]);
+  }, [open, trade, reset, mode, journalId, timezone, setValue, newDraftInstance]);
 
   const allValues=useWatch({control});
   const mandatoryFieldsReady=Boolean(allValues.asset?.trim()&&fromInputDt(allValues.entry_datetime,timezone));
-  const draft=useTradeDraft({open,cloudEnabled:!!auth?.user?.id,journalId,scope:mode==="edit"?String(trade?.id):"new",identity:`${auth?.user?.id ?? auth?.user?.email ?? 'browser'}:${journalId}:${mode}:${trade?.id ?? 'new'}:${timezone}`,
-    snapshot:{timezone,values:allValues,sections:notesSections,generalDocument,pnlUnit,riskUnit,removedImageIds},
+  const hasTradeChanges=isDirty||draftContentChanged||pnlUnit!==defaultUnit||riskUnit!==(defaultUnit==="USD"?"USD":"PCT")||removedImageIds.length>0;
+  useLayoutEffect(()=>{tradeChanges.current=hasTradeChanges;},[hasTradeChanges]);
+  useEffect(()=>{
+    if(!open||(!hasTradeChanges&&!entryFields.dirty))return;
+    const warn=event=>{event.preventDefault();event.returnValue="";};
+    window.addEventListener('beforeunload',warn);
+    return()=>window.removeEventListener('beforeunload',warn);
+  },[open,hasTradeChanges,entryFields.dirty]);
+  const draft=useTradeDraft({open,cloudEnabled:!!auth?.user?.id,journalId,scope:mode==="edit"?String(trade?.id):"new",identity:`${draftOwner}:${journalId}:${mode}:${trade?.id ?? newDraftInstance}:${timezone}`,
+    snapshot:{timezone,values:allValues,sections:notesSections,generalDocument,pnlUnit,riskUnit,removedImageIds,draftInstance:isEdit?String(trade?.id):newDraftInstance},
     getSavedTradeId:()=>savedDraftId.current,
-    getHasChanges:()=>notesDirty.current || JSON.stringify(getValues())!==JSON.stringify(formBaseline.current) || pnlUnit!==defaultUnit || riskUnit!==(defaultUnit==="USD"?"USD":"PCT") || removedImageIds.length>0,
-    onRestore:stored=>{if(!stored){notesDirty.current=false;reset(tradeToDefaults(trade,timezone));setNotesSections(buildSections(trade?.screenshots,trade?.notes_document));setGeneralDocument(trade?.notes_document?.general??documentFromText(trade?.notes));setRemovedImageIds([]);savedDraftId.current=null;return;}notesDirty.current=true;const values={...stored.values};if(stored.timezone&&stored.timezone!==timezone)for(const field of ['entry_datetime','exit_datetime']){const instant=fromInputDt(values[field],stored.timezone);if(instant)values[field]=toInputDt(instant,timezone);}reset(values);setNotesSections(restoreDraftImages(stored.sections));setGeneralDocument(stored.generalDocument);setPnlUnit(stored.pnlUnit);setRiskUnit(stored.riskUnit);setRemovedImageIds(stored.removedImageIds??[]);savedDraftId.current=stored.savedTradeId??null;},
+    getHasChanges:()=>tradeChanges.current,
+    onRestore:stored=>{if(!stored||(!isEdit&&stored.draftInstance!==newDraftInstance)){notesDirty.current=false;setDraftContentChanged(false);reset(tradeToDefaults(trade,timezone));setNotesSections(buildSections(trade?.screenshots,trade?.notes_document));setGeneralDocument(trade?.notes_document?.general??documentFromText(trade?.notes));setRemovedImageIds([]);savedDraftId.current=null;return;}notesDirty.current=true;setDraftContentChanged(true);const values={...stored.values};if(stored.timezone&&stored.timezone!==timezone)for(const field of ['entry_datetime','exit_datetime']){const instant=fromInputDt(values[field],stored.timezone);if(instant)values[field]=toInputDt(instant,timezone);}reset(values);setNotesSections(restoreDraftImages(stored.sections));setGeneralDocument(stored.generalDocument);setPnlUnit(stored.pnlUnit);setRiskUnit(stored.riskUnit);setRemovedImageIds(stored.removedImageIds??[]);savedDraftId.current=stored.savedTradeId??null;},
   });
   useLayoutEffect(()=>{draftFlush.current=draft.flush;});
 
@@ -456,6 +477,27 @@ export default function TradePanel({
       }
       imageState(image.id,{phase:'uploaded',percent:100});return updated;
     }catch(error){imageState(image.id,{phase:'failed',error:error?.response?.data?.error??error.message??'Upload failed.'});throw error;}
+  }
+  function noteDocument(sections) {
+    return {version:1,general:generalLatest.current,sections:sections.map(section=>({id:String(section.id).slice(0,100),title:section.title.slice(0,100),content:section.content??documentFromText(section.text),image_layout:serializeImageLayout(section.images),image_notes:serializeImageNotes(section.images),image_details:serializeImageDetails(section.images)}))};
+  }
+  async function retryImage(id) {
+    if(uploadBusy.current.has(id)||isSubmitting)return;
+    const section=notesSections.find(section=>section.images.some(image=>image.id===id));
+    const image=section?.images.find(image=>image.id===id),tradeId=savedDraftId.current??trade?.id;
+    if(!image||!tradeId)return;
+    uploadBusy.current.add(id);
+    try {
+      const updated=await saveImage(section,image,tradeId);
+      if(!notesLatest.current.some(current=>current.images.some(currentImage=>currentImage.id===id))) {
+        if(image.file&&updated.screenshotId)await deleteScreenshot(journalId,tradeId,updated.screenshotId);
+        return;
+      }
+      const sections=notesLatest.current.map(current=>({...current,images:current.images.map(currentImage=>currentImage.id===id?{...currentImage,file:updated.file,screenshotId:updated.screenshotId,preview:updated.preview,savedWidth:updated.savedWidth,savedSection:updated.savedSection}:currentImage)}));
+      setNotesSections(sections);
+      await onSave({notes_document:noteDocument(sections)},tradeId);
+    }catch(error){imageState(id,{phase:'failed',error:error.message??'Upload failed.'});}
+    finally{uploadBusy.current.delete(id);}
   }
   function invalidSubmit(errors) {
     const labels={asset:t('Asset'),entry_datetime:t('Entry date/time'),exit_datetime:t('Exit date/time')};
@@ -550,6 +592,7 @@ export default function TradePanel({
       for(const id of removedImageIds)if(!present.has(id))await deleteScreenshot(journalId,(savedDraftId.current ?? trade?.id),id);
       setRemovedImageIds([]);
       await draft.clear();
+      if(!isEdit)rotateNewDraft();
       onClose();
     } catch (err) {
       const fieldErrors = err?.response?.data?.custom_fields;
@@ -565,6 +608,34 @@ export default function TradePanel({
         message: err?.response?.data?.detail ?? err.message ?? "Failed to save trade",
       });
     }
+  }
+
+  function handleDeleteBackendImage(screenshotId) {
+    setRemovedImageIds(ids=>ids.includes(screenshotId)?ids:[...ids,screenshotId]);
+  }
+
+  async function saveDraftAndExit() {
+    const action=pendingDraftExit.current;
+    const saved=await draft.flush();
+    if(saved===false)return;
+    pendingDraftExit.current=null;
+    setDraftExitOpen(false);
+    await continueExit(action??onClose);
+  }
+
+  async function discardChangesAndExit() {
+    const action=pendingDraftExit.current;
+    await draft.clear();
+    notesDirty.current=false;
+    setDraftContentChanged(false);
+    reset(tradeToDefaults(trade,timezone));
+    setNotesSections(buildSections(trade?.screenshots,trade?.notes_document));
+    setGeneralDocument(trade?.notes_document?.general??documentFromText(trade?.notes));
+    setRemovedImageIds([]);
+    if(!isEdit)rotateNewDraft();
+    pendingDraftExit.current=null;
+    setDraftExitOpen(false);
+    await continueExit(action??onClose);
   }
 
   async function handleDelete() {
@@ -621,11 +692,10 @@ export default function TradePanel({
             </SheetDescription>
           </SheetHeader>
 
-          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border px-6 py-2 text-xs text-muted-foreground">
+          {['saved','restored'].includes(draft.status)&&<div className="flex shrink-0 items-center border-b border-border px-6 py-2 text-xs text-muted-foreground">
             {['saved','restored'].includes(draft.status)&&<span role="status" aria-live="polite">{t('Draft saved')}</span>}
-            {draft.cloudStatus==='conflict'&&<div className="flex flex-wrap gap-2"><span className="sr-only">{t('Draft changed on another device')}</span><button type="button" disabled={isSubmitting} onClick={draft.loadCloud} className="min-h-9 rounded border border-border px-2">{t('Load cloud draft')}</button><button type="button" disabled={isSubmitting} onClick={draft.keepLocal} className="min-h-9 rounded border border-border px-2">{t('Keep this draft')}</button></div>}
-            <button type="button" disabled={isSubmitting} onClick={()=>setDiscardDraftOpen(true)} className="ml-auto min-h-9 rounded px-2 hover:bg-secondary">{t('Discard draft')}</button>
-          </div>
+          </div>}
+          {draft.cloudStatus==='conflict'&&<div className="flex shrink-0 flex-wrap gap-2 border-b border-border px-6 py-2 text-xs text-muted-foreground"><span className="sr-only">{t('Draft changed on another device')}</span><button type="button" disabled={isSubmitting} onClick={draft.loadCloud} className="min-h-9 rounded border border-border px-2">{t('Load cloud draft')}</button><button type="button" disabled={isSubmitting} onClick={draft.keepLocal} className="min-h-9 rounded border border-border px-2">{t('Keep this draft')}</button></div>}
           {configurationNotification}
           <SheetBody className="trade-panel-body">
             <form id="trade-form" onSubmit={event => {event.preventDefault();requestExit(() => handleSubmit(submit,invalidSubmit)(),true);}} noValidate>
@@ -1152,7 +1222,7 @@ export default function TradePanel({
                 <section>
                   <EntrySectionHeader section="notes" title={t("Notes")} active={customizingSection === "notes"} onToggle={toggleCustomization} />
                   <F label={entryFields.label("notes", t("General trade notes"))} action={<EntryFieldActions active={customizingSection === "notes"} id="notes" label={t("General trade notes")} settings={entryFields} />}>
-                  <RichNotesEditor readOnly={isSubmitting || draft.status==="loading"} label={entryFields.label("notes", t("General trade notes"))} value={generalDocument} onChange={(content,text) => {notesDirty.current=true;setGeneralDocument(content);setValue("notes",text,{shouldDirty:true});}} />
+                  <RichNotesEditor readOnly={isSubmitting || draft.status==="loading"} label={entryFields.label("notes", t("General trade notes"))} value={generalDocument} onChange={(content,text) => {notesDirty.current=true;setDraftContentChanged(true);setGeneralDocument(content);setValue("notes",text,{shouldDirty:true});}} />
                   </F>
                   <TradeCustomFields
                     section="notes"
@@ -1166,6 +1236,21 @@ export default function TradePanel({
                     onUpdateOptions={customFields.updateOptions}
                     disabled={customFields.loading || !!customFields.error}
                     showAdd={false}
+                  />
+                </section>
+
+                {/* Screenshot evidence remains separate from the general Notes field. */}
+                <section>
+                  <h3 className="mb-3 text-[13px] font-medium uppercase tracking-[0.12em] text-zinc-200">{t("Trade Screenshots")}</h3>
+                  <TradeNotesEditor
+                    uploadStates={uploadStates}
+                    onRetryImage={retryImage}
+                    readOnly={isSubmitting || draft.status==="loading"}
+                    sections={notesSections}
+                    onChange={sections=>{notesDirty.current=true;setDraftContentChanged(true);setNotesSections(sections);}}
+                    onDeleteImage={handleDeleteBackendImage}
+                    wide={panelWidth>760}
+                    onToggleWide={()=>setPanelWidth(width=>width>760?560:Math.min(window.innerWidth,1100))}
                   />
                 </section>
 
@@ -1186,7 +1271,7 @@ export default function TradePanel({
                 <Trash2 className="size-3.5" />{t("Delete")}</Button>
             )}
             <div className="ml-auto flex gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => isEdit?requestExit():setDiscardDraftOpen(true)}>{t(isEdit?"Cancel":"Discard")}</Button>
+              <Button type="button" variant="outline" size="sm" onClick={()=>requestExit()}>{t("Cancel")}</Button>
               <Button
                 type="submit"
                 form="trade-form"
@@ -1202,9 +1287,9 @@ export default function TradePanel({
         </SheetContent>
       </Sheet>
 
-      <Dialog open={discardDraftOpen} onOpenChange={setDiscardDraftOpen}><DialogContent>
-        <DialogHeader><DialogTitle>{t('Discard draft?')}</DialogTitle><DialogDescription>{t(isEdit?'Remove your unsaved changes and return to the saved trade.':'Discard this new entry and its draft?')}</DialogDescription></DialogHeader>
-        <DialogFooter><Button type="button" variant="outline" onClick={()=>setDiscardDraftOpen(false)}>{t('Keep editing')}</Button><Button type="button" variant="destructive" onClick={async()=>{await draft.clear();reset(tradeToDefaults(trade,timezone));setNotesSections(buildSections(trade?.screenshots,trade?.notes_document));setGeneralDocument(trade?.notes_document?.general??documentFromText(trade?.notes));setRemovedImageIds([]);setDiscardDraftOpen(false);onClose();}}>{t('Discard draft')}</Button></DialogFooter>
+      <Dialog open={draftExitOpen} onOpenChange={value=>{setDraftExitOpen(value);if(!value)pendingDraftExit.current=null;}}><DialogContent>
+        <DialogHeader><DialogTitle>{t('Save this draft?')}</DialogTitle><DialogDescription>{t('You have changes. Save the draft to continue later, or discard them and leave.')}</DialogDescription></DialogHeader>
+        <DialogFooter><Button type="button" variant="outline" onClick={()=>{pendingDraftExit.current=null;setDraftExitOpen(false);}}>{t('Keep editing')}</Button><Button type="button" variant="destructive" onClick={discardChangesAndExit}>{t('Discard changes')}</Button><Button type="button" onClick={saveDraftAndExit}>{t('Save draft')}</Button></DialogFooter>
       </DialogContent></Dialog>
       <Dialog open={saveConfigurationOpen} onOpenChange={value => {if (!value) dismissConfiguration();}}>
         <DialogContent className="sm:max-w-md">

@@ -158,10 +158,11 @@ try {
  await renameRisk('Risk','Draft risk');
  await exitPage.locator('input[name="commission"]').fill('8');
  await button('Close').click();
- await exitPage.getByRole('dialog',{name:'Unsaved layout changes',exact:true}).waitFor();
- await button('Keep editing').click();
+ await exitPage.getByRole('dialog',{name:'Save this draft?',exact:true}).waitFor();
+ await exitPage.getByRole('dialog',{name:'Save this draft?',exact:true}).getByRole('button',{name:'Keep editing',exact:true}).click();
  assert.equal(await exitPage.locator('input[name="commission"]').inputValue(),'8');
  await exitPage.keyboard.press('Escape');
+ await exitPage.getByRole('dialog',{name:'Save this draft?',exact:true}).getByRole('button',{name:'Discard changes',exact:true}).click();
  await exitPage.getByRole('dialog',{name:'Unsaved layout changes',exact:true}).waitFor();
  await exitPage.getByRole('dialog',{name:'Unsaved layout changes',exact:true}).screenshot({path:'artifacts/entry-preferences/unsaved-layout.png'});
  await button('Discard layout changes').click();

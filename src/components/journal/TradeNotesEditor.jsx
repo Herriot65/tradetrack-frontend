@@ -117,7 +117,7 @@ function NoteSection({
         )}
       </div>
 
-      <div ref={setToolbarHost} data-note-toolbar-host className="sticky top-0 z-20 rounded-t-lg bg-card"/>
+      <div ref={setToolbarHost} data-note-toolbar-host className="rounded-t-lg bg-card"/>
       {/* Text */}
       <RichNotesEditor embedded hasImages={section.images.length > 0} label={t("Notes for {section}", {section: section.title})} value={section.content ?? documentFromText(section.text)} onChange={(content,text) => onTextChange(text,content)} />
 
