@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import AnalyticsTab from "../src/components/analytics/AnalyticsTab";
+import BreakdownTab from "../src/components/journal/BreakdownTab";
 import { JournalContext } from "../src/journals/JournalContext";
 import api from "../src/api/axios";
 import "../src/index.css";
@@ -62,7 +63,9 @@ const journal = {
 createRoot(document.getElementById("root")).render(
   <JournalContext.Provider value={{ activeWorkspace: journal, analyticsVersion: 0 }}>
     <main style={{ maxWidth: 1280, margin: "0 auto", padding: 16 }}>
-      <AnalyticsTab journal={journal} syntheticEnabled={true} onToggleSynthetic={() => {}} />
+      {new URLSearchParams(location.search).has("breakdown")
+        ? <BreakdownTab journal={journal} active syntheticEnabled={false} />
+        : <AnalyticsTab journal={journal} syntheticEnabled={true} onToggleSynthetic={() => {}} />}
     </main>
   </JournalContext.Provider>,
 );

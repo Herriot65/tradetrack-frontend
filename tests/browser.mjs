@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { selectAnalyticsDate } from "./date-picker-helpers.mjs";
 import { createServer } from "vite";
 import { mkdir } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
@@ -8,7 +9,7 @@ const server=await createServer({define:{"import.meta.env.VITE_USE_MOCK":JSON.st
 await server.listen();
 let browser;
 try {
- browser=await chromium.launch({headless:true,channel:"chrome", timeout:15000});
+ browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH ? {executablePath:process.env.CHROMIUM_PATH} : {channel:"chrome"}), timeout:15000});
  const page=await browser.newPage({viewport:{width:1440,height:1000}});
  page.setDefaultTimeout(10000);
  const errors=[];page.on("pageerror",error=>errors.push(error.message));
@@ -37,8 +38,8 @@ try {
  });
 
  await page.getByRole("button",{name:"Custom",exact:true}).click();
- await page.locator("#analytics-start").fill("2025-01-01");
- await page.locator("#analytics-end").fill("2025-12-31");
+ await selectAnalyticsDate(page, "analytics-start", "2025-01-01");
+ await selectAnalyticsDate(page, "analytics-end", "2025-12-31");
  await page.getByText("8 trades",{exact:true}).first().waitFor();
  assert.equal(await page.getByTestId("analytics-kpis").getByText("+0.63R",{exact:true}).count(),1);
  assert.equal(await page.getByText("Recovery factor 1.7",{exact:true}).count(),1);
@@ -84,8 +85,8 @@ try {
  await page.getByRole("menuitem").filter({hasText:"EURUSD"}).click();
  await page.keyboard.press("Escape");
  await page.getByText("4 trades",{exact:true}).first().waitFor();
- await page.locator("#analytics-start").fill("2024-01-01");
- await page.locator("#analytics-end").fill("2024-12-31");
+ await selectAnalyticsDate(page, "analytics-start", "2024-01-01");
+ await selectAnalyticsDate(page, "analytics-end", "2024-12-31");
  await page.getByText("No trades in this range",{exact:true}).waitFor();
  assert.equal(await page.getByRole("heading",{name:"Equity and drawdown"}).count(),0);
  await page.getByRole("button",{name:"Reset filters",exact:true}).click();

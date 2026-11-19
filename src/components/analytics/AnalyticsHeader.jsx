@@ -3,6 +3,7 @@ import { useLanguage } from "@/i18n/useLanguage";
 import { Check, Download, Filter, CalendarDays, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import DatePicker from "@/components/ui/date-picker";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -181,26 +182,24 @@ export default function AnalyticsHeader({
               <CalendarDays aria-hidden="true" className="size-4 text-ink-muted" />
               <div className="flex flex-wrap items-center gap-2">
                 <label className="text-[11px] text-ink-muted" htmlFor="analytics-start">{t("From")}</label>
-                <input
+                <DatePicker
                   id="analytics-start"
+                  label={t("From")}
                   max={customEnd}
-                  type="date"
                   value={customStart}
-                  onChange={(event) =>
-                    onCustomRangeChange({ ...customRange, start: event.target.value })
+                  onChange={(start) =>
+                    onCustomRangeChange({ ...customRange, start })
                   }
-                  className="h-9 rounded-lg border border-hairline bg-surface-raised px-2 text-[11px] text-ink-secondary outline-none focus-visible:ring-2 focus-visible:ring-white/20"
                 />
                 <label className="text-[11px] text-ink-muted" htmlFor="analytics-end">{t("to")}</label>
-                <input
+                <DatePicker
                   id="analytics-end"
+                  label={t("to")}
                   min={customStart}
-                  type="date"
                   value={customEnd}
-                  onChange={(event) =>
-                    onCustomRangeChange({ ...customRange, end: event.target.value })
+                  onChange={(end) =>
+                    onCustomRangeChange({ ...customRange, end })
                   }
-                  className="h-9 rounded-lg border border-hairline bg-surface-raised px-2 text-[11px] text-ink-secondary outline-none focus-visible:ring-2 focus-visible:ring-white/20"
                 />
               </div>
             </div>
