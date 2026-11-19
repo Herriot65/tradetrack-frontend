@@ -15,7 +15,7 @@ import { getUserTimezone } from "@/lib/timezone";
 const HOURS=Array.from({length:24},(_,i)=>String(i).padStart(2,"0"));
 const MINUTES=Array.from({length:60},(_,i)=>String(i).padStart(2,"0"));
 
-function CalendarDropdown({ options, value, onChange, "aria-label": label, disabled }) {
+export function CalendarDropdown({ options, value, onChange, "aria-label": label, disabled }) {
   useLanguage();
   return <SelectField value={value} onValueChange={next=>onChange?.({target:{value:next}})} options={options} label={label} disabled={disabled} allowClear={false} className="h-8 w-auto shrink-0 border-transparent bg-transparent px-2" />;
 }

@@ -7,10 +7,10 @@ import { useJournal } from '@/journals/useJournal';
 import { filterTrades, formatValue } from '@/lib/analytics';
 import { BREAKDOWN_FIELDS, buildBreakdown } from '@/lib/breakdown';
 import { Button } from '@/components/ui/button';
+import SelectField from '@/components/ui/select-field';
 
 const r = value => value === null ? '—' : formatValue(value, 'R');
 const percent = value => `${value.toFixed(1)}%`;
-const selectClass = 'min-w-0 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-200';
 export default function BreakdownTab({journal, active, syntheticEnabled}) {
   useLanguage();
   const {analyticsVersion} = useJournal();
@@ -30,8 +30,8 @@ export default function BreakdownTab({journal, active, syntheticEnabled}) {
       {syntheticEnabled && <span className="rounded-full border border-amber-400/20 bg-amber-400/5 px-3 py-1.5 text-xs text-amber-300">{t("Includes synthetic trades")}</span>}
     </div>
     <div className="flex flex-wrap gap-3 rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
-      <label className="flex min-w-0 flex-col gap-1.5 text-xs text-zinc-500">{t("Compare by")}<select aria-label={t("Breakdown attribute")} className={selectClass} value={field} onChange={e=>{setField(e.target.value);setExpanded(false);}}>{BREAKDOWN_FIELDS.map(([value,label])=><option key={value} value={value}>{t(label)}</option>)}</select></label>
-      <label className="flex flex-col gap-1.5 text-xs text-zinc-500">{t("Period")}<select aria-label={t("Breakdown period")} className={selectClass} value={range} onChange={e=>setRange(e.target.value)}><option value="ALL">{t("All time")}</option><option value="YTD">{t("This year")}</option><option value="12M">{t("Last 12 months")}</option><option value="3M">{t("Last 3 months")}</option></select></label>
+      <div className="flex min-w-0 max-w-full flex-col gap-1.5 text-xs text-zinc-500"><label htmlFor="breakdown-attribute">{t("Compare by")}</label><SelectField id="breakdown-attribute" label={t("Breakdown attribute")} value={field} onValueChange={value=>{setField(value);setExpanded(false);}} options={BREAKDOWN_FIELDS.map(([value,label])=>({value,label}))} translateOptions allowClear={false} className="bg-zinc-950" /></div>
+      <div className="flex min-w-0 max-w-full flex-col gap-1.5 text-xs text-zinc-500"><label htmlFor="breakdown-period">{t("Period")}</label><SelectField id="breakdown-period" label={t("Breakdown period")} value={range} onValueChange={setRange} options={[{value:'ALL',label:'All time'},{value:'YTD',label:'This year'},{value:'12M',label:'Last 12 months'},{value:'3M',label:'Last 3 months'}]} translateOptions allowClear={false} className="bg-zinc-950" /></div>
       <p className="self-end pb-2 text-xs text-zinc-500">{t("Closed trades only.") + " "}{excluded}{" " + t("open or missing risk data excluded.")}{unassigned > 0 && ` ${unassigned} without this attribute omitted.`}</p>
     </div>
     {loading ? <p role="status" className="py-12 text-center text-zinc-500">{t("Loading trade breakdown…")}</p> : error ? <div role="alert" className="space-y-3 text-sm text-red-400"><p>{error}</p><Button variant="outline" onClick={refetch}>{t("Retry")}</Button></div> : !rows.length ? <div className="rounded-xl border border-dashed border-zinc-800 p-12 text-center"><h3 className="text-lg">{t("No comparable trades yet")}</h3><p className="mt-2 text-sm text-zinc-500">{t("Log closed trades with this attribute, or enable synthetic data in Analytics to explore sample results.")}</p></div> : <>
