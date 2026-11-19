@@ -179,8 +179,8 @@ export default function CalendarCard({
           {summary.greenDays}/{summary.tradingDays}{" " + t("green days")}</p>
       </div>
 
-      <div className="overflow-x-auto px-3 pb-3 pt-4 min-[900px]:px-6 min-[900px]:pb-6">
-        <div className="space-y-1">
+      <div role="region" aria-label={t("Trading calendar")} tabIndex={0} className="overflow-x-auto px-3 pb-3 pt-4 min-[900px]:px-6 min-[900px]:pb-6">
+        <div className={cn("space-y-1", unit === "USD" && "min-w-[480px]")}>
           <div className="analytics-calendar grid gap-1" style={{ gridTemplateColumns: GRID_TEMPLATE }}>
             {WEEKDAYS.map((day) => (
               <div key={day} className="pb-2 text-center text-[11px] text-ink-muted">
@@ -226,8 +226,9 @@ export default function CalendarCard({
                       <button
                         type="button"
                         aria-label={`Open trades for ${cell.key}`}
+                        title={`${formatDateLabel(cell.key, "MMM d, yyyy")}: ${formatValue(entry.net, unit)}`}
                         className={cn(
-                          "flex min-h-[58px] min-[900px]:min-h-[76px] flex-col items-start justify-between rounded-md border border-white/[0.04] px-0.5 min-[900px]:px-1.5 py-1 text-left outline-none",
+                          "flex min-w-0 min-h-[58px] min-[900px]:min-h-[76px] flex-col items-start justify-between rounded-md border border-white/[0.04] px-0.5 min-[900px]:px-1.5 py-1 text-left outline-none",
                           "transition-colors hover:border-hairline-strong focus-visible:ring-2 focus-visible:ring-white/20",
                         )}
                         style={{ backgroundColor: dayTone(entry.net) }}
@@ -235,11 +236,11 @@ export default function CalendarCard({
                         <span className="text-[11px] tabular-nums text-ink-muted">{cell.day}</span>
                         <span
                           className={cn(
-                            "w-full text-[10px] min-[900px]:text-[13px] font-medium tabular-nums",
+                            "w-full min-w-0 truncate text-[10px] min-[900px]:text-[13px] font-medium tabular-nums",
                             entry.net > 0 ? "text-profit" : entry.net < 0 ? "text-loss" : "text-ink-secondary",
                           )}
                         >
-                          <span className="min-[900px]:hidden">{formatValue(entry.net, unit).replace(/R$/, "")}</span><span className="hidden min-[900px]:inline">{formatValue(entry.net, unit)}</span>
+                          <span className="min-[900px]:hidden">{formatValue(entry.net, unit, { compact: true }).replace(/R$/, "")}</span><span className="hidden min-[900px]:inline">{formatValue(entry.net, unit)}</span>
                         </span>
                         <span className="trade-count hidden min-[900px]:block text-[11px] text-ink-muted">{entry.count}{" " + t("trades")}</span>
                       </button>
@@ -249,16 +250,16 @@ export default function CalendarCard({
                 );
               })}
 
-              <div className="flex min-h-[58px] min-[900px]:min-h-[76px] flex-col items-start justify-center rounded-md border border-hairline bg-surface-raised px-1.5 py-1">
+              <div title={formatValue(week.net, unit)} className="flex min-w-0 min-h-[58px] min-[900px]:min-h-[76px] flex-col items-start justify-center rounded-md border border-hairline bg-surface-raised px-1.5 py-1">
                 {week.count > 0 ? (
                   <>
                     <span
                       className={cn(
-                        "text-[12px] font-medium tabular-nums",
+                        "w-full truncate text-[12px] font-medium tabular-nums",
                         week.net > 0 ? "text-profit" : week.net < 0 ? "text-loss" : "text-ink-secondary",
                       )}
                     >
-                      {formatValue(week.net, unit)}
+                      <span className="min-[900px]:hidden">{formatValue(week.net, unit, { compact: true })}</span><span className="hidden min-[900px]:inline">{formatValue(week.net, unit)}</span>
                     </span>
                     <span className="trade-count mt-0.5 text-[11px] text-ink-muted">
                       {week.count} {week.count === 1 ? t("trade") : t("trades")}
