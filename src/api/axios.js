@@ -7,23 +7,21 @@ import axios from "axios";
 
 import {
   getAccessToken,
-  getRefreshToken,
+  getSessionVersion,
   setTokens,
   clearTokens,
 } from "../auth/tokenService";
 
-const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api";
+import { BASE_URL, cookieRequest, csrfHeaders, hasPendingLogout } from "./session";
 
-const api = axios.create({
-  baseURL: BASE_URL,
-});
+const api = axios.create({ baseURL: BASE_URL, withCredentials: true });
 
 /* =========================
    REQUEST INTERCEPTOR
 ========================= */
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    config._sessionVersion ??= getSessionVersion();
     const token = getAccessToken();
 
     const isPublicAuth = ["/auth/login/", "/auth/google/", "/auth/register/"].includes(config.url);
@@ -31,6 +29,9 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    if (config.url?.startsWith("/auth/") && !["get", "head", "options"].includes(config.method)) {
+      Object.assign(config.headers, await csrfHeaders());
+    }
     return config;
   },
   (error) => Promise.reject(error)
@@ -49,22 +50,25 @@ const refreshAccessToken = () => {
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
-    const refresh = getRefreshToken();
-    if (!refresh) {
-      const error = new Error("Session expired");
-      error.code = "SESSION_EXPIRED";
-      throw error;
-    }
-
-    const response = await axios.post(`${BASE_URL}/auth/refresh/`, { refresh }, { timeout: 15000 });
-    const { access, refresh: rotatedRefresh } = response.data;
-
-    // SimpleJWT rotates refresh tokens, so retain the replacement when supplied.
-    if (getRefreshToken() !== refresh) {
+    const version = getSessionVersion();
+    if (hasPendingLogout()) throw Object.assign(new Error("Signed out"), { code: "SESSION_EXPIRED" });
+    const previousAccess = getAccessToken();
+    const response = await cookieRequest("/auth/refresh/");
+    const { access } = response.data;
+    if (getSessionVersion() !== version) {
       throw new axios.CanceledError("Session changed while refreshing");
     }
     if (!access) throw new Error("Invalid session response");
-    setTokens(access, rotatedRefresh ?? refresh);
+    // Never replay an old account's mutation under a newly signed-in account.
+    const identity = token => {
+      try { return JSON.parse(atob(token.split(".")[1].replaceAll("-", "+").replaceAll("_", "/"))).user_id; }
+      catch { return null; }
+    };
+    if (previousAccess && identity(previousAccess) !== identity(access)) {
+      expireSession();
+      throw new axios.CanceledError("Account changed while refreshing");
+    }
+    setTokens(access);
     return access;
   })().finally(() => {
     refreshPromise = null;
@@ -83,6 +87,9 @@ api.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+    if (originalRequest && originalRequest._sessionVersion !== getSessionVersion()) {
+      return Promise.reject(new axios.CanceledError("Session changed during request"));
+    }
     const isLoginRequest = ["/auth/login/", "/auth/google/", "/auth/register/", "/auth/logout/"].some(path => originalRequest?.url?.includes(path));
 
     if (
@@ -92,7 +99,7 @@ api.interceptors.response.use(
       !originalRequest._retry
     ) {
       originalRequest._retry = true;
-      const refreshBeforeRetry = getRefreshToken();
+      const versionBeforeRetry = getSessionVersion();
 
       try {
         const newAccessToken = await refreshAccessToken();
@@ -104,7 +111,7 @@ api.interceptors.response.use(
       } catch (refreshError) {
         // A login in another request may have replaced the credentials meanwhile.
         if (
-          getRefreshToken() === refreshBeforeRetry &&
+          getSessionVersion() === versionBeforeRetry &&
           (refreshError.code === "SESSION_EXPIRED" || [400, 401].includes(refreshError.response?.status))
         ) {
           expireSession();

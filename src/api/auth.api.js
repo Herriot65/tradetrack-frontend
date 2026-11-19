@@ -2,8 +2,9 @@
 
 import api from "./axios";
 import axios from "axios";
+import { cookieRequest, hasPendingLogout, setPendingLogout } from "./session";
 import {
-  getRefreshToken,
+  broadcastLogout,
   setTokens,
   clearTokens,
 } from "../auth/tokenService";
@@ -28,33 +29,41 @@ const withConnectionRetry = async (request, signal) => {
 ========================= */
 export const loginUser = async (credentials) => {
   const response = await withConnectionRetry(() =>
-    api.post("/auth/login/", credentials, { timeout: 15000 })
+    cookieRequest("/auth/login/", credentials)
   );
 
-  const { access, refresh, user } = response.data;
+  const { access, user } = response.data;
 
-  // Save tokens locally
+  setPendingLogout(false);
   clearTokens();
-  setTokens(access, refresh);
+  setTokens(access);
 
-  return { access, refresh, user };
+  return { access, user };
 };
 
 /* =========================
    LOGOUT
 ========================= */
 export const logoutUser = async () => {
-  const refresh = getRefreshToken();
-
+  setPendingLogout(true);
   clearTokens();
-  if (!refresh) return;
-  await api.post("/auth/logout/", { refresh }, { timeout: 15000 });
+  broadcastLogout();
+  await cookieRequest("/auth/logout/");
+  setPendingLogout(false);
 };
 
 /* =========================
    GET CURRENT USER
 ========================= */
 export const getCurrentUser = async (config = {}) => {
+  if (hasPendingLogout()) {
+    await cookieRequest("/auth/logout/");
+    setPendingLogout(false);
+    window.dispatchEvent(new Event("auth:expired"));
+    const error = new Error("Signed out");
+    error.code = "SESSION_EXPIRED";
+    throw error;
+  }
   const response = await withConnectionRetry(
     () => api.get("/auth/me/", { timeout: 15000, ...config }), config.signal
   );
@@ -73,9 +82,18 @@ export const registerUser = async (userData) => {
   return response.data;
 };
 
-export const googleLoginUser = async (credential) => {
-  const { data } = await api.post("/auth/google/", { credential });
+export const googleLoginUser = async (credential, remember_me = false) => {
+  const { data } = await cookieRequest("/auth/google/", { credential, remember_me });
   clearTokens();
-  setTokens(data.access, data.refresh);
+  setPendingLogout(false);
+  setTokens(data.access);
   return data;
+};
+
+export const reauthenticate = async credentials => api.post("/auth/reauthenticate/", credentials);
+export const logoutAllDevices = async () => {
+  await api.post("/auth/logout-all/");
+  clearTokens();
+  broadcastLogout();
+  window.dispatchEvent(new Event("auth:expired"));
 };

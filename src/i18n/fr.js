@@ -930,5 +930,14 @@ export default {
   "System": "Système",
   "Appearance": "Apparence",
   "Choose your appearance and the timezone used for trades.": "Choisissez votre apparence et le fuseau horaire utilisé pour les trades.",
-  "Saved in this browser. System follows your device’s theme.": "Enregistré dans ce navigateur. Le mode Système suit le thème de votre appareil."
+  "Saved in this browser. System follows your device’s theme.": "Enregistré dans ce navigateur. Le mode Système suit le thème de votre appareil.",
+  "Remember me on this device": "Se souvenir de moi sur cet appareil",
+  "Use only on a personal device. Sign in again after 7 days away or 30 days total.": "À utiliser uniquement sur un appareil personnel. Reconnectez-vous après 7 jours d’absence ou 30 jours au total.",
+  "Security": "Sécurité",
+  "Sign out all devices": "Déconnecter tous les appareils",
+  "Confirm your identity to sign out on every device, including this one.": "Confirmez votre identité pour vous déconnecter de tous les appareils, y compris celui-ci.",
+  "Confirm and sign out all devices": "Confirmer et déconnecter tous les appareils",
+  "Signing out...": "Déconnexion…",
+  "Unable to sign out all devices. Check your connection and try again.": "Impossible de déconnecter tous les appareils. Vérifiez votre connexion et réessayez.",
+  "Could not confirm your identity. Please try again.": "Impossible de confirmer votre identité. Réessayez.",
 };

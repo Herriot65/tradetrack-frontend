@@ -1,7 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "VITE_API_BASE_URL=https://tradetrack-backend-frankfurt-fxf1.onrender.com/api npm run build",
+  "buildCommand": "VITE_API_BASE_URL=/api npm run build",
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://tradetrack-backend-frankfurt-fxf1.onrender.com/api/:path*"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"

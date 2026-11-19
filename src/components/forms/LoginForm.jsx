@@ -21,6 +21,7 @@ export default function LoginForm({ sessionExpired = false }) {
   useLanguage();
   const navigate = useNavigate();
   const { login } = useAuth();
+  const [rememberMe, setRememberMe] = useState(false);
   const [serverError, setServerError] = useState("");
 
   const {
@@ -35,7 +36,7 @@ export default function LoginForm({ sessionExpired = false }) {
     setServerError("");
 
     try {
-      await login(data);
+      await login({ ...data, remember_me: rememberMe });
       navigate("/dashboard");
     } catch (error) {
       console.error(error);
@@ -57,7 +58,12 @@ export default function LoginForm({ sessionExpired = false }) {
 
       <CardContent>
         {sessionExpired && <p role="status" className="mb-4 rounded-lg border border-border bg-secondary/50 p-3 text-sm text-muted-foreground">{t("Your session has expired. Please sign in again to continue.")}</p>}
-        <GoogleSignIn />
+        <label className="mb-4 flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={rememberMe} onChange={event => setRememberMe(event.target.checked)} />
+          {t("Remember me on this device")}
+        </label>
+        <p className="mb-4 text-xs text-muted-foreground">{t("Use only on a personal device. Sign in again after 7 days away or 30 days total.")}</p>
+        <GoogleSignIn rememberMe={rememberMe} />
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <FormErrorBanner message={serverError} />
 

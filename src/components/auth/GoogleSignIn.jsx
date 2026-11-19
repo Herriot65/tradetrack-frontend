@@ -24,7 +24,7 @@ function loadGoogle() {
   return googleScript;
 }
 
-export default function GoogleSignIn() {
+export default function GoogleSignIn({ rememberMe = false, onCredential }) {
   const { language } = useLanguage();
   const container = useRef(null);
   const busy = useRef(false);
@@ -33,6 +33,10 @@ export default function GoogleSignIn() {
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const handlers = useRef({ loginWithGoogle, onCredential, rememberMe });
+  useEffect(() => {
+    handlers.current = { loginWithGoogle, onCredential, rememberMe };
+  }, [loginWithGoogle, onCredential, rememberMe]);
 
   useEffect(() => {
     if (!clientId) return;
@@ -47,8 +51,13 @@ export default function GoogleSignIn() {
           setPending(true);
           setError("");
           try {
-            await loginWithGoogle(credential);
-            if (active) navigate("/dashboard", { replace: true });
+            const { loginWithGoogle, onCredential, rememberMe } = handlers.current;
+            if (onCredential) {
+              await onCredential(credential);
+            } else {
+              await loginWithGoogle(credential, rememberMe);
+            }
+            if (active && !onCredential) navigate("/dashboard", { replace: true });
           } catch (err) {
             if (active) setError(err.response?.data?.detail || "Google sign-in failed. Please try again.");
           } finally {
@@ -62,7 +71,7 @@ export default function GoogleSignIn() {
       });
     }).catch(err => { if (active) setError(err.message); });
     return () => { active = false; };
-  }, [clientId, loginWithGoogle, navigate, language]);
+  }, [clientId, navigate, language]);
 
   if (!clientId) return null;
   return (

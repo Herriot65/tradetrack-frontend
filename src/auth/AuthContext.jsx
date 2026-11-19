@@ -1,19 +1,18 @@
 import { createContext, useEffect, useRef, useState } from "react";
 import api from "../api/axios";
-import { getAccessToken, getRefreshToken, clearTokens, getSavedUser, saveUser } from "./tokenService";
+import { clearTokens } from "./tokenService";
 import { setUserTimezone } from "../lib/timezone";
 import { loginUser, googleLoginUser, logoutUser, getCurrentUser } from "../api/auth.api";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(getSavedUser);
-  const [loading, setLoading] = useState(() => !getSavedUser());
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [sessionExpired, setSessionExpired] = useState(false);
   const generation = useRef(0);
 
   const acceptUser = user => {
-    saveUser(user);
     setUserTimezone(user.timezone);
     setUser(user);
     setLoading(false);
@@ -46,8 +45,15 @@ export const AuthProvider = ({ children }) => {
       setSessionExpired(true);
       setLoading(false);
     };
+    const remoteLogout = event => {
+      if (event.key === "nexora_logout") resetSession();
+    };
     window.addEventListener("auth:expired", expire);
-    return () => window.removeEventListener("auth:expired", expire);
+    window.addEventListener("storage", remoteLogout);
+    return () => {
+      window.removeEventListener("auth:expired", expire);
+      window.removeEventListener("storage", remoteLogout);
+    };
   }, []);
 
   useEffect(() => {
@@ -58,16 +64,11 @@ export const AuthProvider = ({ children }) => {
     const loadUser = async () => {
       if (pending || controller.signal.aborted) return;
       clearTimeout(timer);
-      if (!getAccessToken() && !getRefreshToken()) {
-        setLoading(false);
-        return;
-      }
       pending = true;
       const startedGeneration = generation.current;
       try {
         const currentUser = await getCurrentUser({ signal: controller.signal });
         if (controller.signal.aborted || generation.current !== startedGeneration) return;
-        saveUser(currentUser);
         setUserTimezone(currentUser.timezone);
         setUser(currentUser);
         setSessionExpired(false);
@@ -76,8 +77,7 @@ export const AuthProvider = ({ children }) => {
       } catch {
         // Keep the current page mounted while connectivity recovers. Only an
         // explicit authentication rejection can end the session.
-        if (!controller.signal.aborted && generation.current === startedGeneration &&
-            (getAccessToken() || getRefreshToken())) {
+        if (!controller.signal.aborted && generation.current === startedGeneration) {
           timer = setTimeout(loadUser, Math.min(30000, 2000 * 2 ** Math.min(failures++, 4)));
         }
       } finally {
@@ -99,8 +99,8 @@ export const AuthProvider = ({ children }) => {
   return <AuthContext.Provider value={{
     user, loading, sessionExpired, isAuthenticated: !!user,
     login, logout, resetSession,
-    loginWithGoogle: async credential => {
-      const { user } = await googleLoginUser(credential);
+    loginWithGoogle: async (credential, rememberMe) => {
+      const { user } = await googleLoginUser(credential, rememberMe);
       generation.current++;
       acceptUser(user);
     },
