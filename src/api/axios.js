@@ -4,6 +4,7 @@ import { clearQueryCache } from "../lib/queryCache.js";
 // on 401 responses using refresh tokens.
 
 import axios from "axios";
+import { requireJsonResponse } from "./responseValidation";
 
 import {
   getAccessToken,
@@ -82,6 +83,8 @@ const refreshAccessToken = () => {
 ========================= */
 api.interceptors.response.use(
   (response) => {
+    if (response.status !== 204 && response.config.method !== "head" &&
+        (!response.config.responseType || response.config.responseType === "json")) requireJsonResponse(response);
     if (!["get", "head", "options"].includes(response.config.method) && !response.config.url?.includes("/drafts/")) clearQueryCache();
     return response;
   },

@@ -252,8 +252,9 @@ by this test.
 
 ## Production API region
 
-Vercel builds pin `VITE_API_BASE_URL` to the Frankfurt backend in the
-`buildCommand` in `vercel.json`. This command takes precedence over an older
+Vercel builds pin `VITE_API_BASE_URL` to `/api` in the
+`buildCommand` in `vercel.json`, and proxy `/api/*` to the Frankfurt backend.
+This command takes precedence over an older
 API URL stored in Vercel's project environment. Other project variables, such as
 the Google client ID, retain their existing values. Local development still uses
 `.env` and the normal `npm run dev` / `npm run build` commands.
@@ -264,3 +265,18 @@ For rollback, revert the `vercel.json` build-command change and redeploy the
 frontend. The Ohio service remains available during verification. It is also the
 source of the initial server-side Blueprint secret references; decouple those
 references before deleting the Ohio service.
+
+Deploy from this repository's root, where `vercel.json` lives, using the Vite
+framework and `dist` output directory. Do not deploy `dist` as a standalone static
+directory: that omits the API proxy and can serve `index.html` for API requests.
+With the Vercel CLI authenticated and linked to the existing project, run
+`vercel deploy --prod` from this directory. Each deployment has a new immutable
+URL; use the returned URL or the project's production alias when verifying.
+
+After deployment, an anonymous `GET /api/auth/me/` must return `401` with JSON,
+and `GET /api/auth/csrf/` must return JSON containing `csrfToken`. Neither may
+return HTML. Check `/register` and `/login` in a fresh browser session, create a
+test account, then sign in. Registration creates the account and opens login;
+signing in establishes the browser session. Run `npm run test:auth-routing` for
+the static-fallback regression and `npm run test:session` for signup and login
+against a temporary local database.

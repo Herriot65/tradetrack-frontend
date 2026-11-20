@@ -11,6 +11,7 @@
     "test": "node --test tests/queryCache.test.js tests/analytics.test.js tests/tradeForm.test.js tests/breakdown.test.js tests/language.test.js tests/imageLayout.test.js tests/mapConcurrent.test.js",
     "test:coach": "npm run build && node tests/coach-browser.mjs",
     "test:session": "npm run build && node tests/session-browser.mjs",
+    "test:auth-routing": "npm run build && node tests/auth-routing-browser.mjs",
     "test:redesign": "node tests/redesign-qa.mjs",
     "test:theme": "npm run build && node tests/theme-browser.mjs",
     "test:browser": "node tests/browser.mjs",

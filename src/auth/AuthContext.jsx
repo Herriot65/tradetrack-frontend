@@ -3,6 +3,7 @@ import api from "../api/axios";
 import { clearTokens } from "./tokenService";
 import { setUserTimezone } from "../lib/timezone";
 import { loginUser, googleLoginUser, logoutUser, getCurrentUser } from "../api/auth.api";
+import { requireUser } from "../api/responseValidation";
 
 export const AuthContext = createContext();
 
@@ -13,6 +14,7 @@ export const AuthProvider = ({ children }) => {
   const generation = useRef(0);
 
   const acceptUser = user => {
+    requireUser(user);
     setUserTimezone(user.timezone);
     setUser(user);
     setLoading(false);
@@ -78,6 +80,9 @@ export const AuthProvider = ({ children }) => {
         // Keep the current page mounted while connectivity recovers. Only an
         // explicit authentication rejection can end the session.
         if (!controller.signal.aborted && generation.current === startedGeneration) {
+          // Keep sign-in and signup usable when the API is unavailable or
+          // misrouted, while preserving an already verified account on retries.
+          setLoading(false);
           timer = setTimeout(loadUser, Math.min(30000, 2000 * 2 ** Math.min(failures++, 4)));
         }
       } finally {
