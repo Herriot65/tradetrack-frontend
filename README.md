@@ -266,6 +266,8 @@ frontend. The Ohio service remains available during verification. It is also the
 source of the initial server-side Blueprint secret references; decouple those
 references before deleting the Ohio service.
 
+The SPA fallback explicitly excludes `/api` and `/api/*` so it cannot override
+the API proxy or turn backend errors into a successful HTML response.
 Deploy from this repository's root, where `vercel.json` lives, using the Vite
 framework and `dist` output directory. Do not deploy `dist` as a standalone static
 directory: that omits the API proxy and can serve `index.html` for API requests.

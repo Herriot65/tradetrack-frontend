@@ -9,7 +9,7 @@
       "destination": "https://tradetrack-backend-frankfurt-fxf1.onrender.com/api/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api(?:/|$)).*)",
       "destination": "/index.html"
     }
   ]
