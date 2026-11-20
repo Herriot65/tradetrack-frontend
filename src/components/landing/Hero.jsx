@@ -6,10 +6,14 @@ import { ArrowRight, ArrowDown, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Section from "./Section";
 import ProductPreview from "./ProductPreview";
+import ImmersiveHero from "./ImmersiveHero";
+import { useDesign } from "@/lib/design";
 
 export default function Hero() {
   useLanguage();
   const { isAuthenticated } = useAuth();
+  const [design] = useDesign();
+  if (design === "3d") return <ImmersiveHero />;
   return (
     <Section className="overflow-hidden !pb-16 !pt-32 md:!pb-24 md:!pt-44">
       <div

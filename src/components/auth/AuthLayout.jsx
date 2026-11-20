@@ -4,8 +4,11 @@ import { Link } from "react-router-dom";
 import { ArrowUpRight, BookOpen, BarChart3, ScanLine } from "lucide-react";
 import LanguageSelector from "@/components/layout/LanguageSelector";
 import ThemeToggle from "@/components/layout/ThemeToggle";
+import DepthScene from "@/components/motion/DepthScene";
+import { useDesign } from "@/lib/design";
 export default function AuthLayout({ children }) {
   useLanguage();
+  const [design] = useDesign();
   return (
     <div className="nx-auth">
       <aside className="nx-auth-story">
@@ -15,7 +18,8 @@ export default function AuthLayout({ children }) {
             nexora<span className="text-primary">.</span>
           </span>
         </Link>
-        <div className="relative my-16 max-w-md">
+        <div className="nx-auth-story-copy relative my-16 max-w-md">
+          {design === "3d" && <div className="nx-auth-depth"><DepthScene /></div>}
           <p className="nx-eyebrow mb-6">{t("The journal behind your edge")}</p>
           <h2 className="text-[clamp(36px,4vw,58px)] font-medium leading-[1.07] tracking-[-0.055em]">{t("Better decisions")}<br />{t("start with a")}<br />
             <span className="text-primary">{t("clearer picture.")}</span>
@@ -47,7 +51,7 @@ export default function AuthLayout({ children }) {
           <ThemeToggle />
           <LanguageSelector />
         </div>
-        <div className="w-full max-w-[400px]">
+        <div className="nx-auth-form-surface w-full max-w-[400px]">
           <Link to="/" className="mb-10 flex items-center justify-center gap-2 md:hidden">
             <img src="/nexora.png" alt="" className="size-9 rounded-lg" />
             <span className="text-xl font-semibold tracking-tight">nexora.</span>

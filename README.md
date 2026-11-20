@@ -252,6 +252,15 @@ by this test.
 
 ## Production API region
 
+The Theme menu offers **Classic** and **3D** designs independently of
+**Light**, **Dark**, or **System** color mode. It is available on the landing
+page (including mobile), login/signup pages, the workspace header, and account
+settings. 3D is the default; an explicit Classic choice is retained. The design is saved in this browser and
+updates other open tabs without changing account data or clearing forms.
+3D uses the scenes and visual styles from `experiment/nezora-3d-motion`, scoped
+to that design; reduced-motion preferences and the landing scene's pause control
+are respected. Run `npm run test:design` for the browser regression checks.
+
 Vercel builds pin `VITE_API_BASE_URL` to `/api` in the
 `buildCommand` in `vercel.json`, and proxy `/api/*` to the Frankfurt backend.
 This command takes precedence over an older

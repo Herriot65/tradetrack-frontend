@@ -14,6 +14,7 @@
     "test:auth-routing": "npm run build && node tests/auth-routing-browser.mjs",
     "test:redesign": "node tests/redesign-qa.mjs",
     "test:theme": "npm run build && node tests/theme-browser.mjs",
+    "test:design": "npm run build && node tests/design-browser.mjs",
     "test:browser": "node tests/browser.mjs",
     "test:analytics-controls": "node tests/analytics-controls-browser.mjs",
     "test:currency-scroll": "node tests/currency-scroll-browser.mjs",
