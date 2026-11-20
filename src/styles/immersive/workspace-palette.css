@@ -1,4 +1,4 @@
-/* Graphite workspace: neutral reading surfaces, periwinkle controls, semantic
+/* Graphite workspace: neutral reading surfaces, green controls, semantic
    green/red results. Route scope also reaches body-mounted Radix portals;
    leaving the workspace restores the landing page's original palette. */
 :where(html[data-design="3d"]):has(.nx-shell) {
@@ -10,17 +10,12 @@
   --border-hairline: #2b2d36;
   --border-control: #3a3d49;
   --bg-ground: hsl(var(--background));
-  --primary: 231 90% 81%;
-  --primary-foreground: 231 30% 12%;
   --ring: var(--primary);
-  --design-accent: hsl(var(--primary));
-  --design-accent-rgb: 163 177 250;
+  --design-accent: var(--gain);
+  --design-accent-rgb: var(--gain-rgb);
   --surface-sheen: linear-gradient(155deg, rgb(255 255 255 / .025), transparent 65%);
   --page-atmosphere: none;
   --shadow-panel: 0 8px 24px rgb(0 0 0 / .13), inset 0 1px 0 rgb(255 255 255 / .035);
-  --sculpture-top: linear-gradient(135deg, #e2e8ff, #9eaff1);
-  --sculpture-front: linear-gradient(180deg, #788bc5, #303a58);
-  --sculpture-side: linear-gradient(90deg, #252d47, #526799);
 }
 :where(html[data-design="3d"]).light:has(.nx-shell) {
   --background: 228 20% 97%;
@@ -30,9 +25,6 @@
   --input: 228 14% 78%;
   --border-hairline: #dfe1e9;
   --border-control: #c5c9d8;
-  --primary: 231 52% 49%;
-  --primary-foreground: 0 0% 100%;
-  --design-accent-rgb: 60 79 190;
   --surface-sheen: linear-gradient(155deg, rgb(255 255 255 / .65), transparent 65%);
   --shadow-panel: 0 6px 22px rgb(29 33 55 / .045), inset 0 1px 0 white;
 }
