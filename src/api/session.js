@@ -1,17 +1,18 @@
 import axios from "axios";
+import { requireJsonResponse } from "./responseValidation";
 
 export const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 export const csrfHeaders = async () => {
-  const { data } = await axios.get(`${BASE_URL}/auth/csrf/`, { withCredentials: true, timeout: 15000 });
+  const { data } = requireJsonResponse(await axios.get(`${BASE_URL}/auth/csrf/`, { withCredentials: true, timeout: 15000 }));
   return { "X-CSRFToken": data.csrfToken };
 };
 
 // Serialize cookie rotation across tabs as well as within this page.
 export const cookieRequest = (path, data = {}) => {
-  const request = async () => axios.post(`${BASE_URL}${path}`, data, {
+  const request = async () => requireJsonResponse(await axios.post(`${BASE_URL}${path}`, data, {
     withCredentials: true, timeout: 15000, headers: await csrfHeaders(),
-  });
+  }));
   return navigator.locks ? navigator.locks.request("nexora-auth-cookie", request) : request();
 };
 

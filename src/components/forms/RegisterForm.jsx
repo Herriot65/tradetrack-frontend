@@ -44,7 +44,8 @@ export default function RegisterForm() {
 
     try {
       await registerUser(data);
-      navigate("/dashboard");
+      // Registration creates an account; login establishes the browser session.
+      navigate("/login");
     } catch (error) {
       console.error(error);
       const responseData = error.response?.data;

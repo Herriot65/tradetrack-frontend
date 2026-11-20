@@ -1,5 +1,17 @@
 // English source strings are stable keys; API values and user content stay unchanged.
 export default {
+  "Design": "Design",
+  "Classic": "Classique",
+  "Color mode": "Mode de couleur",
+  "Play animation": "Lire l’animation",
+  "Pause animation": "Mettre l’animation en pause",
+  "Motion": "Animation",
+  "Journal. Understand. Evolve.": "Consignez. Comprenez. Évoluez.",
+  "Welcome back, {name}.": "Bon retour, {name}.",
+  "Welcome back.": "Bon retour.",
+  "Total accounts": "Total des comptes",
+  "Backtest accounts": "Comptes de backtest",
+  "Nexora overview showing an equity curve, key metrics, and recent trades using sample data.": "Vue d’ensemble de Nexora avec courbe de capital, indicateurs clés et trades récents à partir de données d’exemple.",
   "Optional screenshots and commentary for before, during, and after your trade.": "Captures et commentaires facultatifs avant, pendant et après votre trade.",
   "Discard": "Abandonner",
   "Discard this new entry and its draft?": "Abandonner cette nouvelle entrée et son brouillon ?",

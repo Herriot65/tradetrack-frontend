@@ -2,6 +2,7 @@
 
 import api from "./axios";
 import axios from "axios";
+import { requireUser } from "./responseValidation";
 import { cookieRequest, hasPendingLogout, setPendingLogout } from "./session";
 import {
   broadcastLogout,
@@ -33,6 +34,8 @@ export const loginUser = async (credentials) => {
   );
 
   const { access, user } = response.data;
+  requireUser(user);
+  if (typeof access !== "string" || !access) throw new Error("Invalid session response");
 
   setPendingLogout(false);
   clearTokens();
@@ -67,7 +70,7 @@ export const getCurrentUser = async (config = {}) => {
   const response = await withConnectionRetry(
     () => api.get("/auth/me/", { timeout: 15000, ...config }), config.signal
   );
-  return response.data;
+  return requireUser(response.data);
 };
 
 /* =========================
@@ -84,6 +87,8 @@ export const registerUser = async (userData) => {
 
 export const googleLoginUser = async (credential, remember_me = false) => {
   const { data } = await cookieRequest("/auth/google/", { credential, remember_me });
+  requireUser(data.user);
+  if (typeof data.access !== "string" || !data.access) throw new Error("Invalid session response");
   clearTokens();
   setPendingLogout(false);
   setTokens(data.access);

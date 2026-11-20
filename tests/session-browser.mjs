@@ -17,7 +17,6 @@ const manage = (...args) => execFileSync(python, ['manage.py', ...args], { cwd: 
 let processBackend, server, browser;
 try {
   manage('migrate', '--noinput');
-  manage('shell', '-c', `from users.models import User; User.objects.create_user(email='${email}', password='${password}', first_name='Session')`);
   processBackend = spawn(python, ['manage.py', 'runserver', '127.0.0.1:18887', '--noreload'], { cwd: backend, env, stdio: 'ignore' });
   for (let attempt = 0; ; attempt++) {
     try { if ((await fetch(`${apiOrigin}/api/auth/csrf/`)).ok) break; } catch { /* Startup. */ }
@@ -27,11 +26,23 @@ try {
   server = await preview({ preview: { host: '127.0.0.1', port: 4197, strictPort: true, proxy: { '/api': apiOrigin } } });
   browser = await chromium.launch({ headless: true, ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : { channel: 'chrome' }) });
   const context = await browser.newContext();
+  if (process.env.NEXORA_TEST_DESIGN === '3d') {
+    await context.addInitScript(() => localStorage.setItem('nexora-design', '3d'));
+  }
   const page = await context.newPage();
   page.setDefaultTimeout(15000);
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.goto(`${origin}/login`);
+  await page.goto(`${origin}/register`);
+  await page.getByLabel('Email', { exact: true }).fill(email);
+  await page.getByLabel('First name', { exact: true }).fill('Session');
+  await page.getByLabel('Last name', { exact: true }).fill('Test');
+  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByLabel('Confirm password', { exact: true }).fill(password);
+  const registered = page.waitForResponse(response => response.url().endsWith('/auth/register/') && response.status() === 201);
+  await page.getByRole('button', { name: 'Create account', exact: true }).click();
+  await registered;
+  await page.waitForURL(`${origin}/login`);
   async function signIn(remember = false) {
     await page.getByLabel('Email', { exact: true }).fill(email);
     await page.getByLabel('Password', { exact: true }).fill(password);
@@ -105,7 +116,7 @@ try {
   await page.reload();
   await page.getByText('Your session has expired. Please sign in again to continue.', { exact: true }).waitFor();
   assert.deepEqual(errors, []);
-  console.log('PASS: real API login, CSRF, memory-only access, HttpOnly cookies, Remember me, reload, multi-tab rotation/sign-out, immediate revocation, identity confirmation and failed logout recovery.');
+  console.log('PASS: real API signup and login, CSRF, memory-only access, HttpOnly cookies, Remember me, reload, multi-tab rotation/sign-out, immediate revocation, identity confirmation and failed logout recovery.');
 } finally {
   await browser?.close();
   await server?.close();
