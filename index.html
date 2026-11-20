@@ -5,7 +5,9 @@
     <script>
       // Apply the preference before the first paint.
       (() => {
-        let theme;
+        let theme, design;
+        try { design = localStorage.getItem("nexora-design"); } catch { /* Storage is optional. */ }
+        document.documentElement.dataset.design = design === "3d" ? "3d" : "classic";
         try { theme = localStorage.getItem("nexora-theme"); } catch { /* Storage is optional. */ }
         const resolved = theme === "light" || theme === "dark"
           ? theme

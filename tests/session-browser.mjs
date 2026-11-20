@@ -26,6 +26,9 @@ try {
   server = await preview({ preview: { host: '127.0.0.1', port: 4197, strictPort: true, proxy: { '/api': apiOrigin } } });
   browser = await chromium.launch({ headless: true, ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : { channel: 'chrome' }) });
   const context = await browser.newContext();
+  if (process.env.NEXORA_TEST_DESIGN === '3d') {
+    await context.addInitScript(() => localStorage.setItem('nexora-design', '3d'));
+  }
   const page = await context.newPage();
   page.setDefaultTimeout(15000);
   const errors = [];

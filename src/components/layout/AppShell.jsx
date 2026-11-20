@@ -255,7 +255,7 @@ export default function AppShell({ children }) {
             </DropdownMenu>
           </div>
         </header>
-        <main id="main-content" className="nx-page">
+        <main id="main-content" className="nx-page nx-motion-page">
           {children}
         </main>
       </div>

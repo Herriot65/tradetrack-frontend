@@ -2,7 +2,9 @@ import { getLanguage, translate as t } from "@/i18n/language";
 import { useLanguage } from "@/i18n/useLanguage";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { BookOpen, ChevronRight, Plus, Trash2, Layers3, FlaskConical, Sparkles, ArrowUpRight } from "lucide-react";
+import DepthScene from "@/components/motion/DepthScene";
+import { useDesign } from "@/lib/design";
 
 import { useAuth } from "@/auth/useAuth";
 import { useJournal } from "@/journals/useJournal";
@@ -26,11 +28,12 @@ const JOURNAL_TYPE_LABEL = {
 
 function JournalCard({ journal, onDelete, onOpen }) {
   useLanguage();
+  const [design] = useDesign();
   const typeLabel = JOURNAL_TYPE_LABEL[journal.journalType] ?? "Journal";
   return (
-    <article className="nx-surface group relative overflow-hidden p-5 transition-colors hover:border-primary/25">
+    <article className="nx-surface nx-account-card group relative overflow-hidden p-5 transition-colors hover:border-primary/25">
       <div className="mb-6 flex items-center justify-between">
-        <span className="flex size-10 items-center justify-center rounded-xl border border-primary/15 bg-primary/[0.07] text-primary">
+        <span className="nx-account-icon flex size-10 items-center justify-center rounded-xl border border-primary/15 bg-primary/[0.07] text-primary">
           <BookOpen className="size-[18px]" />
         </span>
         <button
@@ -67,14 +70,17 @@ function JournalCard({ journal, onDelete, onOpen }) {
           <dd className="mt-1 text-[12px] text-zinc-300">{journal.currency || "—"}</dd>
         </div>
       </dl>
+      {design === "3d" && <button type="button" onClick={onOpen} className="nx-open-account"><span>{t("Open journal")}</span><ArrowUpRight className="size-4" /></button>}
     </article>
   );
 }
 
 function OnboardingHero({ userName, onCreateClick }) {
   useLanguage();
+  const [design] = useDesign();
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
+    <div className="nx-onboarding flex flex-col items-center justify-center py-20 text-center">
+      {design === "3d" && <div className="nx-onboarding-depth"><DepthScene /></div>}
       {/* Icon */}
       <div className="mb-6 flex size-16 items-center justify-center rounded-2xl bg-emerald-500/10 ring-1 ring-emerald-500/20">
         <BookOpen className="size-7 text-emerald-400" />
@@ -124,6 +130,8 @@ function OnboardingHero({ userName, onCreateClick }) {
 
 export default function Dashboard() {
   useLanguage();
+  const [design] = useDesign();
+  const immersive = design === "3d";
   const navigate = useNavigate();
   const { user } = useAuth();
   const { journals, loading, createJournal, deleteJournal } = useJournal();
@@ -158,16 +166,21 @@ export default function Dashboard() {
       <div className="space-y-8">
         {/* Page header — only shown when journals exist */}
         {(loading || hasJournals) && (
-          <div className="nx-page-header">
+          <div className={`nx-page-header${immersive ? " nx-accounts-hero" : ""}`}>
             <div>
-              <p className="nx-eyebrow mb-3">{t("Your trading workspace")}</p>
+              <p className={immersive ? "nx-hero-tag" : "nx-eyebrow mb-3"}>{immersive && <span />}{t("Your trading workspace")}</p>
+              {immersive && <p className="nx-welcome">{user?.first_name ? t("Welcome back, {name}.", { name: user.first_name }) : t("Welcome back.")}</p>}
               <h1 className="nx-page-title">
                 {t("Trading accounts")}
               </h1>
               <p className="nx-subtitle">{t("Choose an account to review your performance or manage your trades.")}</p>
+              {immersive && <div className="nx-hero-actions">
+                <Button onClick={() => setCreateOpen(true)}><Plus className="size-4" />{t("New Journal")}</Button>
+                <Button variant="ghost" onClick={() => navigate("/coach")}><Sparkles className="size-4" />{t("AI Coach")}<ArrowUpRight className="size-3.5" /></Button>
+              </div>}
             </div>
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus className="size-4" />{t("New Journal")}</Button>
+            {immersive ? <DepthScene /> : <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />{t("New Journal")}</Button>}
           </div>
         )}
 
@@ -188,8 +201,11 @@ export default function Dashboard() {
         {/* Journal grid — shown only when journals exist */}
         {hasJournals && (
           <div>
+            {immersive && <div className="nx-workspace-stats">
+              {[[Layers3, "Total accounts", journals.length], [BookOpen, "Trading accounts", journals.filter(j => j.journalType === "trading").length], [FlaskConical, "Backtest accounts", journals.filter(j => j.journalType === "backtest").length]].map(([Icon, label, value]) => <div key={label}><span className="nx-stat-icon"><Icon className="size-4" /></span><div><p>{t(label)}</p><strong>{value}</strong></div></div>)}
+            </div>}
             <h2 className="nx-eyebrow mb-4 !text-muted-foreground">{t("Your Journals")}</h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="nx-account-grid grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {journals.map((j) => (
                 <div key={j.id}>
                   <JournalCard
@@ -199,6 +215,7 @@ export default function Dashboard() {
                   />
                 </div>
               ))}
+              {immersive && <button type="button" className="nx-new-account" onClick={() => setCreateOpen(true)}><span><Plus className="size-5" /></span><strong>{t("New Journal")}</strong><p>{t("Set your starting capital, currency, and break-even method.")}</p></button>}
             </div>
           </div>
         )}
