@@ -5,7 +5,7 @@ import { useDesign } from "@/lib/design";
 export default function ProductPreview() {
   useLanguage();
   const [design] = useDesign();
-  const immersive = design === "3d";
+  const immersive = design !== "classic";
   return (
     <figure className="nx-product-preview overflow-hidden rounded-2xl border border-zinc-700/70 bg-card shadow-2xl shadow-black/30">
       <img

@@ -2,6 +2,7 @@
 export default {
   "Design": "Design",
   "Classic": "Classique",
+  "Graphite": "Graphite",
   "Color mode": "Mode de couleur",
   "Play animation": "Lire l’animation",
   "Pause animation": "Mettre l’animation en pause",

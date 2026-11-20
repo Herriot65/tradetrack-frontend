@@ -7,7 +7,7 @@
       (() => {
         let theme, design;
         try { design = localStorage.getItem("nexora-design"); } catch { /* Storage is optional. */ }
-        document.documentElement.dataset.design = design === "classic" ? "classic" : "3d";
+        document.documentElement.dataset.design = ["classic", "3d", "graphite"].includes(design) ? design : "3d";
         try { theme = localStorage.getItem("nexora-theme"); } catch { /* Storage is optional. */ }
         const resolved = theme === "light" || theme === "dark"
           ? theme
