@@ -252,14 +252,17 @@ by this test.
 
 ## Production API region
 
-The Theme menu offers **Classic** and **3D** designs independently of
+The Theme menu offers **Classic**, **3D**, and **Graphite** designs independently of
 **Light**, **Dark**, or **System** color mode. It is available on the landing
 page (including mobile), login/signup pages, the workspace header, and account
-settings. 3D is the default; an explicit Classic choice is retained. The design is saved in this browser and
+settings. 3D is the default; explicit Classic and Graphite choices are retained. The design is saved in this browser and
 updates other open tabs without changing account data or clearing forms.
 3D uses the scenes and visual styles from `experiment/nezora-3d-motion`, scoped
 to that design; reduced-motion preferences and the landing scene's pause control
 are respected. Run `npm run test:design` for the browser regression checks.
+Graphite shares the 3D landing page and depth scenes, with neutral graphite
+workspace surfaces and green controls. The original 3D design retains its
+green-tinted workspace surfaces; Classic keeps the original flat layout.
 
 Vercel builds pin `VITE_API_BASE_URL` to `/api` in the
 `buildCommand` in `vercel.json`, and proxy `/api/*` to the Frankfurt backend.

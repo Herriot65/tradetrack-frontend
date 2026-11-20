@@ -19,7 +19,7 @@ export default function AuthLayout({ children }) {
           </span>
         </Link>
         <div className="nx-auth-story-copy relative my-16 max-w-md">
-          {design === "3d" && <div className="nx-auth-depth"><DepthScene /></div>}
+          {design !== "classic" && <div className="nx-auth-depth"><DepthScene /></div>}
           <p className="nx-eyebrow mb-6">{t("The journal behind your edge")}</p>
           <h2 className="text-[clamp(36px,4vw,58px)] font-medium leading-[1.07] tracking-[-0.055em]">{t("Better decisions")}<br />{t("start with a")}<br />
             <span className="text-primary">{t("clearer picture.")}</span>
