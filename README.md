@@ -255,7 +255,7 @@ by this test.
 The Theme menu offers **Classic** and **3D** designs independently of
 **Light**, **Dark**, or **System** color mode. It is available on the landing
 page (including mobile), login/signup pages, the workspace header, and account
-settings. Classic remains the default. The design is saved in this browser and
+settings. 3D is the default; an explicit Classic choice is retained. The design is saved in this browser and
 updates other open tabs without changing account data or clearing forms.
 3D uses the scenes and visual styles from `experiment/nezora-3d-motion`, scoped
 to that design; reduced-motion preferences and the landing scene's pause control

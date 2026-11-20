@@ -23,7 +23,8 @@ try {
  const page=await context.newPage();page.setDefaultTimeout(15000);
  const choose=async(target,label)=>{await target.getByRole('button',{name:'Theme',exact:true}).click();await target.getByRole('menuitemradio',{name:label,exact:true}).click();};
  const design=async(target,value)=>target.waitForFunction(value=>document.documentElement.dataset.design===value,value);
- await page.goto(origin);await design(page,'classic');
+ await page.goto(origin);await design(page,'3d');await page.locator('.nx-immersive-scene').waitFor();
+ await choose(page,'Classic');await design(page,'classic');
  const classic=await page.locator('h1').evaluate(el=>({size:getComputedStyle(el).fontSize,color:getComputedStyle(el).color}));
  assert.equal(await page.locator('.nx-immersive-scene').count(),0);
  await choose(page,'3D');await design(page,'3d');await page.locator('.nx-immersive-scene').waitFor();
@@ -39,6 +40,7 @@ try {
  await page.locator('.nx-immersive-scene').waitFor({state:'detached'});
  assert.deepEqual(await page.locator('h1').evaluate(el=>({size:getComputedStyle(el).fontSize,color:getComputedStyle(el).color})),classic,'Classic styling is restored after switching back');
  await page.screenshot({animations:'disabled',path:'artifacts/design/landing-classic.png'});
+ await page.reload();await design(page,'classic');assert.equal(await page.locator('.nx-immersive-scene').count(),0,'saved Classic choice survives reload');
  // Switching design does not remount a sign-in form or clear its values.
  await page.goto(origin+'/login');await page.getByLabel('Email',{exact:true}).fill('draft@example.test');
  await page.getByLabel('Password',{exact:true}).fill('Unsubmitted-draft-123!');
@@ -68,7 +70,7 @@ try {
  // Invalid or unavailable storage still permits an in-memory design choice.
  for(const blocked of [false,true]){
   const c=await browser.newContext();await c.addInitScript(blocked=>{if(blocked){Storage.prototype.getItem=()=>{throw Error('Unavailable')};Storage.prototype.setItem=()=>{throw Error('Unavailable')};}else localStorage.setItem('nexora-design','invalid');},blocked);
-  await c.route('**/api/**',r=>r.fulfill({status:401,json:{detail:'Not authenticated'}}));const p=await c.newPage();await p.goto(origin);await design(p,'classic');await choose(p,'3D');await p.locator('.nx-immersive-scene').waitFor();await c.close();
+  await c.route('**/api/**',r=>r.fulfill({status:401,json:{detail:'Not authenticated'}}));const p=await c.newPage();await p.goto(origin);await design(p,'3d');await p.locator('.nx-immersive-scene').waitFor();await choose(p,'Classic');await design(p,'classic');await choose(p,'3D');await p.locator('.nx-immersive-scene').waitFor();await c.close();
  }
  console.log('PASS: Classic/3D switching, color modes, reload, cross-tab sync, mobile, reduced motion, draft retention, portal styling and unavailable storage.');
 } finally {await browser?.close();await server.close();}

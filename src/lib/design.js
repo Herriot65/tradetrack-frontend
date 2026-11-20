@@ -2,10 +2,10 @@ import { useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "nexora-design";
 const listeners = new Set();
-const normalize = value => value === "3d" ? "3d" : "classic";
+const normalize = value => value === "classic" ? "classic" : "3d";
 function readDesign() {
   try { return normalize(localStorage.getItem(STORAGE_KEY)); }
-  catch { return "classic"; }
+  catch { return "3d"; }
 }
 let design = readDesign();
 function notify() {
