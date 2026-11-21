@@ -5,6 +5,7 @@ import "./styles/immersive/theme.css";
 import "./styles/immersive/motion.css";
 import "./styles/immersive/workspace.css";
 import "./styles/immersive/landing.css";
+import "./styles/immersive/workspace-palette.css";
 import "./lib/theme";
 import "./lib/design";
 

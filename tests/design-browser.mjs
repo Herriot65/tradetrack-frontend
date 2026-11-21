@@ -45,6 +45,7 @@ try {
  await page.goto(origin+'/login');await page.getByLabel('Email',{exact:true}).fill('draft@example.test');
  await page.getByLabel('Password',{exact:true}).fill('Unsubmitted-draft-123!');
  await choose(page,'3D');assert.equal(await page.getByLabel('Email',{exact:true}).inputValue(),'draft@example.test');assert.equal(await page.getByLabel('Password',{exact:true}).inputValue(),'Unsubmitted-draft-123!');
+ await choose(page,'Graphite');await design(page,'graphite');assert.equal(await page.getByLabel('Email',{exact:true}).inputValue(),'draft@example.test');assert.equal(await page.getByLabel('Password',{exact:true}).inputValue(),'Unsubmitted-draft-123!');
  await choose(page,'Classic');assert.equal(await page.getByLabel('Email',{exact:true}).inputValue(),'draft@example.test');
  // Reduced motion and mobile access both work with the original 3D scene.
  await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});await page.goto(origin);await choose(page,'3D');
@@ -53,17 +54,30 @@ try {
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
  assert.equal(await page.locator('.nx-orbit-system').evaluate(el=>getComputedStyle(el).animationName),'none');
  await page.screenshot({animations:'disabled',path:'artifacts/design/mobile-3d.png'});
+ await choose(page,'Graphite');await design(page,'graphite');await page.locator('.nx-immersive-scene').waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await choose(page,'3D');
  // Verified account routes keep the same data, form state and portal theme.
  signedIn=true;await page.setViewportSize({width:1440,height:1000});await page.goto(origin+'/dashboard');
  await page.getByRole('heading',{name:'Trading accounts',exact:true}).waitFor();await page.locator('.nx-depth-scene').waitFor();
  await page.getByRole('button',{name:'Theme',exact:true}).click();assert.equal(await page.getByRole('menuitemradio',{name:'3D',exact:true}).getAttribute('aria-checked'),'true');await page.keyboard.press('Escape');
  await page.screenshot({animations:'disabled',path:'artifacts/design/dashboard-3d.png'});
+ const atmosphere=()=>page.locator('.nx-shell').evaluate(el=>getComputedStyle(el).backgroundImage);
+ assert.match(await atmosphere(),/radial-gradient/, '3D retains its original tinted workspace');
+ await choose(page,'Graphite');await design(page,'graphite');assert.equal(await atmosphere(),'none, none','Graphite has neutral workspace surfaces');
+ await page.reload();await page.getByRole('heading',{name:'Trading accounts',exact:true}).waitFor();await design(page,'graphite');
+ assert.equal(await page.evaluate(()=>localStorage.getItem('nexora-design')),'graphite');
+ await page.getByRole('button',{name:'Theme',exact:true}).click();
+ for(const name of ['Classic','3D','Graphite'])assert.equal(await page.getByRole('menuitemradio',{name,exact:true}).count(),1);
+ assert.equal(await page.getByRole('menuitemradio',{name:'Graphite',exact:true}).getAttribute('aria-checked'),'true');
+ await page.screenshot({animations:'disabled',path:'artifacts/design/graphite-theme-menu.png'});await page.keyboard.press('Escape');
+ for(const mode of ['Dark','Light','System']){await choose(page,mode);await design(page,'graphite');assert.equal(await atmosphere(),'none, none');}
+ await choose(page,'3D');assert.match(await atmosphere(),/radial-gradient/);
  await choose(page,'Classic');assert.equal(await page.locator('.nx-depth-scene').count(),0);assert.equal(await page.getByRole('button',{name:'Design journal',exact:true}).count(),1);
  await page.getByRole('button',{name:'New Journal',exact:true}).last().click();
  const dialog=page.getByRole('dialog');await dialog.waitFor();
  const input=dialog.locator('input').first();await input.fill('Keep this draft');
  await choose(second,'3D');await design(page,'3d');assert.equal(await input.inputValue(),'Keep this draft');
  assert.equal(await dialog.evaluate(el=>getComputedStyle(el).backgroundImage!=='none'),true,'body-mounted dialog receives 3D styling');
+ await choose(second,'Graphite');await design(page,'graphite');assert.equal(await input.inputValue(),'Keep this draft');assert.equal(await dialog.evaluate(el=>getComputedStyle(el).backgroundImage.includes('255, 255, 255')),true,'Graphite reaches body-mounted dialogs');
  await choose(second,'Classic');await design(page,'classic');assert.equal(await input.inputValue(),'Keep this draft');
  assert.deepEqual(mutations.filter(path=>path!=='/api/auth/refresh/'),[],'design changes never write account or trade data');assert.deepEqual(errors,[]);
  await context.close();
@@ -72,5 +86,5 @@ try {
   const c=await browser.newContext();await c.addInitScript(blocked=>{if(blocked){Storage.prototype.getItem=()=>{throw Error('Unavailable')};Storage.prototype.setItem=()=>{throw Error('Unavailable')};}else localStorage.setItem('nexora-design','invalid');},blocked);
   await c.route('**/api/**',r=>r.fulfill({status:401,json:{detail:'Not authenticated'}}));const p=await c.newPage();await p.goto(origin);await design(p,'3d');await p.locator('.nx-immersive-scene').waitFor();await choose(p,'Classic');await design(p,'classic');await choose(p,'3D');await p.locator('.nx-immersive-scene').waitFor();await c.close();
  }
- console.log('PASS: Classic/3D switching, color modes, reload, cross-tab sync, mobile, reduced motion, draft retention, portal styling and unavailable storage.');
+ console.log('PASS: Classic/3D/Graphite switching, distinct workspace palettes, color modes, reload, cross-tab sync, mobile, reduced motion, draft retention, portal styling and unavailable storage.');
 } finally {await browser?.close();await server.close();}
