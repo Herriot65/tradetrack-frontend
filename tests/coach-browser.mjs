@@ -30,7 +30,7 @@ try {
       if (failNextChat === "server-html") { failNextChat = false; return route.fulfill({status:500, headers, contentType:"text/html", body:"<html><head><title>Internal Server Error</title></head><body>Internal Server Error</body></html>"}); }
       if (failNextChat) { const error = typeof failNextChat === "object" ? failNextChat : {detail:"Provider unavailable"}; failNextChat = false; return reply(503, error); }
       if (holdChat) { await new Promise(resolve => { releaseChat = resolve; heldReady?.(); }); holdChat = false; }
-      return reply(200, { output: "Your recorded mistakes include entering early. What would help you wait for confirmation?", evidence: [{ id: 7, symbol: "EURUSD" }], screenshots_analyzed: 0 });
+      return reply(200, { scope: {period:"custom",start_date:"2026-11-01",end_date:"2026-11-07",trade_status:"all",label:"2026-11-01 – 2026-11-07 · All trades · America/New_York"}, output: "Your recorded mistakes include entering early. What would help you wait for confirmation?", evidence: [{ id: 7, symbol: "EURUSD" }], screenshots_analyzed: 0 });
     }
     if (path.endsWith("/trades/")) return reply(200, {count:1, next:null, results:[{id:7,asset:{symbol:"EURUSD"},side:"BUY",pnl_r:"-1",entry_datetime:"2026-11-06T12:00:00Z"}]});
     if (path.endsWith("/trades/7/")) return reply(200, { id: 7, asset: { symbol: "EURUSD" }, side: "BUY", pnl_r: "-1", entry_datetime: "2026-11-06T12:00:00Z", notes: "Old note mirror", notes_document: { version: 1, general: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Entered before confirmation", marks: [{ type: "bold" }] }] }] }, sections: [{ id: "after", title: "After entry", content: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Wait for a clear signal next time" }] }] } }] }, screenshots: [] });
@@ -141,6 +141,7 @@ try {
   assert.equal(await page.getByText("<html>",{exact:false}).count(),0);
   await page.getByRole("button",{name:"Try again",exact:true}).click();
   await page.waitForFunction(() => document.getElementById("coach-prompt").value === "" && !document.getElementById("coach-prompt").disabled);
+  assert.equal(chatPayload.previous_scope?.start_date, "2026-11-01");
   // A slow response can be abandoned without losing the draft.
   holdChat = true;
   const requestHeld = new Promise(resolve => { heldReady = resolve; });
@@ -225,10 +226,18 @@ try {
     await page.getByRole("button",{name:"Done",exact:true}).click();
     await page.getByLabel("Ask your coach",{exact:true}).fill("First line");
     const beforeEnter = chatRequests;
-    await page.getByLabel("Ask your coach",{exact:true}).press("Enter");
+    await page.getByLabel("Ask your coach",{exact:true}).press("Shift+Enter");
     await page.getByLabel("Ask your coach",{exact:true}).pressSequentially("Second line");
     assert.equal(await page.getByLabel("Ask your coach",{exact:true}).inputValue(),"First line\nSecond line");
-    assert.equal(chatRequests,beforeEnter,"Phone Enter adds a line instead of sending");
+    assert.equal(chatRequests,beforeEnter,"Shift+Enter adds a line instead of sending");
+    await page.getByLabel("Ask your coach",{exact:true}).press("Enter");
+    await page.waitForFunction(() => document.getElementById("coach-prompt").value === "" && !document.getElementById("coach-prompt").disabled);
+    assert.equal(chatRequests, beforeEnter + 1, "Enter sends exactly once, including on touch devices");
+
+    await page.getByLabel("Analysis scope").first().waitFor();
+    await page.getByRole("button", {name:"Conversation actions",exact:true}).click();
+    await page.getByRole("menuitem", {name:"New chat",exact:true}).click();
+    await page.getByRole("button", {name:"Start new chat",exact:true}).click();
   }
   await page.getByLabel("Ask your coach",{exact:true}).fill("");
   await page.setViewportSize({width:390,height:844});

@@ -131,11 +131,11 @@ function CoachWorkspace({ journal, accountTimezone }) {
     const sentConfiguration = structuredClone(configuration);
     setInput(instruction); setPendingPrompt(instruction); setError(""); setNotice(""); setBusy(true);
     try {
-      const response = await askCoach(journal.id, { instructions: instruction, configuration: sentConfiguration, history: messages.slice(-12).map(({ role, content }) => ({ role, content: content.slice(0, 8000) })) }, request.signal);
+      const response = await askCoach(journal.id, { instructions: instruction, configuration: sentConfiguration, previous_scope: messages.findLast(message => message.scope)?.scope || null, history: messages.slice(-12).map(({ role, content }) => ({ role, content: content.slice(0, 8000) })) }, request.signal);
       if (!mounted.current || request.signal.aborted || controller.current !== request) return;
       setStatus(previous => ({ ...previous, configured: true }));
       setStatusError("");
-      setMessages(previous => [...previous, { role: "user", content: instruction, configuration: sentConfiguration }, { role: "assistant", content: response.output, evidence: response.evidence, screenshots: response.screenshots_analyzed }]);
+      setMessages(previous => [...previous, { role: "user", content: instruction, configuration: sentConfiguration }, { role: "assistant", content: response.output, evidence: response.evidence, screenshots: response.screenshots_analyzed, scope: response.scope }]);
       setInput("");
     } catch (err) { if (mounted.current && !request.signal.aborted) setError(apiError(err)); }
     finally {
@@ -156,7 +156,7 @@ function CoachWorkspace({ journal, accountTimezone }) {
     setNotice("Stopped waiting. Your question is still here. The current request may still finish on the server.");
   }
   function downloadChat() {
-    const text = [`Nexora Coach — ${journal.name}`, `Downloaded ${formatDate(new Date())} (${accountTimezone})`, "", ...messages.flatMap(message => [message.role === "user" ? "You" : "Nexora Coach", message.content, message.configuration ? scopeSummary(message.configuration) : "", ""])].join("\n");
+    const text = [`Nexora Coach — ${journal.name}`, `Downloaded ${formatDate(new Date())} (${accountTimezone})`, "", ...messages.flatMap(message => [message.role === "user" ? "You" : "Nexora Coach", message.content, message.scope?.label || "", ""])].join("\n");
     const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
     const link = document.createElement("a"); link.href = url; link.download = `coaching-conversation-${localDate(accountTimezone)}.txt`;
     link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -203,7 +203,7 @@ function CoachWorkspace({ journal, accountTimezone }) {
     {tab === "chat" ? <section data-conversation={messages.length > 0 || busy} className="coach-chat nx-surface flex h-[calc(100dvh-210px)] min-h-[520px] min-w-0 flex-col overflow-hidden">
         <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-2">
           <Button variant="ghost" size="sm" className="h-auto min-w-0 justify-start text-xs text-muted-foreground" disabled={busy} onClick={() => setOptionsOpen(true)} aria-label="Analysis settings">
-            <Settings2 className="shrink-0" /><span className="truncate">{scopeSummary(configuration)}{configuration.screenshots ? " · Screenshots" : ""}</span>
+            <Settings2 className="shrink-0" /><span className="truncate">{selectedTrade ? scopeSummary(configuration) : "Analysis preferences"}{configuration.screenshots ? " · Screenshots" : ""}</span>
           </Button>
           {messages.length > 0 && <DropdownMenu>
             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm" aria-label="Conversation actions"><MoreHorizontal /></Button></DropdownMenuTrigger>
@@ -230,7 +230,7 @@ function CoachWorkspace({ journal, accountTimezone }) {
           {selectedTrade && <div className="mb-2 flex"><button type="button" disabled={busy} className="flex min-w-0 items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-xs text-primary" onClick={clearTrade} aria-label="Clear selected trade"><span className="truncate">{selectedTrade.asset?.symbol || selectedTrade.asset} · Trade #{selectedTrade.id}</span><X className="size-3.5 shrink-0" /></button></div>}
           <form onSubmit={event => { event.preventDefault(); send(); }}>
             <label className="sr-only" htmlFor="coach-prompt">Ask your coach</label>
-            <textarea ref={promptRef} id="coach-prompt" className="min-h-16 max-h-40 w-full resize-y rounded-lg bg-transparent p-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/30 disabled:opacity-60" rows={2} maxLength={4000} disabled={busy} placeholder="Ask about your trading…" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && window.matchMedia("(min-width: 640px) and (hover: hover) and (pointer: fine)").matches) { event.preventDefault(); send(); } }} />
+            <textarea ref={promptRef} id="coach-prompt" className="min-h-16 max-h-40 w-full resize-y rounded-lg bg-transparent p-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/30 disabled:opacity-60" rows={2} maxLength={4000} disabled={busy} placeholder="Ask about your trading…" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); send(); } }} />
             <div className="flex flex-wrap items-center justify-between gap-2">
               <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => setPickerOpen(true)}><Plus />{selectedTrade ? "Change trade" : "Choose a trade"}</Button>
               {busy ? <Button type="button" variant="outline" size="sm" onClick={stopWaiting}><Square />Stop waiting</Button> : <Button type="submit" size="icon-sm" aria-label="Send message" disabled={!input.trim()}><ArrowUp /></Button>}
