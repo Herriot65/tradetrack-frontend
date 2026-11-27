@@ -62,6 +62,7 @@ export const apiError = (error) => {
   if (error?.response?.status === 503) return "Your coach is temporarily unavailable. Your question is still here—please try again shortly.";
   if (error?.code === "ECONNABORTED") return "This is taking longer than expected. Your question is still here; try a narrower question or a shorter period.";
   const data = error?.response?.data;
+  if (typeof data === "string") return "The coach's server couldn't finish this request. Your question is still here; please try again shortly.";
   if (!data) return "We couldn't connect. Check your connection and try again.";
   if (typeof data.detail === "string") return data.detail;
   function messages(value) { return typeof value === "string" ? [value] : Array.isArray(value) ? value.flatMap(messages) : value && typeof value === "object" ? Object.values(value).flatMap(messages) : []; }
