@@ -13,3 +13,4 @@ const requireCoachSettings = (data) => {
 };
 export const getCoachSettings = async (signal) => requireCoachSettings((await api.get("/auth/coach-settings/", { signal })).data);
 export const saveCoachSettings = async (payload) => requireCoachSettings((await api.patch("/auth/coach-settings/", payload)).data);
+export const testCoachConnection = async () => (await api.post("/auth/coach-settings/connection-test/", {}, { timeout: 20000 })).data;

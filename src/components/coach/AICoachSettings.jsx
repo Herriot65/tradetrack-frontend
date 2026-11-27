@@ -4,7 +4,7 @@ import { useLanguage } from "@/i18n/useLanguage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import SelectField from "@/components/ui/select-field";
-import { getCoachSettings, saveCoachSettings } from "@/api/coach.api";
+import { getCoachSettings, saveCoachSettings, testCoachConnection } from "@/api/coach.api";
 
 const MODEL_SUGGESTIONS = {
   openai: ["gpt-4.1-mini", "gpt-4.1"],
@@ -31,6 +31,8 @@ export default function AICoachSettings() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -56,6 +58,7 @@ export default function AICoachSettings() {
     setApiKey("");
     setError("");
     setNotice("");
+    setTestResult(null);
   }
 
   async function save(event, removeKey = false) {
@@ -72,6 +75,7 @@ export default function AICoachSettings() {
       setModel(provider === "server" ? data.server_model : data.providers.find(item => item.id === provider)?.model || "");
       setApiKey("");
       setNotice(t(removeKey ? "Saved API key removed." : "AI Coach settings saved."));
+      setTestResult(null);
       window.dispatchEvent(new Event("coach:settings-changed"));
     } catch (failure) {
       setError(errorMessage(failure));
@@ -108,8 +112,15 @@ export default function AICoachSettings() {
         <p className="text-xs text-muted-foreground">{dirty ? t("Save to apply your changes.") : t(hasKey ? "API key configured." : "No API key configured for this provider.")}</p>
         <div className="flex flex-wrap gap-2">
           <Button type="submit" disabled={busy || !dirty}>{t(busy ? "Saving…" : "Save AI settings")}</Button>
+          {provider !== "server" && <Button type="button" variant="outline" disabled={busy || testing || dirty || !selected?.has_key} onClick={async () => {
+            setTesting(true); setError(""); setTestResult(null);
+            try { setTestResult(await testCoachConnection()); }
+            catch { setTestResult({ ok: false, message: t("Connection test could not reach the backend. Try again shortly.") }); }
+            finally { setTesting(false); }
+          }}>{t(testing ? "Testing connection…" : "Test connection")}</Button>}
           {provider !== "server" && selected?.has_key && <Button type="button" variant="outline" onClick={event => save(event, true)}>{t("Remove saved key")}</Button>}
         </div>
+        {testResult && <p role={testResult.ok ? "status" : "alert"} className={`text-sm ${testResult.ok ? "text-primary" : "text-destructive"}`}>{t(testResult.message)}</p>}
       </fieldset>
     </form> : <Button type="button" variant="outline" onClick={() => { setLoading(true); setLoadVersion(value => value + 1); }}>{t("Try again")}</Button>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
