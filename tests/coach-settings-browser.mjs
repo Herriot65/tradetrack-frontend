@@ -93,7 +93,8 @@ try {
   for (const width of [1280, 390, 320]) {
     await page.setViewportSize({ width, height: 1000 });
     await dialog.getByLabel("AI model", { exact: true }).scrollIntoViewIfNeeded();
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
+    await page.screenshot({ path: `artifacts/coach-settings/settings-${width}.png` });
+    await page.waitForFunction(() => document.documentElement.scrollWidth <= innerWidth + 1, null, { timeout: 3000 });
     await page.screenshot({ path: `artifacts/coach-settings/settings-${width}.png` });
   }
   await dialog.getByRole("button", { name: "Remove saved key", exact: true }).click();

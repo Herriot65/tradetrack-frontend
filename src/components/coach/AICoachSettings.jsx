@@ -8,7 +8,7 @@ import { getCoachSettings, saveCoachSettings } from "@/api/coach.api";
 
 const MODEL_SUGGESTIONS = {
   openai: ["gpt-4.1-mini", "gpt-4.1"],
-  gemini: ["gemini-2.5-flash", "gemini-2.5-flash-lite"],
+  gemini: ["gemini-3.5-flash-lite", "gemini-2.5-flash", "gemini-2.5-flash-lite"],
   groq: ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b"],
 };
 const errorMessage = error => {
