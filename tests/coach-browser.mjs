@@ -27,7 +27,7 @@ try {
       chatRequests++;
       if (!configured) return reply(503, {detail:"AI coach is not connected yet. Add the server's AI API key to enable conversations and task runs."});
       chatPayload = request.postDataJSON(); chatJournal = path;
-      if (failNextChat) { failNextChat = false; return reply(503, {detail:"Provider unavailable"}); }
+      if (failNextChat) { const error = typeof failNextChat === "object" ? failNextChat : {detail:"Provider unavailable"}; failNextChat = false; return reply(503, error); }
       if (holdChat) { await new Promise(resolve => { releaseChat = resolve; heldReady?.(); }); holdChat = false; }
       return reply(200, { output: "Your recorded mistakes include entering early. What would help you wait for confirmation?", evidence: [{ id: 7, symbol: "EURUSD" }], screenshots_analyzed: 0 });
     }
@@ -123,6 +123,13 @@ try {
   await page.getByRole("button",{name:"Send message",exact:true}).click();
   await page.getByText("Your coach is temporarily unavailable.",{exact:false}).waitFor();
   assert.equal(await page.getByLabel("Ask your coach",{exact:true}).inputValue(),"Help me follow my risk limit.");
+  await page.getByRole("button",{name:"Try again",exact:true}).click();
+  await page.waitForFunction(() => document.getElementById("coach-prompt").value === "" && !document.getElementById("coach-prompt").disabled);
+  failNextChat = {code:"coach_provider_quota", detail:"Provider quota exhausted"};
+  await page.getByLabel("Ask your coach",{exact:true}).fill("Help me reflect.");
+  await page.getByRole("button",{name:"Send message",exact:true}).click();
+  await page.getByText("The AI provider's quota or rate limit has been reached.",{exact:false}).waitFor();
+  assert.equal(await page.getByLabel("Ask your coach",{exact:true}).inputValue(),"Help me reflect.");
   await page.getByRole("button",{name:"Try again",exact:true}).click();
   await page.waitForFunction(() => document.getElementById("coach-prompt").value === "" && !document.getElementById("coach-prompt").disabled);
   // A slow response can be abandoned without losing the draft.

@@ -48,6 +48,16 @@ export function scheduleSummary(task) {
 }
 export const apiError = (error) => {
   if (error?.response?.status === 429) return "You've reached the request limit for now. Please try again later.";
+  const providerErrors = {
+    coach_provider_auth: "The AI provider rejected the coach's key or permissions. Your message is saved here; the AI connection needs attention.",
+    coach_provider_quota: "The AI provider's quota or rate limit has been reached. Check the API project's quota and billing, then try again.",
+    coach_provider_model: "The coach's selected AI model is unavailable. The AI model configuration needs attention.",
+    coach_provider_region: "The AI provider isn't available from the server's region.",
+    coach_provider_request: "The AI provider couldn't accept the coach's request format. The AI integration needs attention.",
+    coach_provider_timeout: "The AI provider took too long. Try a shorter question or a narrower period.",
+    coach_provider_unavailable: "The AI provider is temporarily unavailable. Your question is still here; try again shortly.",
+  };
+  if (error?.response?.status === 503 && Object.hasOwn(providerErrors, error.response.data?.code)) return providerErrors[error.response.data.code];
   if (error?.response?.status === 503 && error.response.data?.detail?.includes("AI coach is not connected yet")) return "The AI coach isn't connected yet. Your message is still here. Ask your administrator to finish AI setup, then try again.";
   if (error?.response?.status === 503) return "Your coach is temporarily unavailable. Your question is still here—please try again shortly.";
   if (error?.code === "ECONNABORTED") return "This is taking longer than expected. Your question is still here; try a narrower question or a shorter period.";
