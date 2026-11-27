@@ -48,6 +48,7 @@ export function scheduleSummary(task) {
 }
 export const apiError = (error) => {
   if (error?.response?.status === 429) return "You've reached the request limit for now. Please try again later.";
+  if (error?.response?.status === 503 && error.response.data?.detail?.includes("AI coach is not connected yet")) return "The AI coach isn't connected yet. Your message is still here. Ask your administrator to finish AI setup, then try again.";
   if (error?.response?.status === 503) return "Your coach is temporarily unavailable. Your question is still here—please try again shortly.";
   if (error?.code === "ECONNABORTED") return "This is taking longer than expected. Your question is still here; try a narrower question or a shorter period.";
   const data = error?.response?.data;

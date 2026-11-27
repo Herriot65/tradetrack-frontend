@@ -25,6 +25,7 @@ try {
     if (path.endsWith("/coach/chat/")) {
       if (method === "GET") return reply(200, { configured, persistent_memory: false });
       chatRequests++;
+      if (!configured) return reply(503, {detail:"AI coach is not connected yet. Add the server's AI API key to enable conversations and task runs."});
       chatPayload = request.postDataJSON(); chatJournal = path;
       if (failNextChat) { failNextChat = false; return reply(503, {detail:"Provider unavailable"}); }
       if (holdChat) { await new Promise(resolve => { releaseChat = resolve; heldReady?.(); }); holdChat = false; }
@@ -52,7 +53,19 @@ try {
   await page.getByRole("heading", { name: "What would you like to work on?" }).waitFor();
   await page.getByText("Your coach is being set up").waitFor();
   assert.equal(await page.getByRole("button", { name: "Send message" }).isDisabled(), true);
-  configured = true; await page.reload();
+  await page.getByLabel("Ask your coach", {exact:true}).fill("Help me review my trading.");
+  assert.equal(await page.getByRole("button", {name:"Send message"}).isEnabled(), true);
+  await page.getByRole("button", {name:"Send message"}).click();
+  await page.getByText("The AI coach isn't connected yet.", {exact:false}).waitFor();
+  assert.equal(await page.getByLabel("Ask your coach", {exact:true}).inputValue(), "Help me review my trading.");
+  // Once setup finishes, an outdated status must not block retrying the draft.
+  configured = true;
+  await page.getByRole("button", {name:"Try again",exact:true}).click();
+  await page.getByText("Your recorded mistakes include entering early.", {exact:false}).waitFor();
+  await page.getByText("Coach ready", {exact:true}).waitFor();
+  await page.getByRole("button", {name:"Conversation actions",exact:true}).click();
+  await page.getByRole("menuitem", {name:"New chat",exact:true}).click();
+  await page.getByRole("button", {name:"Start new chat",exact:true}).click();
   await page.getByText("Coach ready", { exact: false }).waitFor();
   assert.equal(await page.getByRole("button", {name:"Check my goal progress",exact:true}).count(), 0);
   assert.equal(await page.getByRole("combobox", {name:"Trades to include",exact:true}).count(), 0);

@@ -120,7 +120,7 @@ function CoachWorkspace({ journal, accountTimezone }) {
     setError(""); promptRef.current?.focus();
   }
   async function send(prompt = input) {
-    if (!prompt.trim() || requestBusy.current || !status?.configured) return;
+    if (!prompt.trim() || requestBusy.current) return;
     const invalid = configurationError(configuration);
     if (invalid) { setError(invalid); setOptionsOpen(true); return; }
     requestBusy.current = true;
@@ -131,6 +131,8 @@ function CoachWorkspace({ journal, accountTimezone }) {
     try {
       const response = await askCoach(journal.id, { instructions: instruction, configuration: sentConfiguration, history: messages.slice(-12).map(({ role, content }) => ({ role, content: content.slice(0, 8000) })) }, request.signal);
       if (!mounted.current || request.signal.aborted || controller.current !== request) return;
+      setStatus(previous => ({ ...previous, configured: true }));
+      setStatusError("");
       setMessages(previous => [...previous, { role: "user", content: instruction, configuration: sentConfiguration }, { role: "assistant", content: response.output, evidence: response.evidence, screenshots: response.screenshots_analyzed }]);
       setInput("");
     } catch (err) { if (mounted.current && !request.signal.aborted) setError(apiError(err)); }
@@ -218,7 +220,7 @@ function CoachWorkspace({ journal, accountTimezone }) {
             <div className="coach-ideas flex flex-col items-center gap-2 sm:flex-row sm:flex-wrap sm:justify-center">{COACH_STARTERS.slice(0, moreStarters ? undefined : 3).map((starter, index) => { const Icon = STARTER_ICONS[index]; return <button key={starter.id} className={`${index >= 3 ? "hidden sm:flex" : "flex"} items-center gap-2 rounded-xl border border-border px-3 py-2.5 text-xs transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary`} onClick={() => chooseStarter(starter)}><Icon className="size-3.5 shrink-0 text-muted-foreground" />{starter.title}</button>; })}</div>
             <Button variant="ghost" size="sm" className="mt-3 hidden text-xs text-muted-foreground sm:inline-flex" aria-expanded={moreStarters} onClick={() => setMoreStarters(value => !value)}>{moreStarters ? "Fewer ideas" : "More ideas"}</Button>
           </div>}
-          {messages.map((message, index) => <CoachMessage key={index} message={message} onEvidence={openEvidence} disabled={busy || !status?.configured} onFollowUp={index === lastAssistantIndex ? prompt => { setInput(prompt); promptRef.current?.focus(); } : undefined} onSchedule={index === lastAssistantIndex ? () => setTaskDialog({ seed: { instructions: messages[index - 1]?.content || "", configuration: messages[index - 1]?.configuration || configuration } }) : undefined} />)}
+          {messages.map((message, index) => <CoachMessage key={index} message={message} onEvidence={openEvidence} disabled={busy} onFollowUp={index === lastAssistantIndex ? prompt => { setInput(prompt); promptRef.current?.focus(); } : undefined} onSchedule={index === lastAssistantIndex ? () => setTaskDialog({ seed: { instructions: messages[index - 1]?.content || "", configuration: messages[index - 1]?.configuration || configuration } }) : undefined} />)}
           {busy && <><CoachMessage message={{ role: "user", content: pendingPrompt, configuration }} onEvidence={openEvidence} /><p role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />Your coach is working with your request…</p></>}
           <div ref={bottom} />
         </div>
@@ -229,10 +231,10 @@ function CoachWorkspace({ journal, accountTimezone }) {
             <textarea ref={promptRef} id="coach-prompt" className="min-h-16 max-h-40 w-full resize-y rounded-lg bg-transparent p-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/30 disabled:opacity-60" rows={2} maxLength={4000} disabled={busy} placeholder="Ask about your trading…" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && window.matchMedia("(min-width: 640px) and (hover: hover) and (pointer: fine)").matches) { event.preventDefault(); send(); } }} />
             <div className="flex flex-wrap items-center justify-between gap-2">
               <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => setPickerOpen(true)}><Plus />{selectedTrade ? "Change trade" : "Choose a trade"}</Button>
-              {busy ? <Button type="button" variant="outline" size="sm" onClick={stopWaiting}><Square />Stop waiting</Button> : <Button type="submit" size="icon-sm" aria-label="Send message" disabled={!input.trim() || !status?.configured}><ArrowUp /></Button>}
+              {busy ? <Button type="button" variant="outline" size="sm" onClick={stopWaiting}><Square />Stop waiting</Button> : <Button type="submit" size="icon-sm" aria-label="Send message" disabled={!input.trim()}><ArrowUp /></Button>}
             </div>
           </form>
-          {error && <div role="alert" className="mt-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3"><p className="text-xs leading-5 text-destructive">{error}</p><Button className="mt-2" size="sm" variant="outline" disabled={busy || !status?.configured || !input.trim()} onClick={() => send()}>Try again</Button></div>}
+          {error && <div role="alert" className="mt-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3"><p className="text-xs leading-5 text-destructive">{error}</p><Button className="mt-2" size="sm" variant="outline" disabled={busy || !input.trim()} onClick={() => send()}>Try again</Button></div>}
           {notice && <p role="status" className="mt-3 text-xs leading-5 text-muted-foreground">{notice}</p>}
           {messages.length > 0 && <p className="mt-2 text-center text-[11px] leading-5 text-muted-foreground">Chats aren't saved. Download a copy from the conversation menu.</p>}
         </div>
