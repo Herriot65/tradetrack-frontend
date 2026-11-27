@@ -25,8 +25,10 @@ try {
     if (path.endsWith("/coach/chat/")) {
       if (method === "GET") return reply(200, { configured, persistent_memory: false });
       chatRequests++;
+      if (!configured) return reply(503, {detail:"AI coach is not connected yet. Add the server's AI API key to enable conversations and task runs."});
       chatPayload = request.postDataJSON(); chatJournal = path;
-      if (failNextChat) { failNextChat = false; return reply(503, {detail:"Provider unavailable"}); }
+      if (failNextChat === "server-html") { failNextChat = false; return route.fulfill({status:500, headers, contentType:"text/html", body:"<html><head><title>Internal Server Error</title></head><body>Internal Server Error</body></html>"}); }
+      if (failNextChat) { const error = typeof failNextChat === "object" ? failNextChat : {detail:"Provider unavailable"}; failNextChat = false; return reply(503, error); }
       if (holdChat) { await new Promise(resolve => { releaseChat = resolve; heldReady?.(); }); holdChat = false; }
       return reply(200, { output: "Your recorded mistakes include entering early. What would help you wait for confirmation?", evidence: [{ id: 7, symbol: "EURUSD" }], screenshots_analyzed: 0 });
     }
@@ -52,12 +54,31 @@ try {
   await page.getByRole("heading", { name: "What would you like to work on?" }).waitFor();
   await page.getByText("Your coach is being set up").waitFor();
   assert.equal(await page.getByRole("button", { name: "Send message" }).isDisabled(), true);
-  configured = true; await page.reload();
+  await page.getByLabel("Ask your coach", {exact:true}).fill("Help me review my trading.");
+  assert.equal(await page.getByRole("button", {name:"Send message"}).isEnabled(), true);
+  await page.getByRole("button", {name:"Send message"}).click();
+  await page.getByText("The AI coach isn't connected yet.", {exact:false}).waitFor();
+  assert.equal(await page.getByLabel("Ask your coach", {exact:true}).inputValue(), "Help me review my trading.");
+  // Once setup finishes, an outdated status must not block retrying the draft.
+  configured = true;
+  await page.getByRole("button", {name:"Try again",exact:true}).click();
+  await page.getByText("Your recorded mistakes include entering early.", {exact:false}).waitFor();
+  await page.getByText("Coach ready", {exact:true}).waitFor();
+  await page.getByRole("button", {name:"Conversation actions",exact:true}).click();
+  await page.getByRole("menuitem", {name:"New chat",exact:true}).click();
+  await page.getByRole("button", {name:"Start new chat",exact:true}).click();
   await page.getByText("Coach ready", { exact: false }).waitFor();
+  assert.equal(await page.getByRole("button", {name:"Check my goal progress",exact:true}).count(), 0);
+  assert.equal(await page.getByRole("combobox", {name:"Trades to include",exact:true}).count(), 0);
+  assert.equal(await page.getByRole("button", {name:"Create a task",exact:true}).count(), 0);
+  assert.equal(await page.getByText("Build a coaching routine", {exact:true}).count(), 0);
+  await mkdir("artifacts/coach", { recursive: true });
+  await page.screenshot({ path: "artifacts/coach/desktop.png", fullPage: true });
   await page.getByRole("button", { name: "Understand my losses", exact: false }).click();
   assert.match(await page.getByLabel("Ask your coach", { exact: true }).inputValue(), /losing trades/);
-  await page.getByRole("button", { name: "Adjust output" }).click();
+  await page.getByRole("button", { name: "Analysis settings" }).click();
   await page.getByLabel("Response length").selectOption("detailed");
+  await page.getByText("Goals and report options", {exact:true}).click();
   await page.getByRole("button", { name: "Full report", exact: true }).click();
   await page.getByLabel("Current goal", { exact: false }).fill("Wait for confirmation");
   await page.getByRole("button", { name: "Done", exact: true }).click();
@@ -80,7 +101,8 @@ try {
   assert.match(await page.getByLabel("Ask your coach",{exact:true}).inputValue(), /simpler terms/);
   await page.getByLabel("Ask your coach",{exact:true}).fill("");
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button",{name:"Save chat",exact:true}).click();
+  await page.getByRole("button",{name:"Conversation actions",exact:true}).click();
+  await page.getByRole("menuitem",{name:"Save chat",exact:true}).click();
   assert.match((await downloadPromise).suggestedFilename(), /coaching-conversation.*\.txt$/);
   await page.getByRole("button",{name:"Choose a trade",exact:true}).click();
   await page.getByLabel("Search trades").fill("EURUSD");
@@ -93,13 +115,30 @@ try {
   assert.equal(chatPayload.configuration.start_date,"2026-11-06");
   assert.equal(chatPayload.configuration.trade_status,"all");
   await page.getByRole("button",{name:"Clear selected trade",exact:true}).click();
+  await page.getByRole("button",{name:"Analysis settings",exact:true}).click();
   assert.equal(await page.getByRole("combobox",{name:"Trades to include",exact:true}).inputValue(),"LOSS");
+  await page.getByRole("button",{name:"Done",exact:true}).click();
   // Failures preserve the question and provide an explicit retry.
   failNextChat = true;
   await page.getByLabel("Ask your coach",{exact:true}).fill("Help me follow my risk limit.");
   await page.getByRole("button",{name:"Send message",exact:true}).click();
   await page.getByText("Your coach is temporarily unavailable.",{exact:false}).waitFor();
   assert.equal(await page.getByLabel("Ask your coach",{exact:true}).inputValue(),"Help me follow my risk limit.");
+  await page.getByRole("button",{name:"Try again",exact:true}).click();
+  await page.waitForFunction(() => document.getElementById("coach-prompt").value === "" && !document.getElementById("coach-prompt").disabled);
+  failNextChat = {code:"coach_provider_quota", detail:"Provider quota exhausted"};
+  await page.getByLabel("Ask your coach",{exact:true}).fill("Help me reflect.");
+  await page.getByRole("button",{name:"Send message",exact:true}).click();
+  await page.getByText("The AI provider's quota or rate limit has been reached.",{exact:false}).waitFor();
+  assert.equal(await page.getByLabel("Ask your coach",{exact:true}).inputValue(),"Help me reflect.");
+  await page.getByRole("button",{name:"Try again",exact:true}).click();
+  await page.waitForFunction(() => document.getElementById("coach-prompt").value === "" && !document.getElementById("coach-prompt").disabled);
+  failNextChat = "server-html";
+  await page.getByLabel("Ask your coach",{exact:true}).fill("Review my recent trades.");
+  await page.getByRole("button",{name:"Send message",exact:true}).click();
+  await page.getByText("The coach's server couldn't finish this request.",{exact:false}).waitFor();
+  assert.equal(await page.getByLabel("Ask your coach",{exact:true}).inputValue(),"Review my recent trades.");
+  assert.equal(await page.getByText("<html>",{exact:false}).count(),0);
   await page.getByRole("button",{name:"Try again",exact:true}).click();
   await page.waitForFunction(() => document.getElementById("coach-prompt").value === "" && !document.getElementById("coach-prompt").disabled);
   // A slow response can be abandoned without losing the draft.
@@ -116,11 +155,13 @@ try {
   assert.equal(await page.getByLabel("Ask your coach",{exact:true}).inputValue(),"Help me stay patient today.");
   assert.equal(chatRequests, requestsBeforeStop);
   // A new chat asks before clearing the current conversation.
-  await page.getByRole("button",{name:"New chat",exact:true}).click();
+  await page.getByRole("button",{name:"Conversation actions",exact:true}).click();
+  await page.getByRole("menuitem",{name:"New chat",exact:true}).click();
   await page.getByRole("heading",{name:"Start a fresh conversation?",exact:true}).waitFor();
   await page.getByRole("button",{name:"Start new chat",exact:true}).click();
   await page.getByRole("heading",{name:"What would you like to work on?",exact:true}).waitFor();
-  await page.locator("aside").getByRole("button", { name: "Schedule this", exact: false }).click();
+  await page.getByRole("button", {name:"Scheduled tasks",exact:true}).click();
+  await page.getByRole("button", {name:"Create a task",exact:true}).click();
   await page.getByLabel("Start with a template", {exact:true}).selectOption("prepare");
   await page.getByText("Edit task details",{exact:true}).click();
   assert.equal(await page.getByLabel("Task name").inputValue(), "Session preparation");
@@ -152,8 +193,6 @@ try {
   await page.getByRole("button", { name: "Delete task", exact: true }).click();
   await page.getByRole("heading", { name: "Make coaching a habit" }).waitFor();
   await page.getByRole("button", { name: "Conversation", exact: true }).click();
-  await mkdir("artifacts/coach", { recursive: true });
-  await page.screenshot({ path: "artifacts/coach/desktop.png", fullPage: true });
   // The current navigation stays available; only the navbar switches accounts.
   const nav = page.getByRole("navigation", { name: "Main sections", exact: true });
   for (const name of ["Overview", "Journal", "Analytics", "AI Coach"]) assert.equal(await nav.getByRole("link", { name, exact: true }).count(), 1);
@@ -164,6 +203,8 @@ try {
   await page.getByRole("menuitem", { name: /Backtest journal/ }).click();
   await page.getByRole("heading", { name: "What would you like to work on?" }).waitFor();
   assert.match(page.url(), /\/coach$/);
+  await page.getByRole("button", {name:"More ideas",exact:true}).click();
+  assert.equal(await page.locator(".coach-ideas button:visible").count(), 6);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForFunction(() => document.documentElement.scrollWidth <= innerWidth);
   await page.waitForFunction(() => document.getElementById("app-navigation").inert);
@@ -171,14 +212,17 @@ try {
     await page.setViewportSize({ width, height: 844 });
     await page.waitForFunction(() => document.documentElement.scrollWidth <= innerWidth);
     assert.equal(await page.locator(".coach-messages").evaluate(node => getComputedStyle(node).overflowY), "visible");
-    const starter = page.getByRole("button", {name:"Check my goal progress",exact:false});
+    assert.equal(await page.locator(".coach-ideas button:visible").count(), 3);
+    assert.equal(await page.getByRole("button", {name:/^(More|Fewer) ideas$/}).count(), 0);
+    const starter = page.getByRole("button", {name:"Understand my losses",exact:true});
     await starter.scrollIntoViewIfNeeded();
     const box = await starter.boundingBox();
     assert.ok(box.height >= 44, "Starter has a comfortable touch target");
-    const mobileFilters = page.locator(".coach-mobile-scope");
-    await mobileFilters.locator("summary").click();
-    await mobileFilters.getByRole("combobox",{name:"Trades to include",exact:true}).selectOption("WIN");
-    await mobileFilters.locator("summary").click();
+    const composerBox = await page.locator(".coach-composer").boundingBox();
+    assert.ok(box.y + box.height <= composerBox.y, "Mobile ideas stay above the composer");
+    await page.getByRole("button",{name:"Analysis settings",exact:true}).click();
+    await page.getByRole("combobox",{name:"Trades to include",exact:true}).selectOption("WIN");
+    await page.getByRole("button",{name:"Done",exact:true}).click();
     await page.getByLabel("Ask your coach",{exact:true}).fill("First line");
     const beforeEnter = chatRequests;
     await page.getByLabel("Ask your coach",{exact:true}).press("Enter");
@@ -188,10 +232,12 @@ try {
   }
   await page.getByLabel("Ask your coach",{exact:true}).fill("");
   await page.setViewportSize({width:390,height:844});
+  await page.getByLabel("Ask your coach",{exact:true}).blur();
   await page.evaluate(() => window.scrollTo(0,0));
   await page.screenshot({ path: "artifacts/coach/mobile.png", fullPage: true, animations: "disabled" });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   await page.setViewportSize({width:320,height:844});
+  await page.getByRole("button",{name:"Scheduled tasks",exact:true}).click();
   await page.getByRole("button",{name:"Create a task",exact:true}).click();
   await page.getByLabel("Start with a template",{exact:true}).selectOption("discipline");
   await page.screenshot({path:"artifacts/coach/task-mobile.png",fullPage:true,animations:"disabled"});
