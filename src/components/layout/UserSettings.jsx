@@ -9,6 +9,7 @@ import { reauthenticate, logoutAllDevices } from "@/api/auth.api";
 import GoogleSignIn from "@/components/auth/GoogleSignIn";
 import { PasswordInput } from "@/components/forms/PasswordInput";
 import ThemeToggle from "./ThemeToggle";
+import AICoachSettings from "@/components/coach/AICoachSettings";
 export default function UserSettings({onClose}) {
   useLanguage();
   const {user,updatePreferences,resetSession} = useAuth();
@@ -45,6 +46,7 @@ export default function UserSettings({onClose}) {
       <p className="text-xs text-muted-foreground">{t("Saved in this browser. System follows your device’s theme.")}</p>
     </div>
     <SelectField label={t("Timezone")} value={zone} onValueChange={setZone} options={[{value:"browser",label:`${t("Browser")} (${Intl.DateTimeFormat().resolvedOptions().timeZone})`},...zones.map(value=>({value,label:value.replaceAll("_"," ")}))]} allowClear={false}/>
+    <div className="border-t border-border pt-4"><AICoachSettings /></div>
     <div className="space-y-3 border-t border-border pt-4">
       <p className="text-sm font-medium">{t("Security")}</p>
       {!confirmSignOut ? <Button type="button" variant="outline" onClick={()=>setConfirmSignOut(true)}>{t("Sign out all devices")}</Button> : <div className="space-y-3">

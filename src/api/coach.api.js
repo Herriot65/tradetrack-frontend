@@ -7,3 +7,9 @@ export const saveCoachTask = async (id, payload, taskId) => (await api[taskId ? 
 export const deleteCoachTask = async (id, taskId) => api.delete(`${base(id)}/tasks/${taskId}/`);
 export const runCoachTask = async (id, taskId) => (await api.post(`${base(id)}/tasks/${taskId}/run/`, {}, { timeout: 300000 })).data;
 export const coachTaskHistory = async (id, taskId) => (await api.get(`${base(id)}/tasks/${taskId}/history/`)).data;
+const requireCoachSettings = (data) => {
+  if (!data || !Array.isArray(data.providers) || typeof data.provider !== "string") throw new Error("Invalid AI settings response");
+  return data;
+};
+export const getCoachSettings = async (signal) => requireCoachSettings((await api.get("/auth/coach-settings/", { signal })).data);
+export const saveCoachSettings = async (payload) => requireCoachSettings((await api.patch("/auth/coach-settings/", payload)).data);

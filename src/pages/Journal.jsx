@@ -15,6 +15,7 @@ import AppShell from "@/components/layout/AppShell";
 import { MT5ImportDialog } from "@/components/journal/MT5ImportDialog";
 import OverviewTab from "@/components/journal/OverviewTab";
 import UserSettings from "@/components/layout/UserSettings";
+import AICoachSettings from "@/components/coach/AICoachSettings";
 import BreakdownTab from "@/components/journal/BreakdownTab";
 import CustomFieldsTab from "@/components/journal/CustomFieldsTab";
 import TradesTab from "@/components/journal/TradesTab";
@@ -404,6 +405,7 @@ export default function Journal() {
           <div hidden={activeTab !== 'settings'} className="grid gap-5 lg:grid-cols-2">
             <section className="nx-surface p-6"><h2 className="text-lg font-medium">{t('Journal Settings')}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{t('Configure the name, currency, starting capital and break-even rules for this account.')}</p><Button className="mt-5" variant="outline" onClick={()=>setSettingsOpen(true)}>{t('Edit account settings')}</Button></section>
             <section className="nx-surface p-6"><h2 className="text-lg font-medium">{t('Preferences')}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{t('Choose your appearance and the timezone used for trades.')}</p><Button className="mt-5" variant="outline" onClick={()=>setPreferencesOpen(true)}>{t('Edit preferences')}</Button></section>
+            {activeTab === "settings" && <div className="nx-surface p-6 lg:col-span-2"><AICoachSettings /></div>}
             <section className="nx-surface p-6"><h2 className="text-lg font-medium">{t('Import MT5 Report')}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{t('Import an existing MetaTrader 5 report into this journal.')}</p><Button className="mt-5" variant="outline" onClick={()=>setImportOpen(true)}><FileUp className="size-4"/>{t('Import MT5 Report')}</Button></section>
             <section className="nx-surface p-6"><h2 className="text-lg font-medium">{t('Delete Journal')}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{t('All trades, analytics, and catalog data will be permanently deleted. This action cannot be undone.')}</p><Button className="mt-5" variant="outline" onClick={()=>{setDeleteError(null);setDeleteOpen(true);}}>{t('Delete Journal')}</Button></section>
           </div>

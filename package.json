@@ -37,7 +37,8 @@
     "test:journal-draft-ux": "node tests/journal-draft-ux-browser.mjs",
     "test:custom-field-actions": "node tests/custom-field-actions-browser.mjs",
     "test:cloud-drafts": "node tests/cloud-drafts-browser.mjs",
-    "test:new-entry-actions": "node tests/new-entry-actions-browser.mjs"
+    "test:new-entry-actions": "node tests/new-entry-actions-browser.mjs",
+    "test:coach-settings": "npm run build && node tests/coach-settings-browser.mjs"
   },
   "dependencies": {
     "@date-fns/tz": "^1.4.1",

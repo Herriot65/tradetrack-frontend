@@ -238,3 +238,11 @@ remaining tools. New image uploads optimize large raster images to WebP when
 smaller, with a 2560px longest edge and 0.92 quality, retaining the source preview.
 Uploads run two at a time. Successful uploads are retained across failed saves;
 per-image retries reuse a stable client ID.
+
+
+AI Coach provider settings: `npm run test:coach-settings` exercises provider and
+model selection, custom model IDs, write-only API key inputs, replacement/removal,
+provider switching, reload persistence, safe errors, immediate coach status refresh,
+and 320/390/1280px layouts against a stubbed backend. It makes no provider calls.
+Backend `tests/test_coach_settings.py` separately covers encrypted storage, account
+isolation, validation, server fallback, secret rotation, and chat/task resolution.

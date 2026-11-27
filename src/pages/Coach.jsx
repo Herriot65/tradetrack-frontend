@@ -81,8 +81,10 @@ function CoachWorkspace({ journal, accountTimezone }) {
     mounted.current = true;
     let cancelled = false;
     coachStatus(journal.id).then(value => { if (!cancelled) setStatus(value); }).catch(err => { if (!cancelled) setStatusError(apiError(err)); }).finally(() => { if (!cancelled) setStatusLoading(false); });
+    const refreshConnection = () => coachStatus(journal.id).then(value => { if (!cancelled) { setStatus(value); setStatusError(""); } }).catch(err => { if (!cancelled) setStatusError(apiError(err)); });
+    window.addEventListener("coach:settings-changed", refreshConnection);
     listCoachTasks(journal.id).then(value => { if (!cancelled) setTasks(value); }).catch(err => { if (!cancelled) setTaskError(apiError(err)); }).finally(() => { if (!cancelled) setTasksLoading(false); });
-    return () => { mounted.current = false; cancelled = true; controller.current?.abort(); };
+    return () => { mounted.current = false; cancelled = true; controller.current?.abort(); window.removeEventListener("coach:settings-changed", refreshConnection); };
   }, [journal.id]);
   useEffect(() => {
     if (messages.length || busy) bottom.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -200,7 +202,7 @@ function CoachWorkspace({ journal, accountTimezone }) {
       <span className="max-w-full break-words text-xs text-muted-foreground">{journal.name} · {statusLoading ? "Connecting…" : statusError ? "Connection unavailable" : status?.configured ? "Coach ready" : "Setup in progress"}</span>
     </div>
     {statusError && <div role="alert" className="nx-surface p-4"><p className="text-sm">We couldn't connect to your coach.</p><p className="mt-1 text-xs text-muted-foreground">{statusError}</p><Button className="mt-3" variant="outline" disabled={statusLoading} onClick={retryConnection}>Try connection again</Button></div>}
-    {status && !status.configured && <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4"><p className="text-sm font-medium">Your coach is being set up</p><p className="mt-1 text-xs leading-5 text-muted-foreground">You can explore the tools and save coaching tasks now. Conversations and task runs will be available when setup is complete.</p></div>}
+    {status && !status.configured && <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4"><p className="text-sm font-medium">Your coach is being set up</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Choose a provider, model and API key in Settings → AI Coach to start conversations and run coaching tasks.</p></div>}
 
     {tab === "chat" ? <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_240px]">
       <section data-conversation={messages.length > 0 || busy} className="coach-chat nx-surface flex h-[560px] min-h-[500px] min-w-0 flex-col overflow-hidden lg:h-[calc(100dvh-280px)]">
