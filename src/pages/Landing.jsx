@@ -8,7 +8,7 @@ import { useDesign } from "@/lib/design";
 export default function Landing() {
   const [design] = useDesign();
   return (
-    <div className={`nx-market min-h-screen${design === "3d" ? " nx-immersive-landing" : ""}`}>
+    <div className={`nx-market min-h-screen${design !== "classic" ? " nx-immersive-landing" : ""}`}>
       <Navbar />
       <main>
         <Hero />

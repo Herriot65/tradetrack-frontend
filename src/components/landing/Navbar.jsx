@@ -35,9 +35,6 @@ export default function Navbar() {
             </a>
           ))}
         </div>
-        <div className="hidden shrink-0 items-center gap-2 xl:flex">
-          <LanguageSelector />
-        </div>
         <div className="hidden items-center gap-3 xl:flex">
           {!loading && !user && (
             <Button asChild variant="ghost">
@@ -50,6 +47,7 @@ export default function Navbar() {
           </Button>
         </div>
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <LanguageSelector />
           <ThemeToggle />
           <Button
             type="button"
@@ -81,10 +79,6 @@ export default function Navbar() {
               {t(link.label)}
             </a>
           ))}
-          <div className="flex items-center gap-3 border-t border-border pt-4">
-            <span className="text-sm text-muted-foreground">{t("Language")}</span>
-            <LanguageSelector />
-          </div>
           <div className="flex gap-3 pt-3">
             {!loading && !user && (
               <Button asChild variant="outline" className="flex-1">

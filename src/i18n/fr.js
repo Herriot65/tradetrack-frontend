@@ -25,6 +25,7 @@ export default {
 
   "Design": "Design",
   "Classic": "Classique",
+  "3D": "3D",
   "Graphite": "Graphite",
   "Color mode": "Mode de couleur",
   "Play animation": "Lire l’animation",

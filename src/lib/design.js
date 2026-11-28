@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "nexora-design";
 const listeners = new Set();
-const normalize = value => value === "classic" ? "classic" : "3d";
+const normalize = value => ["classic", "3d", "graphite"].includes(value) ? value : "3d";
 function readDesign() {
   try { return normalize(localStorage.getItem(STORAGE_KEY)); }
   catch { return "3d"; }
@@ -10,6 +10,7 @@ function readDesign() {
 let design = readDesign();
 function notify() {
   document.documentElement.dataset.design = design;
+  document.documentElement.dataset.designLayout = design === "classic" ? "classic" : "3d";
   listeners.forEach(listener => listener());
 }
 export function setDesign(value) {

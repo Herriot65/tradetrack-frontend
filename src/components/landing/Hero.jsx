@@ -13,7 +13,7 @@ export default function Hero() {
   useLanguage();
   const { isAuthenticated } = useAuth();
   const [design] = useDesign();
-  if (design === "3d") return <ImmersiveHero />;
+  if (design !== "classic") return <ImmersiveHero />;
   return (
     <Section className="overflow-hidden !pb-16 !pt-32 md:!pb-24 md:!pt-44">
       <div

@@ -70,7 +70,7 @@ function JournalCard({ journal, onDelete, onOpen }) {
           <dd className="mt-1 text-[12px] text-zinc-300">{journal.currency || "—"}</dd>
         </div>
       </dl>
-      {design === "3d" && <button type="button" onClick={onOpen} className="nx-open-account"><span>{t("Open journal")}</span><ArrowUpRight className="size-4" /></button>}
+      {design !== "classic" && <button type="button" onClick={onOpen} className="nx-open-account"><span>{t("Open journal")}</span><ArrowUpRight className="size-4" /></button>}
     </article>
   );
 }
@@ -80,7 +80,7 @@ function OnboardingHero({ userName, onCreateClick }) {
   const [design] = useDesign();
   return (
     <div className="nx-onboarding flex flex-col items-center justify-center py-20 text-center">
-      {design === "3d" && <div className="nx-onboarding-depth"><DepthScene /></div>}
+      {design !== "classic" && <div className="nx-onboarding-depth"><DepthScene /></div>}
       {/* Icon */}
       <div className="mb-6 flex size-16 items-center justify-center rounded-2xl bg-emerald-500/10 ring-1 ring-emerald-500/20">
         <BookOpen className="size-7 text-emerald-400" />
@@ -131,7 +131,7 @@ function OnboardingHero({ userName, onCreateClick }) {
 export default function Dashboard() {
   useLanguage();
   const [design] = useDesign();
-  const immersive = design === "3d";
+  const immersive = design !== "classic";
   const navigate = useNavigate();
   const { user } = useAuth();
   const { journals, loading, createJournal, deleteJournal } = useJournal();
