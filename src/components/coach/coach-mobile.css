@@ -23,6 +23,7 @@
     padding: 10px 12px max(10px, env(safe-area-inset-bottom));
     box-shadow: 0 -5px 18px rgb(0 0 0 / 0.04);
   }
+  .coach-composer button[data-size="icon-sm"] { min-width: 44px; }
   .coach-composer textarea {
     min-height: 64px;
     max-height: 140px;
