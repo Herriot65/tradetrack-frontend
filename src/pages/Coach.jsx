@@ -2,7 +2,7 @@ import "@/components/coach/coach-mobile.css";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  AlignLeft, AudioLines, Mic, MicOff, ArrowUp, CalendarClock, Check, ChevronRight, Clock3, Download, FileText,
+  AlignLeft, AudioLines, Mic, ArrowUp, CalendarClock, Check, ChevronRight, Clock3, Download, FileText,
   Loader2, MessageSquare, MoreHorizontal, Pause, Play, Plus, RotateCcw, Search, Settings2,
   ShieldCheck, Sparkles, Square, Target, Trash2, X,
 } from "lucide-react";
@@ -13,7 +13,7 @@ import TradeDetailPanel from "@/components/journal/TradeDetailPanel";
 import AppShell from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import useCoachDictation from "@/components/coach/useCoachDictation";
 import CoachMessage from "@/components/coach/CoachMessage";
 import CoachTradePicker from "@/components/coach/CoachTradePicker";
@@ -90,6 +90,13 @@ function CoachWorkspace({ journal, accountTimezone }) {
   useEffect(() => {
     if (messages.length || busy) bottom.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [messages, busy]);
+
+  useEffect(() => {
+    const field = promptRef.current;
+    if (!field) return;
+    field.style.height = "auto";
+    field.style.height = `${Math.min(field.scrollHeight, 160)}px`;
+  }, [input, tab]);
 
   async function retryConnection() {
     setStatusError(""); setStatusLoading(true);
@@ -216,34 +223,36 @@ function CoachWorkspace({ journal, accountTimezone }) {
           {busy && <><CoachMessage message={{ role: "user", content: pendingPrompt, configuration }} onEvidence={openEvidence} /><p role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />Your coach is working with your request…</p></>}
           <div ref={bottom} />
         </div>
-        <div className="coach-composer border-t border-border bg-card p-4">
+        <div className="coach-composer p-3 sm:p-4">
           {selectedTrade && <div className="mb-2 flex"><button type="button" disabled={busy} className="flex min-w-0 items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-xs text-primary" onClick={clearTrade} aria-label="Clear selected trade"><span className="truncate">{selectedTrade.asset?.symbol || selectedTrade.asset} · Trade #{selectedTrade.id}</span><X className="size-3.5 shrink-0" /></button></div>}
           <form onSubmit={event => { event.preventDefault(); send(); }}>
             <label className="sr-only" htmlFor="coach-prompt">Ask your coach</label>
-            <textarea ref={promptRef} id="coach-prompt" className="min-h-16 max-h-40 w-full resize-y rounded-lg bg-transparent p-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/30 disabled:opacity-60" rows={2} maxLength={4000} disabled={busy || dictation.listening} placeholder={dictation.listening ? "Listening…" : "Ask about your trading…"} value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); send(); } }} />
-            <div className="flex items-center justify-between gap-1">
-              <div className="flex items-center gap-1">
+            <div className="coach-input-bar" data-recording={dictation.listening}>
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild><Button type="button" variant="ghost" size="icon-sm" aria-label="Add context" title="Add context" disabled={busy || dictation.listening}><Plus /></Button></DropdownMenuTrigger>
+                  <DropdownMenuTrigger asChild><Button type="button" variant="ghost" size="icon-sm" className="coach-input-action" aria-label="Add context" title="Add context" disabled={busy || dictation.listening}><Plus /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
                     <DropdownMenuItem onSelect={() => setPickerOpen(true)}><Search className="size-4" />{selectedTrade ? "Change trade" : "Choose a trade"}</DropdownMenuItem>
                     <DropdownMenuItem role="menuitemcheckbox" aria-checked={configuration.screenshots} onSelect={() => setConfiguration(previous => ({ ...previous, screenshots: !previous.screenshots }))}><Check className={`size-4 ${configuration.screenshots ? "text-primary" : "opacity-0"}`} />Include attached screenshots</DropdownMenuItem>
+                    <DropdownMenuLabel>Response length</DropdownMenuLabel>
+                    {[["brief", "Brief"], ["detailed", "Detailed"]].map(([value, label]) => <DropdownMenuItem key={value} role="menuitemradio" aria-checked={configuration.detail === value} onSelect={() => setConfiguration(previous => ({ ...previous, detail: value }))}><AlignLeft className="size-4" />{label}{configuration.detail === value && <Check className="ml-auto size-3.5" />}</DropdownMenuItem>)}
                   </DropdownMenuContent>
                 </DropdownMenu>
+            <textarea ref={promptRef} id="coach-prompt" className="coach-prompt-field" rows={1} maxLength={4000} disabled={busy} readOnly={dictation.listening} placeholder={dictation.listening ? "Listening…" : "Message…"} value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); send(); } }} />
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild><Button type="button" variant="ghost" size="icon-sm" aria-label="Response length" title={`Response length: ${configuration.detail === "brief" ? "Brief" : "Detailed"}`} disabled={busy || dictation.listening}><AlignLeft /></Button></DropdownMenuTrigger>
+                  <DropdownMenuTrigger asChild><Button type="button" variant="ghost" size="icon-sm" className="coach-input-action hidden sm:inline-flex" aria-label="Response length" title={`Response length: ${configuration.detail === "brief" ? "Brief" : "Detailed"}`} disabled={busy || dictation.listening}><AlignLeft /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
                     {[["brief", "Brief"], ["detailed", "Detailed"]].map(([value, label]) => <DropdownMenuItem key={value} role="menuitemradio" aria-checked={configuration.detail === value} onSelect={() => setConfiguration(previous => ({ ...previous, detail: value }))}><Check className={`size-4 ${configuration.detail === value ? "text-primary" : "opacity-0"}`} />{label}</DropdownMenuItem>)}
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </div>
-              <div className="flex items-center gap-1">
-                {!busy && <><Button type="button" variant="ghost" size="icon-sm" className={dictation.listening ? "bg-destructive/10 text-destructive" : ""} aria-label={dictation.listening ? "Stop dictation" : "Dictate message"} aria-pressed={dictation.listening} title={dictation.listening ? "Stop dictation" : "Dictate message"} disabled={busy} onClick={dictation.listening ? dictation.stop : dictation.start}>{dictation.listening ? <MicOff /> : <Mic />}</Button>
-                <span title="Voice mode — coming soon"><Button type="button" variant="ghost" size="icon-sm" aria-label="Voice mode — coming soon" disabled><AudioLines /></Button></span></>}
-                {busy ? <Button type="button" variant="outline" size="sm" onClick={stopWaiting}><Square />Stop waiting</Button> : <Button type="submit" size="icon-sm" aria-label="Send message" disabled={!input.trim() || dictation.listening}><ArrowUp /></Button>}
-              </div>
+              {busy ? <Button type="button" variant="ghost" size="icon-sm" className="coach-input-primary" aria-label="Stop waiting" title="Stop waiting" onClick={stopWaiting}><Square /></Button>
+                : dictation.listening ? <Button type="button" variant="ghost" size="icon-sm" className="coach-input-primary" aria-label={dictation.finishing ? "Transcribing recording" : "Stop recording and transcribe"} title="Stop recording and transcribe" disabled={dictation.finishing} onClick={dictation.stop}>{dictation.finishing ? <Loader2 className="animate-spin" /> : <Square className="fill-current" />}</Button>
+                : <>
+                  <Button type="button" variant="ghost" size="icon-sm" className="coach-input-action" aria-label="Dictate message" title="Dictate message" onClick={dictation.start}><Mic /></Button>
+                  {input.trim() ? <Button type="submit" variant="ghost" size="icon-sm" className="coach-input-primary" aria-label="Send message" title="Send message"><ArrowUp /></Button>
+                    : <span className="shrink-0" title="Voice mode — coming soon"><Button type="button" variant="ghost" size="icon-sm" className="coach-input-primary" aria-label="Voice mode — coming soon" disabled><AudioLines /></Button></span>}
+                </>}
             </div>
-            {dictation.listening && <p role="status" className="mt-2 text-xs text-muted-foreground">Listening… Tap the microphone to stop, then review your message.</p>}
+            {dictation.listening && <p role="status" className="mt-2 text-xs text-muted-foreground">{dictation.finishing ? "Transcribing your recording…" : "Recording… Stop to transcribe your message."}</p>}
             {dictation.error && <p role="status" className="mt-2 text-xs text-muted-foreground">{dictation.error}</p>}
           </form>
           {error && <div role="alert" className="mt-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3"><p className="text-xs leading-5 text-destructive">{error}</p><Button className="mt-2" size="sm" variant="outline" disabled={busy || dictation.listening || !input.trim()} onClick={() => send()}>Try again</Button></div>}

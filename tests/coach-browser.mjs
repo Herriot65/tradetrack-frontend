@@ -17,7 +17,10 @@ try {
         if (window.__speech.error) { this.onerror?.({error:window.__speech.error}); this.onend?.(); }
         else this.onstart?.();
       }); }
-      stop() { this.onend?.(); }
+      stop() {
+        if (window.__speech.holdStop) { window.__speech.pending = this; return; }
+        this.onend?.();
+      }
       abort() { window.__speech.aborts++; this.onend?.(); }
     }
     window.__MockRecognition = window.SpeechRecognition = window.webkitSpeechRecognition = MockRecognition;
@@ -65,7 +68,7 @@ try {
   await page.goto("http://127.0.0.1:4198/coach");
   await page.getByRole("heading", { name: "What would you like to work on?" }).waitFor();
   await page.getByText("Your coach is being set up").waitFor();
-  assert.equal(await page.getByRole("button", { name: "Send message" }).isDisabled(), true);
+  assert.equal(await page.getByRole("button", { name: "Voice mode — coming soon" }).isDisabled(), true);
   await page.getByLabel("Ask your coach", {exact:true}).fill("Help me review my trading.");
   assert.equal(await page.getByRole("button", {name:"Send message"}).isEnabled(), true);
   await page.getByRole("button", {name:"Send message"}).click();
@@ -85,33 +88,44 @@ try {
   assert.equal(await page.getByRole("button", {name:"Create a task",exact:true}).count(), 0);
   assert.equal(await page.getByText("Build a coaching routine", {exact:true}).count(), 0);
   await mkdir("artifacts/coach", { recursive: true });
+  assert.equal(await page.getByRole("button",{name:"Voice mode — coming soon",exact:true}).evaluate(node => getComputedStyle(node).backgroundColor), "rgb(48, 100, 237)");
   await page.screenshot({ path: "artifacts/coach/desktop.png", fullPage: true });
   const requestsBeforeDictation = chatRequests;
   await page.getByLabel("Ask your coach",{exact:true}).fill("Review");
   await page.getByRole("button",{name:"Dictate message",exact:true}).click();
-  await page.getByRole("button",{name:"Stop dictation",exact:true}).waitFor();
-  assert.equal(await page.getByRole("button",{name:"Send message",exact:true}).isDisabled(),true);
+  await page.getByRole("button",{name:"Stop recording and transcribe",exact:true}).waitFor();
+  assert.equal(await page.getByRole("button",{name:"Send message",exact:true}).count(),0);
   await page.evaluate(() => window.__speech.active.onresult({results:[[{transcript:"my recent"}]]}));
   await page.evaluate(() => window.__speech.active.onresult({results:[[{transcript:"my recent trades"}]]}));
-  await page.getByRole("button",{name:"Stop dictation",exact:true}).click();
-  assert.equal(await page.getByLabel("Ask your coach",{exact:true}).inputValue(),"Review my recent trades");
+  await page.screenshot({path:"artifacts/coach/recording.png",fullPage:true});
+  await page.evaluate(() => { window.__speech.holdStop = true; });
+  await page.getByRole("button",{name:"Stop recording and transcribe",exact:true}).click();
+  await page.getByRole("button",{name:"Transcribing recording",exact:true}).waitFor();
+  assert.equal(await page.getByRole("button",{name:"Transcribing recording",exact:true}).isDisabled(),true);
+  await page.evaluate(() => {
+    window.__speech.pending.onresult({results:[[{transcript:"my recent trades please"}]]});
+    window.__speech.pending.onend();
+    window.__speech.holdStop = false;
+  });
+
+  assert.equal(await page.getByLabel("Ask your coach",{exact:true}).inputValue(),"Review my recent trades please");
   assert.equal(chatRequests,requestsBeforeDictation,"Dictation never sends automatically");
   await page.evaluate(() => { window.__speech.error = "not-allowed"; });
   await page.getByRole("button",{name:"Dictate message",exact:true}).click();
   await page.getByText("Microphone access was denied.",{exact:false}).waitFor();
-  assert.equal(await page.getByLabel("Ask your coach",{exact:true}).inputValue(),"Review my recent trades");
+  assert.equal(await page.getByLabel("Ask your coach",{exact:true}).inputValue(),"Review my recent trades please");
   await page.evaluate(() => { window.SpeechRecognition = window.webkitSpeechRecognition = undefined; });
   await page.getByRole("button",{name:"Dictate message",exact:true}).click();
   await page.getByText("Voice input isn't supported in this browser.",{exact:false}).waitFor();
   await page.evaluate(() => { window.__speech.error = null; window.SpeechRecognition = window.webkitSpeechRecognition = window.__MockRecognition; });
   await page.getByRole("button",{name:"Dictate message",exact:true}).click();
-  await page.getByRole("button",{name:"Stop dictation",exact:true}).click();
+  await page.getByRole("button",{name:"Stop recording and transcribe",exact:true}).click();
   await page.getByRole("button",{name:"Add context",exact:true}).click();
   await page.getByRole("menuitemcheckbox",{name:"Include attached screenshots",exact:true}).click();
   await page.getByRole("button", { name: "Understand my losses", exact: false }).click();
   assert.match(await page.getByLabel("Ask your coach", { exact: true }).inputValue(), /losing trades/);
   assert.equal(await page.getByRole("button", {name:"Analysis settings",exact:true}).count(), 0);
-  assert.equal(await page.getByRole("button", {name:"Voice mode — coming soon",exact:true}).isDisabled(), true);
+  assert.equal(await page.getByRole("button", {name:"Voice mode — coming soon",exact:true}).count(), 0);
   await page.getByRole("button", {name:"Response length",exact:true}).click();
   await page.getByRole("menuitemradio", {name:"Detailed",exact:true}).click();
   await page.getByRole("button", { name: "Send message" }).click();
@@ -232,7 +246,7 @@ try {
   assert.equal(await nav.getByRole("link", { name: "AI Coach", exact: true }).getAttribute("aria-current"), "page");
   // Switching journals clears the conversation and stays on the coach page.
   await page.getByRole("button", {name:"Dictate message",exact:true}).click();
-  await page.getByRole("button", {name:"Stop dictation",exact:true}).waitFor();
+  await page.getByRole("button", {name:"Stop recording and transcribe",exact:true}).waitFor();
   await page.getByRole("button", { name: "Switch journal", exact: true }).click();
   await page.getByRole("menuitem", { name: /Backtest journal/ }).click();
   await page.getByRole("heading", { name: "What would you like to work on?" }).waitFor();
@@ -255,7 +269,7 @@ try {
     assert.ok(box.height >= 44, "Starter has a comfortable touch target");
     const composerBox = await page.locator(".coach-composer").boundingBox();
     assert.ok(box.y + box.height <= composerBox.y, "Mobile ideas stay above the composer");
-    await page.getByRole("button",{name:"Response length",exact:true}).click();
+    await page.getByRole("button",{name:"Add context",exact:true}).click();
     await page.getByRole("menuitemradio",{name:"Brief",exact:true}).click();
     await page.getByLabel("Ask your coach",{exact:true}).fill("First line");
     const beforeEnter = chatRequests;

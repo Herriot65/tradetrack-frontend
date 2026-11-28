@@ -4,12 +4,28 @@ import { useEffect, useRef, useState } from "react";
 // may use their own speech service; no audio is stored by this application.
 export default function useCoachDictation({ value, onChange, disabled, onFinish }) {
   const [listening, setListening] = useState(false);
+  const [finishing, setFinishing] = useState(false);
+  const stopping = useRef(false);
   const [error, setError] = useState("");
   const recognition = useRef(null);
   const callbacks = useRef({ onChange, onFinish });
   useEffect(() => { callbacks.current = { onChange, onFinish }; });
 
-  function stop() { recognition.current?.stop(); }
+  function stop() {
+    if (!recognition.current || stopping.current) return;
+    stopping.current = true;
+    setFinishing(true);
+    // stop() requests the final recognition result before onend. Keep handlers
+    // attached until then so the final words are included in the draft.
+    try { recognition.current.stop(); }
+    catch {
+      recognition.current = null;
+      stopping.current = false;
+      setListening(false);
+      setFinishing(false);
+      setError("Voice input stopped. Your draft is still here; please review it.");
+    }
+  }
 
   function start() {
     if (disabled || recognition.current) return;
@@ -21,9 +37,11 @@ export default function useCoachDictation({ value, onChange, disabled, onFinish 
     const session = new SpeechRecognition();
     const prefix = value.trimEnd();
     session.lang = navigator.language || "en-US";
-    session.continuous = false;
+    session.continuous = true;
     session.interimResults = true;
     recognition.current = session;
+    stopping.current = false;
+    setFinishing(false);
     setError("");
     setListening(true);
     session.onstart = () => { if (recognition.current === session) setListening(true); };
@@ -46,6 +64,8 @@ export default function useCoachDictation({ value, onChange, disabled, onFinish 
     session.onend = () => {
       if (recognition.current !== session) return;
       recognition.current = null;
+      stopping.current = false;
+      setFinishing(false);
       setListening(false);
       callbacks.current.onFinish?.();
     };
@@ -53,6 +73,7 @@ export default function useCoachDictation({ value, onChange, disabled, onFinish 
     catch {
       recognition.current = null;
       setListening(false);
+      setFinishing(false);
       setError("Voice input couldn't start. Please try again or type your message.");
     }
   }
@@ -69,5 +90,5 @@ export default function useCoachDictation({ value, onChange, disabled, onFinish 
     }
   }, []);
 
-  return { listening, error, start, stop };
+  return { listening, finishing, error, start, stop };
 }
