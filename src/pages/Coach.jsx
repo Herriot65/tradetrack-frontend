@@ -57,6 +57,8 @@ function CoachWorkspace({ journal, accountTimezone }) {
   const [taskDialog, setTaskDialog] = useState(null);
   const [newChatOpen, setNewChatOpen] = useState(false);
   const [messages, setMessages] = useState([]);
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [streamOutput, setStreamOutput] = useState("");
   const [input, setInput] = useState("");
   const [pendingPrompt, setPendingPrompt] = useState("");
   const [busy, setBusy] = useState(false);
@@ -128,20 +130,27 @@ function CoachWorkspace({ journal, accountTimezone }) {
     requestBusy.current = true;
     const request = new AbortController(); controller.current = request;
     const instruction = prompt.trim();
-    const sentConfiguration = { timezone: accountTimezone, detail: configuration.detail, screenshots: configuration.screenshots, ...(configuration.trade_id ? { trade_id: configuration.trade_id } : {}) };
+    const editingMessage = editingIndex === null ? null : messages[editingIndex];
+    const sentConfiguration = editingMessage?.configuration || { timezone: accountTimezone, detail: configuration.detail, screenshots: configuration.screenshots, ...(configuration.trade_id ? { trade_id: configuration.trade_id } : {}) };
+    const contextMessages = editingIndex === null ? messages : messages.slice(0, editingIndex);
+    setStreamOutput("");
     setInput(instruction); setPendingPrompt(instruction); setError(""); setNotice(""); setBusy(true);
     try {
-      const response = await askCoach(journal.id, { instructions: instruction, configuration: sentConfiguration, previous_scope: messages.findLast(message => message.scope)?.scope || null, history: messages.slice(-12).map(({ role, content }) => ({ role, content: content.slice(0, 8000) })) }, request.signal);
+      const response = await askCoach(journal.id, { instructions: instruction, configuration: sentConfiguration, previous_scope: contextMessages.findLast(message => message.scope)?.scope || null, history: contextMessages.slice(-12).map(({ role, content }) => ({ role, content: content.slice(0, 8000) })) }, request.signal, chunk => {
+        if (mounted.current && !request.signal.aborted && controller.current === request) setStreamOutput(previous => previous + chunk);
+      });
       if (!mounted.current || request.signal.aborted || controller.current !== request) return;
       setStatus(previous => ({ ...previous, configured: true }));
       setStatusError("");
-      setMessages(previous => [...previous, { role: "user", content: instruction, configuration: sentConfiguration }, { role: "assistant", content: response.output, evidence: response.evidence, screenshots: response.screenshots_analyzed, scope: response.scope }]);
+      const replacement = [{ role: "user", content: instruction, configuration: sentConfiguration }, { role: "assistant", content: response.output, evidence: response.evidence, screenshots: response.screenshots_analyzed, scope: response.scope }];
+      setMessages(previous => editingIndex === null ? [...previous, ...replacement] : [...previous.slice(0, editingIndex), ...replacement]);
+      setEditingIndex(null);
       setInput("");
     } catch (err) { if (mounted.current && !request.signal.aborted) setError(apiError(err)); }
     finally {
       if (controller.current === request) {
         requestBusy.current = false;
-        if (mounted.current) { setBusy(false); setPendingPrompt(""); }
+        if (mounted.current) { setBusy(false); setPendingPrompt(""); setStreamOutput(""); }
       }
     }
   }
@@ -152,7 +161,7 @@ function CoachWorkspace({ journal, accountTimezone }) {
     controller.current?.abort();
     controller.current = null;
     requestBusy.current = false;
-    setBusy(false); setInput(pendingPrompt); setPendingPrompt("");
+    setBusy(false); setInput(pendingPrompt); setPendingPrompt(""); setStreamOutput("");
     setNotice("Stopped waiting. Your question is still here. The current request may still finish on the server.");
   }
   function downloadChat() {
@@ -183,7 +192,6 @@ function CoachWorkspace({ journal, accountTimezone }) {
     } catch (err) { if (mounted.current) setEvidenceTrade(previous => previous?.id === trade.id ? { error: apiError(err), id: trade.id } : previous); }
   }
   const lastUser = [...messages].reverse().find(item => item.role === "user");
-  const lastAssistantIndex = messages.findLastIndex(item => item.role === "assistant");
   const scheduleCurrent = () => setTaskDialog({ seed: { instructions: input || lastUser?.content || "", configuration } });
 
   return <div className="coach-workspace mx-auto max-w-4xl space-y-4">
@@ -219,11 +227,12 @@ function CoachWorkspace({ journal, accountTimezone }) {
             <div className="coach-ideas flex flex-col items-center gap-2 sm:flex-row sm:flex-wrap sm:justify-center">{COACH_STARTERS.slice(0, moreStarters ? undefined : 3).map((starter, index) => { const Icon = STARTER_ICONS[index]; return <button key={starter.id} className={`${index >= 3 ? "hidden sm:flex" : "flex"} items-center gap-2 rounded-xl border border-border px-3 py-2.5 text-xs transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary`} disabled={dictation.listening} onClick={() => chooseStarter(starter)}><Icon className="size-3.5 shrink-0 text-muted-foreground" />{starter.title}</button>; })}</div>
             <Button variant="ghost" size="sm" className="mt-3 hidden text-xs text-muted-foreground sm:inline-flex" aria-expanded={moreStarters} onClick={() => setMoreStarters(value => !value)}>{moreStarters ? "Fewer ideas" : "More ideas"}</Button>
           </div>}
-          {messages.map((message, index) => <CoachMessage key={index} message={message} onEvidence={openEvidence} disabled={busy || dictation.listening} onFollowUp={index === lastAssistantIndex ? prompt => { setInput(prompt); promptRef.current?.focus(); } : undefined} onSchedule={index === lastAssistantIndex ? () => setTaskDialog({ seed: { instructions: messages[index - 1]?.content || "", configuration: messages[index - 1]?.configuration || configuration } }) : undefined} />)}
-          {busy && <><CoachMessage message={{ role: "user", content: pendingPrompt, configuration }} onEvidence={openEvidence} /><p role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />Your coach is working with your request…</p></>}
+          {messages.map((message, index) => <CoachMessage key={index} message={message} onEvidence={openEvidence} disabled={busy || dictation.listening} onEdit={message.role === "user" && !busy ? () => { setEditingIndex(index); setInput(message.content); setError(""); setNotice(""); promptRef.current?.focus(); } : undefined} />)}
+          {busy && <><CoachMessage message={{ role: "user", content: pendingPrompt, configuration }} onEvidence={openEvidence} /><div aria-live="off"><CoachMessage message={{ role: "assistant", content: streamOutput || "" }} onEvidence={openEvidence} /></div>{!streamOutput && <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />Your coach is working with your request…</p>}</>}
           <div ref={bottom} />
         </div>
         <div className="coach-composer p-3 sm:p-4">
+          {editingIndex !== null && !busy && <div className="mb-2 flex items-center justify-between gap-2 rounded-lg bg-primary/5 px-3 py-2 text-xs text-muted-foreground"><span>Editing a message · the reply and later messages will be replaced after regeneration.</span><Button type="button" size="sm" variant="ghost" onClick={() => { setEditingIndex(null); setInput(""); setError(""); }}>Cancel edit</Button></div>}
           {selectedTrade && <div className="mb-2 flex"><button type="button" disabled={busy} className="flex min-w-0 items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-xs text-primary" onClick={clearTrade} aria-label="Clear selected trade"><span className="truncate">{selectedTrade.asset?.symbol || selectedTrade.asset} · Trade #{selectedTrade.id}</span><X className="size-3.5 shrink-0" /></button></div>}
           <form onSubmit={event => { event.preventDefault(); send(); }}>
             <label className="sr-only" htmlFor="coach-prompt">Ask your coach</label>
@@ -248,7 +257,7 @@ function CoachWorkspace({ journal, accountTimezone }) {
                 : dictation.listening ? <Button type="button" variant="ghost" size="icon-sm" className="coach-input-primary" aria-label={dictation.finishing ? "Transcribing recording" : "Stop recording and transcribe"} title="Stop recording and transcribe" disabled={dictation.finishing} onClick={dictation.stop}>{dictation.finishing ? <Loader2 className="animate-spin" /> : <Square className="fill-current" />}</Button>
                 : <>
                   <Button type="button" variant="ghost" size="icon-sm" className="coach-input-action" aria-label="Dictate message" title="Dictate message" onClick={dictation.start}><Mic /></Button>
-                  {input.trim() ? <Button type="submit" variant="ghost" size="icon-sm" className="coach-input-primary" aria-label="Send message" title="Send message"><ArrowUp /></Button>
+                  {input.trim() ? <Button type="submit" variant="ghost" size="icon-sm" className="coach-input-primary" aria-label={editingIndex !== null ? "Regenerate answer" : "Send message"} title={editingIndex !== null ? "Regenerate answer" : "Send message"}><ArrowUp /></Button>
                     : <span className="shrink-0" title="Voice mode — coming soon"><Button type="button" variant="ghost" size="icon-sm" className="coach-input-primary" aria-label="Voice mode — coming soon" disabled><AudioLines /></Button></span>}
                 </>}
             </div>
