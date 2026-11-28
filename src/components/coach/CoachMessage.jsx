@@ -13,13 +13,14 @@ export default function CoachMessage({ message, onEvidence, onFollowUp, onSchedu
     catch { setCopyError("Copy isn't available in this browser. You can select and copy the text instead."); }
   }
   return <article className={isUser ? "ml-auto max-w-[95%] rounded-2xl bg-secondary p-4 sm:max-w-[90%]" : "max-w-full"}>
-    <div className="mb-2 flex items-center justify-between gap-3"><p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">{isUser ? "You" : <><Sparkles className="size-3.5 text-primary" />Nexora Coach</>}</p>{!isUser && <Button variant="ghost" size="sm" onClick={copy} aria-label={copied ? "Answer copied" : "Copy answer"}>{copied ? <Check /> : <Copy />}{copied ? "Copied" : "Copy"}</Button>}</div>
+    <div className="mb-2 flex items-center justify-between gap-3"><p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">{isUser ? "You" : <><Sparkles className="size-3.5 text-primary" />Nexora Coach</>}</p></div>
     {!isUser && message.scope?.label && <p className="mb-2 text-xs text-muted-foreground" aria-label="Analysis scope">{message.scope.label}</p>}
-    <div className="whitespace-pre-wrap break-words text-sm leading-7">{pieces.map((part, index) => {
+    <div className="coach-message-content whitespace-pre-wrap break-words text-sm leading-7">{pieces.map((part, index) => {
       const match = part.match(/^\[Trade #(\d+)\]$/);
       const trade = match && evidence.find(item => item.id === Number(match[1]));
       return trade ? <button type="button" key={index} className="rounded bg-primary/10 px-1.5 text-primary underline decoration-primary/30 underline-offset-4" onClick={() => onEvidence(trade)}>{part}</button> : part;
     })}</div>
+    {!isUser && <div className="mt-2 flex items-center" role="group" aria-label="Answer actions"><Button type="button" variant="ghost" size="icon-sm" onClick={copy} aria-label={copied ? "Answer copied" : "Copy answer"} title={copied ? "Copied" : "Copy answer"}>{copied ? <Check /> : <Copy />}</Button><span role="status" className="sr-only">{copied ? "Answer copied" : ""}</span></div>}
     {evidence.length > 0 && <details className="mt-3 text-xs text-muted-foreground"><summary className="cursor-pointer">Supporting trades ({evidence.length})</summary><div className="mt-2 flex flex-wrap gap-2">{evidence.map(trade => <button type="button" key={trade.id} className="rounded-md border border-border px-2.5 py-2 hover:text-primary" onClick={() => onEvidence(trade)}>#{trade.id} · {trade.symbol}</button>)}</div></details>}
     {message.screenshots > 0 && <p className="mt-2 text-xs text-muted-foreground">{message.screenshots} attached screenshot(s) analyzed</p>}
     {!isUser && onFollowUp && <div className="mt-4 flex flex-wrap gap-2" aria-label="Continue this conversation">
