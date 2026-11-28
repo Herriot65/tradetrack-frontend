@@ -81,6 +81,10 @@ export default function Navbar() {
               {t(link.label)}
             </a>
           ))}
+          <div className="flex items-center gap-3 border-t border-border pt-4">
+            <span className="text-sm text-muted-foreground">{t("Language")}</span>
+            <LanguageSelector />
+          </div>
           <div className="flex gap-3 pt-3">
             {!loading && !user && (
               <Button asChild variant="outline" className="flex-1">

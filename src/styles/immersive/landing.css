@@ -83,6 +83,10 @@
 @media (max-width: 520px) {
   :where(html[data-design="3d"]) .nx-immersive-scene { height: 410px; }
   :where(html[data-design="3d"]) .nx-scene-art { width: 440px; left: calc(50% - 220px); scale: .7; transform-origin: center; }
+  /* Keep the analytics card above the cube on narrow screens. The scene art is
+     scaled as a whole, so a small vertical offset prevents the animated panel
+     from drifting across the cube while retaining the desktop composition. */
+  :where(html[data-design="3d"]) .nx-panel-chart { top: 0; right: 8px; }
   :where(html[data-design="3d"]) .nx-immersive-landing .nx-hero-copy h1 { font-size: clamp(37px,10vw,50px); }
   :where(html[data-design="3d"]) .nx-hero-description { font-size: 13px; }
   :where(html[data-design="3d"]) .nx-immersive-landing .nx-product-preview { max-height: none; }
@@ -95,3 +99,7 @@
 }
 
 :where(html[data-design="3d"]) .nx-immersive-landing .nx-product-preview img { height: clamp(260px, 50vw, 620px); object-fit: cover; object-position: top; }
+
+/* The landing preview is a dark captured workspace. Re-map its neutral UI
+   tones for light mode while preserving the green/red status color direction. */
+html.light .nx-product-preview img { filter: invert(1) hue-rotate(180deg); }
