@@ -11,6 +11,7 @@ try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, hasTouch: true });
   await context.addInitScript(() => { localStorage.setItem("access", "test-access"); localStorage.setItem("last_journal_id", "1"); });
   await context.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", {configurable:true, value:{writeText:async text => { window.__copiedText = text; }}});
     window.__speech = {starts:0, aborts:0};
     class MockRecognition {
       start() { window.__speech.starts++; window.__speech.active = this; queueMicrotask(() => {
@@ -88,7 +89,27 @@ try {
   assert.equal(await page.getByRole("button", {name:"Create a task",exact:true}).count(), 0);
   assert.equal(await page.getByText("Build a coaching routine", {exact:true}).count(), 0);
   await mkdir("artifacts/coach", { recursive: true });
-  assert.equal(await page.getByRole("button",{name:"Voice mode — coming soon",exact:true}).evaluate(node => getComputedStyle(node).backgroundColor), "rgb(48, 100, 237)");
+  const themedColors = await page.evaluate(() => {
+    const root = document.documentElement;
+    const original = root.getAttribute("class");
+    const primary = document.querySelector(".coach-input-primary");
+    const transition = primary.style.transition;
+    primary.style.transition = "none";
+    const probe = document.createElement("span");
+    probe.style.backgroundColor = "hsl(var(--primary))";
+    document.querySelector(".coach-workspace").append(probe);
+    const colors = ["light", "dark"].map(theme => {
+      root.classList.toggle("light", theme === "light");
+      root.classList.toggle("dark", theme === "dark");
+      return {actual:getComputedStyle(document.querySelector(".coach-input-primary")).backgroundColor, expected:getComputedStyle(probe).backgroundColor};
+    });
+    probe.remove();
+    if (original === null) root.removeAttribute("class"); else root.setAttribute("class",original);
+    primary.style.transition = transition;
+    return colors;
+  });
+  for (const color of themedColors) assert.equal(color.actual,color.expected,"Voice button follows the app accent in each theme");
+  assert.notEqual(themedColors[0].actual,themedColors[1].actual);
   await page.screenshot({ path: "artifacts/coach/desktop.png", fullPage: true });
   const requestsBeforeDictation = chatRequests;
   await page.getByLabel("Ask your coach",{exact:true}).fill("Review");
@@ -137,6 +158,11 @@ try {
   assert.equal(chatPayload.configuration.goal, undefined);
   assert.equal(chatPayload.configuration.timezone, "America/New_York");
   assert.match(chatJournal, /journals\/1/);
+  const copyAnswer = page.getByRole("button",{name:"Copy answer",exact:true});
+  assert.equal(await copyAnswer.evaluate(button => button.getBoundingClientRect().top >= button.closest("article").querySelector(".coach-message-content").getBoundingClientRect().bottom),true,"Copy icon sits below the generated answer");
+  await copyAnswer.click();
+  await page.getByRole("button",{name:"Answer copied",exact:true}).waitFor();
+  assert.equal(await page.evaluate(() => window.__copiedText),"Your recorded mistakes include entering early. What would help you wait for confirmation?");
   await page.getByText("Supporting trades (1)").click();
   await page.getByRole("button", { name: "#7 · EURUSD", exact: true }).click();
   await page.getByText("Entered before confirmation", { exact: true }).waitFor();
