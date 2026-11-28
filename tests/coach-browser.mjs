@@ -10,6 +10,21 @@ try {
   browser = await chromium.launch({ headless: true, channel: "chrome" });
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, hasTouch: true });
   await context.addInitScript(() => { localStorage.setItem("access", "test-access"); localStorage.setItem("last_journal_id", "1"); });
+  await context.addInitScript(() => {
+    window.__speech = {starts:0, aborts:0};
+    class MockRecognition {
+      start() { window.__speech.starts++; window.__speech.active = this; queueMicrotask(() => {
+        if (window.__speech.error) { this.onerror?.({error:window.__speech.error}); this.onend?.(); }
+        else this.onstart?.();
+      }); }
+      stop() {
+        if (window.__speech.holdStop) { window.__speech.pending = this; return; }
+        this.onend?.();
+      }
+      abort() { window.__speech.aborts++; this.onend?.(); }
+    }
+    window.__MockRecognition = window.SpeechRecognition = window.webkitSpeechRecognition = MockRecognition;
+  });
   page = await context.newPage();
   page.setDefaultTimeout(10000);
   const errors = []; page.on("pageerror", err => { errors.push(err.message); console.error("PAGE ERROR:", err.message); });
@@ -53,7 +68,7 @@ try {
   await page.goto("http://127.0.0.1:4198/coach");
   await page.getByRole("heading", { name: "What would you like to work on?" }).waitFor();
   await page.getByText("Your coach is being set up").waitFor();
-  assert.equal(await page.getByRole("button", { name: "Send message" }).isDisabled(), true);
+  assert.equal(await page.getByRole("button", { name: "Voice mode — coming soon" }).isDisabled(), true);
   await page.getByLabel("Ask your coach", {exact:true}).fill("Help me review my trading.");
   assert.equal(await page.getByRole("button", {name:"Send message"}).isEnabled(), true);
   await page.getByRole("button", {name:"Send message"}).click();
@@ -73,21 +88,53 @@ try {
   assert.equal(await page.getByRole("button", {name:"Create a task",exact:true}).count(), 0);
   assert.equal(await page.getByText("Build a coaching routine", {exact:true}).count(), 0);
   await mkdir("artifacts/coach", { recursive: true });
+  assert.equal(await page.getByRole("button",{name:"Voice mode — coming soon",exact:true}).evaluate(node => getComputedStyle(node).backgroundColor), "rgb(48, 100, 237)");
   await page.screenshot({ path: "artifacts/coach/desktop.png", fullPage: true });
+  const requestsBeforeDictation = chatRequests;
+  await page.getByLabel("Ask your coach",{exact:true}).fill("Review");
+  await page.getByRole("button",{name:"Dictate message",exact:true}).click();
+  await page.getByRole("button",{name:"Stop recording and transcribe",exact:true}).waitFor();
+  assert.equal(await page.getByRole("button",{name:"Send message",exact:true}).count(),0);
+  await page.evaluate(() => window.__speech.active.onresult({results:[[{transcript:"my recent"}]]}));
+  await page.evaluate(() => window.__speech.active.onresult({results:[[{transcript:"my recent trades"}]]}));
+  await page.screenshot({path:"artifacts/coach/recording.png",fullPage:true});
+  await page.evaluate(() => { window.__speech.holdStop = true; });
+  await page.getByRole("button",{name:"Stop recording and transcribe",exact:true}).click();
+  await page.getByRole("button",{name:"Transcribing recording",exact:true}).waitFor();
+  assert.equal(await page.getByRole("button",{name:"Transcribing recording",exact:true}).isDisabled(),true);
+  await page.evaluate(() => {
+    window.__speech.pending.onresult({results:[[{transcript:"my recent trades please"}]]});
+    window.__speech.pending.onend();
+    window.__speech.holdStop = false;
+  });
+
+  assert.equal(await page.getByLabel("Ask your coach",{exact:true}).inputValue(),"Review my recent trades please");
+  assert.equal(chatRequests,requestsBeforeDictation,"Dictation never sends automatically");
+  await page.evaluate(() => { window.__speech.error = "not-allowed"; });
+  await page.getByRole("button",{name:"Dictate message",exact:true}).click();
+  await page.getByText("Microphone access was denied.",{exact:false}).waitFor();
+  assert.equal(await page.getByLabel("Ask your coach",{exact:true}).inputValue(),"Review my recent trades please");
+  await page.evaluate(() => { window.SpeechRecognition = window.webkitSpeechRecognition = undefined; });
+  await page.getByRole("button",{name:"Dictate message",exact:true}).click();
+  await page.getByText("Voice input isn't supported in this browser.",{exact:false}).waitFor();
+  await page.evaluate(() => { window.__speech.error = null; window.SpeechRecognition = window.webkitSpeechRecognition = window.__MockRecognition; });
+  await page.getByRole("button",{name:"Dictate message",exact:true}).click();
+  await page.getByRole("button",{name:"Stop recording and transcribe",exact:true}).click();
+  await page.getByRole("button",{name:"Add context",exact:true}).click();
+  await page.getByRole("menuitemcheckbox",{name:"Include attached screenshots",exact:true}).click();
   await page.getByRole("button", { name: "Understand my losses", exact: false }).click();
   assert.match(await page.getByLabel("Ask your coach", { exact: true }).inputValue(), /losing trades/);
-  await page.getByRole("button", { name: "Analysis settings" }).click();
-  await page.getByLabel("Response length").selectOption("detailed");
-  await page.getByText("Goals and report options", {exact:true}).click();
-  await page.getByRole("button", { name: "Full report", exact: true }).click();
-  await page.getByLabel("Current goal", { exact: false }).fill("Wait for confirmation");
-  await page.getByRole("button", { name: "Done", exact: true }).click();
+  assert.equal(await page.getByRole("button", {name:"Analysis settings",exact:true}).count(), 0);
+  assert.equal(await page.getByRole("button", {name:"Voice mode — coming soon",exact:true}).count(), 0);
+  await page.getByRole("button", {name:"Response length",exact:true}).click();
+  await page.getByRole("menuitemradio", {name:"Detailed",exact:true}).click();
   await page.getByRole("button", { name: "Send message" }).click();
   await page.getByText("Your recorded mistakes include entering early.", { exact: false }).waitFor();
-  assert.equal(chatPayload.configuration.trade_status, "LOSS");
+  assert.equal(chatPayload.configuration.trade_status, undefined);
   assert.equal(chatPayload.configuration.detail, "detailed");
-  assert.equal(chatPayload.configuration.sections.length, 5);
-  assert.equal(chatPayload.configuration.goal, "Wait for confirmation");
+  assert.equal(chatPayload.configuration.screenshots,true);
+  assert.equal(chatPayload.configuration.sections, undefined);
+  assert.equal(chatPayload.configuration.goal, undefined);
   assert.equal(chatPayload.configuration.timezone, "America/New_York");
   assert.match(chatJournal, /journals\/1/);
   await page.getByText("Supporting trades (1)").click();
@@ -104,7 +151,8 @@ try {
   await page.getByRole("button",{name:"Conversation actions",exact:true}).click();
   await page.getByRole("menuitem",{name:"Save chat",exact:true}).click();
   assert.match((await downloadPromise).suggestedFilename(), /coaching-conversation.*\.txt$/);
-  await page.getByRole("button",{name:"Choose a trade",exact:true}).click();
+  await page.getByRole("button",{name:"Add context",exact:true}).click();
+  await page.getByRole("menuitem",{name:"Choose a trade",exact:true}).click();
   await page.getByLabel("Search trades").fill("EURUSD");
   await page.getByRole("button",{name:/EURUSD · BUY/}).click();
   await page.getByRole("button",{name:"Clear selected trade",exact:true}).waitFor();
@@ -112,12 +160,9 @@ try {
   await page.getByLabel("Ask your coach",{exact:true}).waitFor();
   await page.waitForFunction(() => document.getElementById("coach-prompt").value === "" && !document.getElementById("coach-prompt").disabled);
   assert.equal(chatPayload.configuration.trade_id,7);
-  assert.equal(chatPayload.configuration.start_date,"2026-11-06");
-  assert.equal(chatPayload.configuration.trade_status,"all");
+  assert.equal(chatPayload.configuration.start_date, undefined);
+  assert.equal(chatPayload.configuration.trade_status, undefined);
   await page.getByRole("button",{name:"Clear selected trade",exact:true}).click();
-  await page.getByRole("button",{name:"Analysis settings",exact:true}).click();
-  assert.equal(await page.getByRole("combobox",{name:"Trades to include",exact:true}).inputValue(),"LOSS");
-  await page.getByRole("button",{name:"Done",exact:true}).click();
   // Failures preserve the question and provide an explicit retry.
   failNextChat = true;
   await page.getByLabel("Ask your coach",{exact:true}).fill("Help me follow my risk limit.");
@@ -200,10 +245,13 @@ try {
   assert.equal(await page.locator("#app-navigation").getByRole("button", { name: "Switch journal", exact: true }).count(), 0);
   assert.equal(await nav.getByRole("link", { name: "AI Coach", exact: true }).getAttribute("aria-current"), "page");
   // Switching journals clears the conversation and stays on the coach page.
+  await page.getByRole("button", {name:"Dictate message",exact:true}).click();
+  await page.getByRole("button", {name:"Stop recording and transcribe",exact:true}).waitFor();
   await page.getByRole("button", { name: "Switch journal", exact: true }).click();
   await page.getByRole("menuitem", { name: /Backtest journal/ }).click();
   await page.getByRole("heading", { name: "What would you like to work on?" }).waitFor();
   assert.match(page.url(), /\/coach$/);
+  assert.ok(await page.evaluate(() => window.__speech.aborts > 0), "Dictation is released on journal change");
   await page.getByRole("button", {name:"More ideas",exact:true}).click();
   assert.equal(await page.locator(".coach-ideas button:visible").count(), 6);
   await page.setViewportSize({ width: 390, height: 844 });
@@ -221,9 +269,8 @@ try {
     assert.ok(box.height >= 44, "Starter has a comfortable touch target");
     const composerBox = await page.locator(".coach-composer").boundingBox();
     assert.ok(box.y + box.height <= composerBox.y, "Mobile ideas stay above the composer");
-    await page.getByRole("button",{name:"Analysis settings",exact:true}).click();
-    await page.getByRole("combobox",{name:"Trades to include",exact:true}).selectOption("WIN");
-    await page.getByRole("button",{name:"Done",exact:true}).click();
+    await page.getByRole("button",{name:"Add context",exact:true}).click();
+    await page.getByRole("menuitemradio",{name:"Brief",exact:true}).click();
     await page.getByLabel("Ask your coach",{exact:true}).fill("First line");
     const beforeEnter = chatRequests;
     await page.getByLabel("Ask your coach",{exact:true}).press("Shift+Enter");
@@ -257,7 +304,7 @@ try {
   assert.equal(tasks[0].title,"Weekly discipline check");
   assert.equal(tasks[0].enabled,true);
   assert.deepEqual(errors, []);
-  console.log("PASS: guided prompts, actual trade filters, trade picker, rich evidence, followups, export, retry, stop waiting, reset confirmation, task templates, task lifecycle, journal isolation, mobile layout");
+  console.log("PASS: compact composer, response length, dictation lifecycle and errors, disabled voice mode, guided prompts, trade picker, rich evidence, followups, export, retry, stop waiting, reset confirmation, task templates, task lifecycle, journal isolation, mobile layout");
 } catch (error) {
   console.error(await page?.locator("body").innerText());
   await page?.screenshot({ path: "/tmp/coach-failure.png", fullPage: true });

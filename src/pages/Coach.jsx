@@ -2,7 +2,7 @@ import "@/components/coach/coach-mobile.css";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowUp, CalendarClock, Check, ChevronRight, Clock3, Download, FileText,
+  AlignLeft, AudioLines, Mic, ArrowUp, CalendarClock, Check, ChevronRight, Clock3, Download, FileText,
   Loader2, MessageSquare, MoreHorizontal, Pause, Play, Plus, RotateCcw, Search, Settings2,
   ShieldCheck, Sparkles, Square, Target, Trash2, X,
 } from "lucide-react";
@@ -13,14 +13,14 @@ import TradeDetailPanel from "@/components/journal/TradeDetailPanel";
 import AppShell from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import CoachConfiguration from "@/components/coach/CoachConfiguration";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import useCoachDictation from "@/components/coach/useCoachDictation";
 import CoachMessage from "@/components/coach/CoachMessage";
 import CoachTradePicker from "@/components/coach/CoachTradePicker";
 import CoachTaskDialog from "@/components/coach/CoachTaskDialog";
 import {
   COACH_STARTERS, defaultConfiguration, apiError,
-  configurationError, localDate, scheduleSummary, scopeSummary,
+  localDate, scheduleSummary,
 } from "@/components/coach/coachConfiguration.js";
 import {
   askCoach, coachStatus, listCoachTasks, saveCoachTask,
@@ -51,7 +51,6 @@ function CoachWorkspace({ journal, accountTimezone }) {
   const [tab, setTab] = useState("chat");
   const [outputConfiguration, setConfiguration] = useState(() => defaultConfiguration(accountTimezone));
   const configuration = { ...outputConfiguration, timezone: accountTimezone };
-  const [optionsOpen, setOptionsOpen] = useState(false);
   const [moreStarters, setMoreStarters] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedTrade, setSelectedTrade] = useState(null);
@@ -77,7 +76,7 @@ function CoachWorkspace({ journal, accountTimezone }) {
   const controller = useRef(null);
   const mounted = useRef(true);
   const requestBusy = useRef(false);
-  const previousScope = useRef(null);
+  const dictation = useCoachDictation({ value: input, onChange: setInput, disabled: busy || tab !== "chat", onFinish: () => promptRef.current?.focus() });
 
   useEffect(() => {
     mounted.current = true;
@@ -92,6 +91,13 @@ function CoachWorkspace({ journal, accountTimezone }) {
     if (messages.length || busy) bottom.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [messages, busy]);
 
+  useEffect(() => {
+    const field = promptRef.current;
+    if (!field) return;
+    field.style.height = "auto";
+    field.style.height = `${Math.min(field.scrollHeight, 160)}px`;
+  }, [input, tab]);
+
   async function retryConnection() {
     setStatusError(""); setStatusLoading(true);
     try { const value = await coachStatus(journal.id); if (mounted.current) setStatus(value); }
@@ -103,32 +109,26 @@ function CoachWorkspace({ journal, accountTimezone }) {
     catch (err) { if (mounted.current) setTaskError(apiError(err)); }
   }
   function clearTrade() {
-    const restore = previousScope.current || {};
-    previousScope.current = null;
     setSelectedTrade(null);
-    setConfiguration(previous => { const next = { ...previous, ...restore }; delete next.trade_id; return next; });
+    setConfiguration(previous => { const next = { ...previous }; delete next.trade_id; return next; });
   }
   function chooseStarter(starter) {
-    clearTrade(); setConfiguration(previous => ({ ...previous, ...starter.configuration, trade_id: undefined }));
+    clearTrade();
     setInput(starter.prompt); setError(""); setNotice("");
     promptRef.current?.focus();
   }
   function chooseTrade(trade) {
-    if (!configuration.trade_id) previousScope.current = { ...configuration };
-    const date = localDate(accountTimezone, new Date(trade.entry_datetime));
-    setConfiguration(previous => ({ ...previous, period: "custom", start_date: date, end_date: date, trade_id: trade.id, trade_status: "all", instrument: "" }));
+    setConfiguration(previous => ({ ...previous, trade_id: trade.id }));
     setSelectedTrade(trade); setPickerOpen(false);
     setInput(`Help me understand this ${trade.asset?.symbol || trade.asset} ${trade.side} trade. Use my journal notes and distinguish my decision quality from the outcome. What did I do well and what is one thing to improve?`);
     setError(""); promptRef.current?.focus();
   }
   async function send(prompt = input) {
-    if (!prompt.trim() || requestBusy.current) return;
-    const invalid = configurationError(configuration);
-    if (invalid) { setError(invalid); setOptionsOpen(true); return; }
+    if (!prompt.trim() || requestBusy.current || dictation.listening) return;
     requestBusy.current = true;
     const request = new AbortController(); controller.current = request;
     const instruction = prompt.trim();
-    const sentConfiguration = structuredClone(configuration);
+    const sentConfiguration = { timezone: accountTimezone, detail: configuration.detail, screenshots: configuration.screenshots, ...(configuration.trade_id ? { trade_id: configuration.trade_id } : {}) };
     setInput(instruction); setPendingPrompt(instruction); setError(""); setNotice(""); setBusy(true);
     try {
       const response = await askCoach(journal.id, { instructions: instruction, configuration: sentConfiguration, previous_scope: messages.findLast(message => message.scope)?.scope || null, history: messages.slice(-12).map(({ role, content }) => ({ role, content: content.slice(0, 8000) })) }, request.signal);
@@ -201,42 +201,61 @@ function CoachWorkspace({ journal, accountTimezone }) {
     {status && !status.configured && <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4"><p className="text-sm font-medium">Your coach is being set up</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Choose a provider, model and API key in Settings → AI Coach to start conversations and run coaching tasks.</p></div>}
 
     {tab === "chat" ? <section data-conversation={messages.length > 0 || busy} className="coach-chat nx-surface flex h-[calc(100dvh-210px)] min-h-[520px] min-w-0 flex-col overflow-hidden">
-        <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-2">
-          <Button variant="ghost" size="sm" className="h-auto min-w-0 justify-start text-xs text-muted-foreground" disabled={busy} onClick={() => setOptionsOpen(true)} aria-label="Analysis settings">
-            <Settings2 className="shrink-0" /><span className="truncate">{selectedTrade ? scopeSummary(configuration) : "Analysis preferences"}{configuration.screenshots ? " · Screenshots" : ""}</span>
-          </Button>
+        {messages.length > 0 && <div className="flex justify-end border-b border-border/60 px-4 py-2">
           {messages.length > 0 && <DropdownMenu>
-            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm" aria-label="Conversation actions"><MoreHorizontal /></Button></DropdownMenuTrigger>
+            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm" aria-label="Conversation actions" disabled={dictation.listening}><MoreHorizontal /></Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onSelect={downloadChat}><Download className="size-4" />Save chat</DropdownMenuItem>
               <DropdownMenuItem disabled={busy} onSelect={() => setNewChatOpen(true)}><RotateCcw className="size-4" />New chat</DropdownMenuItem>
               <DropdownMenuItem onSelect={scheduleCurrent}><CalendarClock className="size-4" />Schedule this</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>}
-        </div>
+        </div>}
         <div className="coach-messages min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-6 sm:px-8" aria-live="polite" aria-busy={busy}>
           {!messages.length && !busy && <div className="coach-welcome mx-auto flex min-h-full max-w-xl flex-col items-center justify-center py-6 text-center">
             <span className="mb-5 flex size-11 items-center justify-center rounded-2xl bg-primary/10"><Sparkles className="size-5 text-primary" /></span>
             <h2 className="text-2xl font-medium tracking-tight">What would you like to work on?</h2>
             <p className="mb-7 mt-2 text-sm leading-6 text-muted-foreground">Ask a question about your trading, or start here.</p>
-            <div className="coach-ideas flex flex-col items-center gap-2 sm:flex-row sm:flex-wrap sm:justify-center">{COACH_STARTERS.slice(0, moreStarters ? undefined : 3).map((starter, index) => { const Icon = STARTER_ICONS[index]; return <button key={starter.id} className={`${index >= 3 ? "hidden sm:flex" : "flex"} items-center gap-2 rounded-xl border border-border px-3 py-2.5 text-xs transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary`} onClick={() => chooseStarter(starter)}><Icon className="size-3.5 shrink-0 text-muted-foreground" />{starter.title}</button>; })}</div>
+            <div className="coach-ideas flex flex-col items-center gap-2 sm:flex-row sm:flex-wrap sm:justify-center">{COACH_STARTERS.slice(0, moreStarters ? undefined : 3).map((starter, index) => { const Icon = STARTER_ICONS[index]; return <button key={starter.id} className={`${index >= 3 ? "hidden sm:flex" : "flex"} items-center gap-2 rounded-xl border border-border px-3 py-2.5 text-xs transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary`} disabled={dictation.listening} onClick={() => chooseStarter(starter)}><Icon className="size-3.5 shrink-0 text-muted-foreground" />{starter.title}</button>; })}</div>
             <Button variant="ghost" size="sm" className="mt-3 hidden text-xs text-muted-foreground sm:inline-flex" aria-expanded={moreStarters} onClick={() => setMoreStarters(value => !value)}>{moreStarters ? "Fewer ideas" : "More ideas"}</Button>
           </div>}
-          {messages.map((message, index) => <CoachMessage key={index} message={message} onEvidence={openEvidence} disabled={busy} onFollowUp={index === lastAssistantIndex ? prompt => { setInput(prompt); promptRef.current?.focus(); } : undefined} onSchedule={index === lastAssistantIndex ? () => setTaskDialog({ seed: { instructions: messages[index - 1]?.content || "", configuration: messages[index - 1]?.configuration || configuration } }) : undefined} />)}
+          {messages.map((message, index) => <CoachMessage key={index} message={message} onEvidence={openEvidence} disabled={busy || dictation.listening} onFollowUp={index === lastAssistantIndex ? prompt => { setInput(prompt); promptRef.current?.focus(); } : undefined} onSchedule={index === lastAssistantIndex ? () => setTaskDialog({ seed: { instructions: messages[index - 1]?.content || "", configuration: messages[index - 1]?.configuration || configuration } }) : undefined} />)}
           {busy && <><CoachMessage message={{ role: "user", content: pendingPrompt, configuration }} onEvidence={openEvidence} /><p role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />Your coach is working with your request…</p></>}
           <div ref={bottom} />
         </div>
-        <div className="coach-composer border-t border-border bg-card p-4">
+        <div className="coach-composer p-3 sm:p-4">
           {selectedTrade && <div className="mb-2 flex"><button type="button" disabled={busy} className="flex min-w-0 items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-xs text-primary" onClick={clearTrade} aria-label="Clear selected trade"><span className="truncate">{selectedTrade.asset?.symbol || selectedTrade.asset} · Trade #{selectedTrade.id}</span><X className="size-3.5 shrink-0" /></button></div>}
           <form onSubmit={event => { event.preventDefault(); send(); }}>
             <label className="sr-only" htmlFor="coach-prompt">Ask your coach</label>
-            <textarea ref={promptRef} id="coach-prompt" className="min-h-16 max-h-40 w-full resize-y rounded-lg bg-transparent p-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/30 disabled:opacity-60" rows={2} maxLength={4000} disabled={busy} placeholder="Ask about your trading…" value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); send(); } }} />
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => setPickerOpen(true)}><Plus />{selectedTrade ? "Change trade" : "Choose a trade"}</Button>
-              {busy ? <Button type="button" variant="outline" size="sm" onClick={stopWaiting}><Square />Stop waiting</Button> : <Button type="submit" size="icon-sm" aria-label="Send message" disabled={!input.trim()}><ArrowUp /></Button>}
+            <div className="coach-input-bar" data-recording={dictation.listening}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild><Button type="button" variant="ghost" size="icon-sm" className="coach-input-action" aria-label="Add context" title="Add context" disabled={busy || dictation.listening}><Plus /></Button></DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem onSelect={() => setPickerOpen(true)}><Search className="size-4" />{selectedTrade ? "Change trade" : "Choose a trade"}</DropdownMenuItem>
+                    <DropdownMenuItem role="menuitemcheckbox" aria-checked={configuration.screenshots} onSelect={() => setConfiguration(previous => ({ ...previous, screenshots: !previous.screenshots }))}><Check className={`size-4 ${configuration.screenshots ? "text-primary" : "opacity-0"}`} />Include attached screenshots</DropdownMenuItem>
+                    <DropdownMenuLabel>Response length</DropdownMenuLabel>
+                    {[["brief", "Brief"], ["detailed", "Detailed"]].map(([value, label]) => <DropdownMenuItem key={value} role="menuitemradio" aria-checked={configuration.detail === value} onSelect={() => setConfiguration(previous => ({ ...previous, detail: value }))}><AlignLeft className="size-4" />{label}{configuration.detail === value && <Check className="ml-auto size-3.5" />}</DropdownMenuItem>)}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+            <textarea ref={promptRef} id="coach-prompt" className="coach-prompt-field" rows={1} maxLength={4000} disabled={busy} readOnly={dictation.listening} placeholder={dictation.listening ? "Listening…" : "Message…"} value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); send(); } }} />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild><Button type="button" variant="ghost" size="icon-sm" className="coach-input-action hidden sm:inline-flex" aria-label="Response length" title={`Response length: ${configuration.detail === "brief" ? "Brief" : "Detailed"}`} disabled={busy || dictation.listening}><AlignLeft /></Button></DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {[["brief", "Brief"], ["detailed", "Detailed"]].map(([value, label]) => <DropdownMenuItem key={value} role="menuitemradio" aria-checked={configuration.detail === value} onSelect={() => setConfiguration(previous => ({ ...previous, detail: value }))}><Check className={`size-4 ${configuration.detail === value ? "text-primary" : "opacity-0"}`} />{label}</DropdownMenuItem>)}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              {busy ? <Button type="button" variant="ghost" size="icon-sm" className="coach-input-primary" aria-label="Stop waiting" title="Stop waiting" onClick={stopWaiting}><Square /></Button>
+                : dictation.listening ? <Button type="button" variant="ghost" size="icon-sm" className="coach-input-primary" aria-label={dictation.finishing ? "Transcribing recording" : "Stop recording and transcribe"} title="Stop recording and transcribe" disabled={dictation.finishing} onClick={dictation.stop}>{dictation.finishing ? <Loader2 className="animate-spin" /> : <Square className="fill-current" />}</Button>
+                : <>
+                  <Button type="button" variant="ghost" size="icon-sm" className="coach-input-action" aria-label="Dictate message" title="Dictate message" onClick={dictation.start}><Mic /></Button>
+                  {input.trim() ? <Button type="submit" variant="ghost" size="icon-sm" className="coach-input-primary" aria-label="Send message" title="Send message"><ArrowUp /></Button>
+                    : <span className="shrink-0" title="Voice mode — coming soon"><Button type="button" variant="ghost" size="icon-sm" className="coach-input-primary" aria-label="Voice mode — coming soon" disabled><AudioLines /></Button></span>}
+                </>}
             </div>
+            {dictation.listening && <p role="status" className="mt-2 text-xs text-muted-foreground">{dictation.finishing ? "Transcribing your recording…" : "Recording… Stop to transcribe your message."}</p>}
+            {dictation.error && <p role="status" className="mt-2 text-xs text-muted-foreground">{dictation.error}</p>}
           </form>
-          {error && <div role="alert" className="mt-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3"><p className="text-xs leading-5 text-destructive">{error}</p><Button className="mt-2" size="sm" variant="outline" disabled={busy || !input.trim()} onClick={() => send()}>Try again</Button></div>}
+          {error && <div role="alert" className="mt-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3"><p className="text-xs leading-5 text-destructive">{error}</p><Button className="mt-2" size="sm" variant="outline" disabled={busy || dictation.listening || !input.trim()} onClick={() => send()}>Try again</Button></div>}
           {notice && <p role="status" className="mt-3 text-xs leading-5 text-muted-foreground">{notice}</p>}
           {messages.length > 0 && <p className="mt-2 text-center text-[11px] leading-5 text-muted-foreground">Chats aren't saved. Download a copy from the conversation menu.</p>}
         </div>
@@ -254,7 +273,6 @@ function CoachWorkspace({ journal, accountTimezone }) {
 
     {pickerOpen && <CoachTradePicker journalId={journal.id} timezone={accountTimezone} onSelect={chooseTrade} onClose={() => setPickerOpen(false)} />}
     {evidenceTrade && (evidenceTrade.loading || evidenceTrade.error ? <Dialog open onOpenChange={() => setEvidenceTrade(null)}><DialogContent><DialogHeader><DialogTitle>Trade #{evidenceTrade.id}</DialogTitle><DialogDescription>Recorded evidence from {journal.name}</DialogDescription></DialogHeader>{evidenceTrade.loading ? <p role="status">Loading trade…</p> : <div><p role="alert" className="text-destructive">{evidenceTrade.error}</p><Button className="mt-3" variant="outline" onClick={() => openEvidence(evidenceTrade)}>Try again</Button></div>}</DialogContent></Dialog> : <TradeDetailPanel trade={evidenceTrade} open onClose={() => setEvidenceTrade(null)} />)}
-    {optionsOpen && <Dialog open onOpenChange={setOptionsOpen}><DialogContent className="coach-dialog sm:max-w-lg"><DialogHeader><DialogTitle>Analysis settings</DialogTitle><DialogDescription>Choose the trades and response that suit your question.</DialogDescription></DialogHeader><form className="space-y-4" onSubmit={event => { event.preventDefault(); const invalid = configurationError(configuration); if (invalid) { setError(invalid); return; } setError(""); setOptionsOpen(false); }}><CoachConfiguration value={configuration} onChange={setConfiguration} />{configurationError(configuration) && <p role="alert" className="text-xs text-destructive">{configurationError(configuration)}</p>}<Button type="submit">Done</Button></form></DialogContent></Dialog>}
     {taskDialog && !taskDialog.deleting && <CoachTaskDialog journalId={journal.id} {...taskDialog} seed={taskDialog.seed || { configuration }} onClose={() => setTaskDialog(null)} onSaved={() => { reloadTasks(); setTab("tasks"); }} />}
     {taskDialog?.deleting && <Dialog open onOpenChange={() => setTaskDialog(null)}><DialogContent><DialogHeader><DialogTitle>Delete this task?</DialogTitle><DialogDescription>“{taskDialog.deleting.title}” and its results will be permanently removed.</DialogDescription></DialogHeader><div className="flex justify-end gap-2"><Button variant="outline" disabled={taskBusy !== null} onClick={() => setTaskDialog(null)}>Keep task</Button><Button variant="destructive" disabled={taskBusy !== null} onClick={() => taskAction(taskDialog.deleting.id, async () => { await deleteCoachTask(journal.id, taskDialog.deleting.id); setTaskDialog(null); })}>Delete task</Button></div>{taskError && <p role="alert" className="text-xs text-destructive">{taskError}</p>}</DialogContent></Dialog>}
     {newChatOpen && <Dialog open onOpenChange={setNewChatOpen}><DialogContent><DialogHeader><DialogTitle>Start a fresh conversation?</DialogTitle><DialogDescription>This will clear the current chat. Download a copy first if you want to keep it.</DialogDescription></DialogHeader><div className="flex flex-wrap justify-end gap-2"><Button variant="outline" onClick={downloadChat}><Download />Save chat</Button><Button onClick={() => { setMessages([]); setInput(""); setError(""); setNotice(""); setNewChatOpen(false); }}>Start new chat</Button></div></DialogContent></Dialog>}

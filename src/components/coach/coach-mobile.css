@@ -1,3 +1,56 @@
+/* A single-row composer, expanding only when the draft needs another line. */
+.coach-input-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid rgb(255 255 255 / .14);
+  border-radius: 32px;
+  background: #222;
+  box-shadow: inset 0 1px 1px rgb(255 255 255 / .08), 0 2px 8px rgb(0 0 0 / .08);
+}
+.coach-input-bar:focus-within { border-color: #6b8ef6; }
+.coach-input-bar .coach-prompt-field {
+  flex: 1;
+  min-width: 0;
+  width: 0;
+  min-height: 44px;
+  max-height: 160px;
+  resize: none;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  padding: 10px 4px;
+  background: transparent;
+  color: #fafafa;
+  font-size: 16px;
+  line-height: 24px;
+  box-shadow: none;
+  overflow-y: auto;
+  opacity: 1;
+}
+.coach-input-bar .coach-prompt-field:disabled { background: transparent; color: #fafafa; }
+.coach-prompt-field::placeholder { color: #a1a1aa; }
+.coach-input-bar .coach-input-action,
+.coach-input-bar .coach-input-primary {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #fafafa;
+  background: transparent;
+  box-shadow: none;
+}
+.coach-input-bar .coach-input-action:hover { background: rgb(255 255 255 / .09); }
+.coach-input-bar .coach-input-primary { background: #3064ed; }
+.coach-input-bar .coach-input-primary:hover { background: #2454d5; }
+.coach-input-bar .coach-input-primary:disabled { opacity: .85; cursor: not-allowed; color: #fafafa; background: #3064ed; }
+.coach-input-bar .coach-input-action:disabled { opacity: .4; color: #fafafa; background: transparent; }
+.coach-input-bar .coach-input-action svg,
+.coach-input-bar .coach-input-primary svg { width: 22px; height: 22px; }
+
 /* Phones use page scrolling instead of squeezing the conversation between
    three fixed-height toolbars. Desktop retains its independent chat scroller. */
 @media (max-width: 639px) {
@@ -23,12 +76,8 @@
     padding: 10px 12px max(10px, env(safe-area-inset-bottom));
     box-shadow: 0 -5px 18px rgb(0 0 0 / 0.04);
   }
-  .coach-composer textarea {
-    min-height: 64px;
-    max-height: 140px;
-    resize: none;
-    font-size: 16px;
-  }
+  .coach-composer button[data-size="icon-sm"] { min-width: 44px; }
+
   .coach-workspace button, .coach-dialog button {
     min-height: var(--coach-touch-target, 44px);
   }
