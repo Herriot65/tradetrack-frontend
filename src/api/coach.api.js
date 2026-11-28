@@ -37,7 +37,7 @@ export const askCoach = async (id, payload, signal, onDelta = () => {}) => {
           onDelta(data.text.slice(offset, offset + 18));
           await new Promise(resolve => setTimeout(resolve, 12));
         }
-      }
+      } else if (data.type === "reset") onDelta("\u0000RESET\u0000");
       else if (data.type === "done") result = data.result;
       else if (data.type === "error") throw { response: { status: 503, data: { detail: data.detail, code: data.code } } };
     }
