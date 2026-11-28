@@ -40,17 +40,10 @@ export default function Hero() {
               </a>
             </Button>
           </div>
-          <p className="mt-5 text-[11px] text-zinc-500">{t("Built for serious traders. Designed for your daily process.")}</p>
         </div>
       </div>
       <div className="relative mt-14 md:mt-20">
         <ProductPreview />
-      </div>
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-[10px] uppercase tracking-[0.12em] text-zinc-500">
-        <span>{t("Multi-journal logging")}</span>
-        <span>{t("MT5 import")}</span>
-        <span>{t("Performance analytics")}</span>
-        <span>{t("Session insights")}</span>
       </div>
     </Section>
   );

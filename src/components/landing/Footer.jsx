@@ -9,10 +9,10 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-zinc-800/60 bg-zinc-950">
+    <footer className="border-t border-border/60 bg-background">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="sm:col-span-2 lg:col-span-1">
+        <div className="grid gap-10 sm:grid-cols-2">
+          <div>
             <Link to="/" className="flex items-center gap-2.5">
               <img
                 src="/nexora.png"
@@ -23,7 +23,6 @@ export default function Footer() {
                 Nexora Analytics
               </span>
             </Link>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-zinc-500">{t("Journal your trades, understand your numbers, and compound the edge you already have.")}</p>
           </div>
 
           <div>
@@ -33,39 +32,7 @@ export default function Footer() {
                 <li key={link.label}>
                   <a
                     href={link.href}
-                    className="text-sm text-zinc-500 transition-colors hover:text-zinc-300"
-                  >
-                    {t(link.label)}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="mb-4 text-sm font-semibold text-foreground">{t("Company")}</h4>
-            <ul className="space-y-3">
-              {footerLinks.company.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-sm text-zinc-500 transition-colors hover:text-zinc-300"
-                  >
-                    {t(link.label)}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="mb-4 text-sm font-semibold text-foreground">{t("Legal")}</h4>
-            <ul className="space-y-3">
-              {footerLinks.legal.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-sm text-zinc-500 transition-colors hover:text-zinc-300"
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {t(link.label)}
                   </a>
@@ -76,16 +43,16 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-zinc-800/60 pt-8 sm:flex-row">
-          <p className="text-sm text-zinc-600">
+          <p className="text-sm text-muted-foreground">
             © {year}{" " + t("Nexora Analytics. All rights reserved.")}</p>
           <div className="flex gap-6">
             <Link
               to="/login"
-              className="text-sm text-zinc-500 transition-colors hover:text-zinc-300"
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >{t("Log in")}</Link>
             <Link
               to="/register"
-              className="text-sm text-zinc-500 transition-colors hover:text-zinc-300"
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >{t("Sign up")}</Link>
           </div>
         </div>

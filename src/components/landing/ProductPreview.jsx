@@ -15,9 +15,6 @@ export default function ProductPreview() {
         decoding="async"
         className="block h-auto w-full"
       />
-      <figcaption className="border-t border-border px-4 py-3 text-center text-[11px] text-muted-foreground">
-        {t("Actual Nexora workspace with synthetic sample trades. Your journal shows your own results.")}
-      </figcaption>
     </figure>
   );
 }

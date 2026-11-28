@@ -1,4 +1,4 @@
-import { BookOpen, LineChart, BarChart3, Clock, Upload, Target, Flame } from "lucide-react";
+import { BookOpen, LineChart, BarChart3, Clock, Upload, Target } from "lucide-react";
 
 export const navLinks = [
   { label: "Features", href: "#features" },
@@ -9,26 +9,22 @@ export const features = [
   {
     icon: BookOpen,
     title: "Multi-journal Trade Logging",
-    description:
-      "Keep separate journals for live, demo, or backtesting. Log trades with asset, entry & exit, R-multiple, setup tags, and notes — then search and filter your full history in seconds.",
+    description: "Separate live, demo, and backtesting journals. Record each trade and find it quickly with search and filters.",
   },
   {
     icon: BarChart3,
     title: "Full Analytics Suite",
-    description:
-      "Equity curve, drawdown chart, R-per-trade waterfall, win/loss distribution, profit factor, max streaks, and expectancy — all computed automatically from your trade log.",
+    description: "Track equity, drawdown, win rate, expectancy, and R per trade in one clear view.",
   },
   {
     icon: Clock,
     title: "Time-Based Performance",
-    description:
-      "Discover exactly which days of the week and hours of the day you trade best. Heatmap calendar and session breakdowns surface patterns invisible to the naked eye.",
+    description: "Compare results by day, hour, and session to see when your strategy performs best.",
   },
   {
     icon: Upload,
     title: "MT5 One-Click Import",
-    description:
-      "Import your full MetaTrader 5 trading history in seconds. Trades are mapped automatically — no spreadsheet wrangling, no manual entry.",
+    description: "Bring your MetaTrader 5 history into Nexora without spreadsheet cleanup or manual entry.",
   },
 ];
 
@@ -37,29 +33,19 @@ export const steps = [
     icon: Upload,
     step: "01",
     title: "Import or log trades",
-    description:
-      "Import your MT5 history with one click, or manually journal trades using our streamlined entry form with R-multiple, setup tags, and notes.",
+    description: "Import your MT5 history or add trades manually. Keep entries, exits, setups, and notes together.",
   },
   {
     icon: LineChart,
     step: "02",
     title: "See your analytics instantly",
-    description:
-      "Your equity curve, drawdown chart, win rate, profit factor, and career-level streak stats appear the moment your first trade lands.",
+    description: "Review equity, drawdown, win rate, and performance by setup or session.",
   },
   {
     icon: Target,
     step: "03",
     title: "Find your edge",
-    description:
-      "Heatmaps, day-of-week charts, and hourly breakdowns reveal which setups, sessions, and instruments actually drive your results.",
-  },
-  {
-    icon: Flame,
-    step: "04",
-    title: "Compound the advantage",
-    description:
-      "Track expectancy and average R across years. Filter by year, review per-period stats, and iterate on your process with hard numbers.",
+    description: "Use patterns in your history to make better-informed trading decisions.",
   },
 ];
 
@@ -116,15 +102,6 @@ export const pricingTiers = [
 export const footerLinks = {
   product: [
     { label: "Features", href: "#features" },
-    { label: "Changelog", href: "#" },
-  ],
-  company: [
-    { label: "About", href: "#" },
-    { label: "Blog", href: "#" },
-    { label: "Careers", href: "#" },
-  ],
-  legal: [
-    { label: "Privacy", href: "#" },
-    { label: "Terms", href: "#" },
+    { label: "How it works", href: "#how-it-works" },
   ],
 };
