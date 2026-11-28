@@ -51,6 +51,42 @@
 .coach-input-bar .coach-input-action svg,
 .coach-input-bar .coach-input-primary svg { width: 22px; height: 22px; }
 
+.coach-message { max-width: 100%; }
+.coach-message-user { max-width: min(95%, 42rem); margin-left: auto; }
+.coach-user-bubble {
+  padding: 13px 17px;
+  border: 1px solid hsl(var(--primary) / .18);
+  border-radius: 22px 22px 6px 22px;
+  background: linear-gradient(140deg, hsl(var(--primary) / .12), hsl(var(--primary) / .045));
+  box-shadow: 0 5px 18px hsl(var(--primary) / .055), inset 0 1px 0 rgb(255 255 255 / .18);
+}
+.coach-user-context { color: hsl(var(--primary) / .75); }
+.coach-message-actions {
+  position: absolute;
+  top: -43px;
+  right: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-2px);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+.coach-message-actions > button {
+  border: 1px solid hsl(var(--border) / .65);
+  border-radius: 999px;
+  background: hsl(var(--background) / .82);
+  box-shadow: 0 2px 8px rgb(0 0 0 / .06);
+}
+.coach-message:not(.coach-message-user) .coach-message-actions { right: auto; left: 0; justify-content: flex-start; }
+.coach-message[data-actions-visible="true"] .coach-message-actions,
+.coach-message:focus-within .coach-message-actions { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+@media (hover: hover) and (pointer: fine) {
+  .coach-message:hover .coach-message-actions { opacity: 1; pointer-events: auto; transform: translateY(0); }
+}
+
 /* Phones use page scrolling instead of squeezing the conversation between
    three fixed-height toolbars. Desktop retains its independent chat scroller. */
 @media (max-width: 639px) {
@@ -81,6 +117,7 @@
   .coach-workspace button, .coach-dialog button {
     min-height: var(--coach-touch-target, 44px);
   }
+  .coach-message-actions button { min-width: 44px; min-height: 44px; }
   .coach-workspace input, .coach-workspace select,
   .coach-dialog input, .coach-dialog select, .coach-dialog textarea {
     font-size: 16px;
