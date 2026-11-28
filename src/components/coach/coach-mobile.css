@@ -62,22 +62,24 @@
 }
 .coach-user-context { color: hsl(var(--primary) / .75); }
 .coach-message-actions {
+  position: absolute;
+  top: -43px;
+  right: 0;
   display: flex;
   justify-content: flex-end;
   gap: 2px;
-  margin-top: 3px;
   opacity: 0;
   pointer-events: none;
   transform: translateY(-2px);
   transition: opacity 140ms ease, transform 140ms ease;
 }
-.coach-message-actions > button,
-.coach-message-actions [aria-label="More message options"] {
+.coach-message-actions > button {
   border: 1px solid hsl(var(--border) / .65);
   border-radius: 999px;
   background: hsl(var(--background) / .82);
   box-shadow: 0 2px 8px rgb(0 0 0 / .06);
 }
+.coach-message:not(.coach-message-user) .coach-message-actions { right: auto; left: 0; justify-content: flex-start; }
 .coach-message[data-actions-visible="true"] .coach-message-actions,
 .coach-message:focus-within .coach-message-actions { opacity: 1; pointer-events: auto; transform: translateY(0); }
 

@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Copy, MoreHorizontal, Pencil, Sparkles } from "lucide-react";
+import { Check, Copy, Pencil, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-export default function CoachMessage({ message, onEvidence, onEdit, onSchedule, onReuse, disabled }) {
+export default function CoachMessage({ message, onEvidence, onEdit, disabled }) {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState("");
   const [actionsVisible, setActionsVisible] = useState(false);
@@ -23,8 +22,6 @@ export default function CoachMessage({ message, onEvidence, onEdit, onSchedule, 
     try { await navigator.clipboard.writeText(message.content); setCopied(true); setCopyError(""); }
     catch { setCopyError("Copy isn't available in this browser. You can select and copy the text instead."); }
   }
-  function menuEdit() { setActionsVisible(false); onEdit?.(); }
-  function menuCopy() { setActionsVisible(false); copy(); }
   return <article className={`coach-message relative ${isUser ? "coach-message-user" : ""}`} data-actions-visible={actionsVisible} onPointerDown={startLongPress} onPointerUp={cancelLongPress} onPointerCancel={cancelLongPress} onPointerLeave={cancelLongPress} onContextMenu={event => { event.preventDefault(); setActionsVisible(true); }}>
     {!isUser && <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground"><Sparkles className="size-3.5 text-primary" />Nexora Coach</div>}
     <div className={isUser ? "coach-user-bubble" : ""}>
@@ -41,13 +38,6 @@ export default function CoachMessage({ message, onEvidence, onEdit, onSchedule, 
     <div className="coach-message-actions" role="group" aria-label={isUser ? "Message actions" : "Answer actions"}>
       {isUser && onEdit && <Button type="button" variant="ghost" size="icon-sm" onClick={onEdit} disabled={disabled} aria-label="Edit message" title="Edit message"><Pencil /></Button>}
       <Button type="button" variant="ghost" size="icon-sm" onClick={copy} aria-label={copied ? (isUser ? "Message copied" : "Answer copied") : (isUser ? "Copy message" : "Copy answer")} title={copied ? "Copied" : "Copy"}>{copied ? <Check /> : <Copy />}</Button>
-      <DropdownMenu onOpenChange={open => { if (!open) setActionsVisible(false); }}>
-        <DropdownMenuTrigger asChild><Button type="button" variant="ghost" size="icon-sm" aria-label="More message options" title="More options"><MoreHorizontal /></Button></DropdownMenuTrigger>
-        <DropdownMenuContent align={isUser ? "end" : "start"}>
-          {isUser && <><DropdownMenuItem onSelect={menuEdit} disabled={!onEdit || disabled}><Pencil className="size-4" />Edit message</DropdownMenuItem><DropdownMenuItem onSelect={menuCopy}><Copy className="size-4" />Copy message</DropdownMenuItem></>}
-          {!isUser && <><DropdownMenuItem onSelect={menuCopy}><Copy className="size-4" />Copy answer</DropdownMenuItem>{onReuse && <DropdownMenuItem onSelect={() => { setActionsVisible(false); onReuse(); }}>Use as prompt</DropdownMenuItem>}{onSchedule && <DropdownMenuItem onSelect={() => { setActionsVisible(false); onSchedule(); }}>Schedule this</DropdownMenuItem>}</>}
-        </DropdownMenuContent>
-      </DropdownMenu>
       <span role="status" className="sr-only">{copied ? (isUser ? "Message copied" : "Answer copied") : ""}</span>
     </div>
     {copyError && <p role="status" className="mt-2 text-xs text-muted-foreground">{copyError}</p>}
